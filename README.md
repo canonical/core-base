@@ -1,6 +1,10 @@
 # Core snap for UbuntuCore v22
 
-This is a base snap for snapd that is based on Ubuntu 22.04
+This is a base snap for snapd & ubuntucore that is based on Ubuntu 22.04 rootfs
+
+## What is a base snap?
+
+![Base Snaps](https://snapcraft.io/docs/base-snaps)
 
 # Building locally
 
