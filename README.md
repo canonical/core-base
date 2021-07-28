@@ -1,4 +1,4 @@
-# Core22 snap for UbuntuCore22
+# Core snap for UbuntuCore v22
 
 This is a base snap for snapd that is based on Ubuntu 22.04
 
