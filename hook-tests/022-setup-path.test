@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+grep -q "PATH=.*:/snap/bin" etc/environment
+grep -q "PATH=.*:/snap/bin" etc/login.defs

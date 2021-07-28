@@ -1,0 +1,11 @@
+#!/bin/sh -e
+
+if ! test -e etc/hostname; then
+    echo "etc/hostname must exist"
+    exit 1
+fi
+
+if ! test -s etc/hostname; then
+    echo "etc/hostname must be empty"
+    exit 1
+fi

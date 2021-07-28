@@ -1,0 +1,40 @@
+#! /bin/sh
+
+set -e
+
+echo "creating mtab and modules dir" >&2
+ln -sf ../proc/self/mounts /etc/mtab
+mkdir -p /lib/modules
+mkdir -p /etc/modules-load.d
+mkdir -p /lib/firmware
+mkdir -p /writable
+mkdir -p /var/lib/systemd/rfkill
+touch /etc/machine-id
+
+echo "creating fontconfig mount points" >&2
+mkdir -p /usr/share/fonts
+mkdir -p /usr/local/share/fonts
+mkdir -p /var/cache/fontconfig
+
+echo "creating snap dirs/files"
+mkdir -p /snap /var/snap
+mkdir -p /usr/lib/snapd
+mkdir -p /var/lib/snapd
+mkdir -p /var/cache/snapd
+# workaround for seeding bug
+mkdir -p /var/lib/snapd/apparmor/profiles
+
+echo "creating extra systemd dirs"
+mkdir -p /var/lib/systemd/coredump
+mkdir -p /var/lib/private/systemd
+chmod 700 /var/lib/private
+
+echo "extra cloud init files"
+mkdir -p /etc/cloud
+mkdir -p /var/lib/cloud
+
+echo "ensure snapctl is available"
+ln -s ../lib/snapd/snapctl /usr/bin/snapctl
+
+echo "creating host mounts dir"
+mkdir -p /host

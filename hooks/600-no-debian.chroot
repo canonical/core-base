@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# removing debian packaging artifacts
+
+set -ex
+
+echo "I: Removing the debian legacy"
+
+dpkg --purge --force-depends \
+     apt \
+     libapt-pkg6.0 \
+     debconf \
+     debconf-utils \
+     po-debconf
+
+dpkg --purge --force-depends --force-remove-essential \
+     init-system-helpers
+
+# store manifest of all installed packages
+install -m755 -d usr/share/snappy
+dpkg -l > usr/share/snappy/dpkg.list
+
+# dpkg-deb and dpkg purposefully left behind
+dpkg --purge --force-depends apt libapt-pkg5.0 debconf
+
+rm -r \
+        var/lib/dpkg \
+        var/log/apt
+rm \
+        usr/bin/dpkg \
+        usr/bin/dpkg-query \
+        usr/bin/dpkg-split \
+        usr/bin/dpkg-divert \
+        usr/bin/dpkg-trigger \
+        usr/bin/dpkg-statoverride \
+        usr/bin/dpkg-maintscript-helper
+
+rm \
+    /usr/sbin/pam-auth-update \
+    /usr/sbin/pam_getenv \
+    /usr/bin/run-mailcap \
+    /usr/sbin/update-mime
+
+# remove generated locales for packages we do not use
+rm -f usr/share/locale/*/LC_MESSAGES/dpkg*
+rm -f usr/share/locale/*/LC_MESSAGES/libapt*
+# remove generated logs
+rm -f var/log/bootstrap.log \
+      var/log/alternatives.log \
+      var/log/dpkg.log
+# also remove obsolete cron jobs
+rm -f /etc/cron.daily/dpkg \
+      /etc/cron.daily/passwd
+    

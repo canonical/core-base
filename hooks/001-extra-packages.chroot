@@ -1,0 +1,90 @@
+#!/bin/sh
+
+set -eux
+
+export DEBIAN_FRONTEND=noninteractive
+
+# TODO: work with foundation to not have PROPOSED=1 when building the
+#       bionic-base tarfiles. Right now we still get some packages from
+#       proposed presumably if they are part of the initial debootstrap.
+#
+# ensure we don't use proposed for new installs
+rm -f /etc/apt/sources.list.d/proposed.list
+
+
+# ensure we have /proc or systemd will fail
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# systemd postinst needs this
+mkdir -p /var/log/journal
+
+# shellcheck disable=SC1091
+CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
+# enable the foundations ubuntu-image PPA
+echo "deb http://ppa.launchpad.net/canonical-foundations/ubuntu-image/ubuntu $CODENAME main" > /etc/apt/sources.list.d/ubuntu-image.list
+
+cat >/etc/apt/trusted.gpg.d/canonical-foundations-ubuntu-image.asc <<EOF
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xo0EUL4ncAEEAOZssKpJDMZKbmsf9lHwlKA0vN6yQ0sOIPc500waH3xTC0sVlqQc
+3pUxCIdhU+qK1mH2D51FGHDb504k0Lpb+LE56TWa/X3xrZqUQX0UD1fykEruR4W2
+CdkXXZvmNBNatE9GurR6p407X5TED+dlUK/hIKNCb5unTEilBb4WwArxABEBAAHN
+LExhdW5jaHBhZCBQUEEgZm9yIENhbm9uaWNhbCBGb3VuZGF0aW9ucyBUZWFtwrgE
+EwECACIFAlC+J3ACGwMGCwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJENTAtmj9
+TJE5u/MD/2j2auOv62YUFwT7POylj7ihhZOarOSCEiQGita8II77j5AoK5O75uD+
+oQc5pdxVN2NGYD5R0PmDCPFN1Rb869YjtsPgLefEB+6Tc1GOR9hgnwuSU5lrwqdQ
+Ht/skh2wZSHtJgejt9kqIKMho1wtYz7ZTqMtN9GJK0VONbHP0Xu6
+=lWSn
+-----END PGP PUBLIC KEY BLOCK-----
+
+EOF
+
+# install some packages we need
+apt update
+apt dist-upgrade -y
+apt install --no-install-recommends -y \
+    systemd \
+    systemd-sysv \
+    finalrd \
+    libnss-extrausers \
+    libpam-systemd \
+    libpam-modules \
+    distro-info-data \
+    tzdata \
+    openssh-server \
+    iproute2 \
+    iptables \
+    kmod \
+    udev \
+    sudo \
+    less \
+    dbus \
+    dbus-user-session \
+    vim-tiny \
+    bash-completion \
+    netcat-openbsd \
+    iputils-ping \
+    apparmor \
+    netplan.io \
+    ca-certificates \
+    dosfstools \
+    squashfs-tools \
+    rfkill \
+    wpasupplicant \
+    cloud-init \
+    dmsetup \
+    cryptsetup \
+    gdbserver
+
+# Install self-built console-conf
+find /tmp -name '*.deb' -print0 | xargs -0 apt install -y
+rm /tmp/*.deb
+
+apt autoremove -y
+
+case "$(dpkg --print-architecture)" in
+    amd64|i386)
+        apt install --no-install-recommends -y secureboot-db
+        ;;
+esac

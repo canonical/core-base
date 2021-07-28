@@ -1,0 +1,40 @@
+project: core22
+environment:
+    PROJECT_PATH: /tmp/core22
+    LANG: "$(echo ${LANG:-C.UTF-8})"
+    LANGUAGE: "$(echo ${LANGUAGE:-en})"
+backends:
+    local:
+        type: adhoc
+        allocate: |
+            echo "Allocate called"
+            make -C tests/lib background-start
+            ADDRESS localhost:8022
+        discard: |
+            echo "Discard called"
+            make -C tests/lib background-stop
+        systems:
+            - core22-amd64:
+                username: ubuntu
+                password: ubuntu
+path: /tmp/core22
+exclude:
+    - "*.raw"
+    - "*.snap"
+    - Makefile
+    - README.md
+    - hooks
+    - parts
+    - prime
+    - snap
+    - spread.yaml
+    - stage
+kill-timeout: 20m
+prepare: |
+    true
+restore: |
+    true
+suites:
+    tests/main/:
+        summary: Tests for core22 snap.
+# vim:ts=4:sw=4:et

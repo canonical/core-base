@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+if [ -f var/lib/dbus/machine-id ]; then
+    echo "cannot have /var/lib/dbus/machine-id in the image"
+    exit 1
+fi
+
+if [ ! -e etc/machine-id ]; then
+    echo "/etc/machine-id must exist"
+    exit 1
+fi
+
+if [ -s etc/machine-id ]; then
+    echo "/etc/machine-id exists but must be empty"
+    exit 1
+fi

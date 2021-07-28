@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# In core16 we did not actually print /etc/issue on the terminal as
+# console-conf does that for us.  Probably something changed in agetty?
+# We can hack around it by explicitly forwarding -i to the agetty command.
+
+sed -i 's/\/sbin\/agetty /\/sbin\/agetty -i /' /lib/systemd/system/console-conf@.service /lib/systemd/system/serial-console-conf\@.service

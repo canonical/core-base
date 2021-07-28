@@ -1,0 +1,25 @@
+#!/bin/sh -ex
+# This sequence is modelled after snapd's packaging/snapd.mk it also contains
+# the important "void" directory, along with the special permissions it
+# carries.
+echo "I: Creating snapd skeleton directory structure"
+install -m 755 -d var/cache/snapd
+install -m 755 -d var/lib/snapd/apparmor/profiles
+install -m 755 -d var/lib/snapd/apparmor/snap-confine
+install -m 755 -d var/lib/snapd/assertions
+install -m 755 -d var/lib/snapd/cache
+install -m 755 -d var/lib/snapd/cookie
+install -m 755 -d var/lib/snapd/desktop/applications
+install -m 755 -d var/lib/snapd/device
+install -m 755 -d var/lib/snapd/hostfs
+install -m 755 -d var/lib/snapd/lib/gl
+install -m 755 -d var/lib/snapd/lib/gl32
+install -m 755 -d var/lib/snapd/lib/glvnd
+install -m 755 -d var/lib/snapd/lib/vulkan
+install -m 755 -d var/lib/snapd/mount
+install -m 755 -d var/lib/snapd/save
+install -m 755 -d var/lib/snapd/seccomp/bpf
+install -m 755 -d var/lib/snapd/seed
+install -m 755 -d var/lib/snapd/sequence
+install -m 755 -d var/lib/snapd/snaps
+install -m 111 -d var/lib/snapd/void

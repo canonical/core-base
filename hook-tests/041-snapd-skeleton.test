@@ -1,0 +1,25 @@
+#!/bin/sh -ex
+
+# There are several directories present
+test -d var/cache/snapd
+test -d var/lib/snapd/apparmor
+test -d var/lib/snapd/apparmor/profiles
+test -d var/lib/snapd/apparmor/snap-confine
+test -d var/lib/snapd/assertions
+test -d var/lib/snapd/cache
+test -d var/lib/snapd/cookie
+test -d var/lib/snapd/desktop/applications
+test -d var/lib/snapd/device
+test -d var/lib/snapd/hostfs
+test -d var/lib/snapd/lib/gl
+test -d var/lib/snapd/lib/gl32
+test -d var/lib/snapd/lib/glvnd
+test -d var/lib/snapd/lib/vulkan
+test -d var/lib/snapd/mount
+test -d var/lib/snapd/seccomp/bpf
+test -d var/lib/snapd/sequence
+test -d var/lib/snapd/snaps
+test -d var/lib/snapd/void
+
+# The void directory has special permissions
+test "$(stat -c %a var/lib/snapd/void)" = 111

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+
+echo "Remove uneeded packages"
+dpkg -r --force-depends dh-python

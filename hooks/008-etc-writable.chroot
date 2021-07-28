@@ -1,0 +1,21 @@
+#!/bin/sh -ex
+
+mkdir -p /etc/writable/default
+
+# cloud-init needs to be able to modify hostname and has the ability to
+# set the other two.
+for f in timezone localtime hostname; do
+    if [ -e /etc/$f ]; then
+        echo "I: Moving /etc/$f to /etc/writable/"
+        mv /etc/$f /etc/writable/$f
+    fi
+    echo "I: Linking /etc/$f to /etc/writable/"
+    ln -s writable/$f /etc/$f
+done
+
+# create systemd override dirs
+for f in system user; do
+    echo "I: creating /etc/systemd/$f.conf.d"
+    mkdir -p /etc/systemd/$f.conf.d
+done
+

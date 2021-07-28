@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+SSH_KEYS="$(find etc/ssh/ -name "*key*")"
+if [ -n "$SSH_KEYS" ]; then
+    echo "There MUST not be any ssh keys on the image."
+    echo "However the following keys where found:"
+    echo "$SSH_KEYS"
+    exit 1
+fi

@@ -1,0 +1,5 @@
+#!/bin/sh -ex
+
+# add all requirements for bits used by the hooks/configure script
+
+mkdir -p /etc/systemd/logind.conf.d

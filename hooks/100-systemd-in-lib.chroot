@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eux
+
+echo "ensure the systemd target.wants are in /lib instead of /etc"
+for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
+    mv etc/systemd/system/"$d"/* lib/systemd/system/"$d"
+done
+

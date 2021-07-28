@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+test -e usr/bin/timedatectl.real
+grep '$TIMEDATECTL' usr/bin/timedatectl

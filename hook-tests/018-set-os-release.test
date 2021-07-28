@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+grep -qE '^ID=ubuntu-core' usr/lib/os-release

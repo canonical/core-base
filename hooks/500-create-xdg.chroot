@@ -1,0 +1,54 @@
+#!/bin/sh -ex
+
+echo "I: Creating xdg helper"
+
+mkdir -p /usr/bin
+cat >/usr/bin/xdg-open <<'EOF'
+#!/bin/sh
+exec snapctl user-open "$@"
+EOF
+chmod 755 /usr/bin/xdg-open
+
+# corresponding .desktop entry, needed for mimetype registration
+mkdir -p /usr/share/applications
+cat >/usr/share/applications/xdg-open.desktop <<EOF
+[Desktop Entry]
+Version=1.0
+Name=Url Handler Script
+Exec=/usr/bin/xdg-open %u
+MimeType=x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;x-scheme-handler/help;
+Type=Application
+EOF
+
+# define xdg-open as the default handler for common types
+cat >/usr/share/applications/mimeapps.list <<EOF
+[Default Applications]
+x-scheme-handler/http=xdg-open.desktop
+x-scheme-handler/https=xdg-open.desktop
+x-scheme-handler/mailto=xdg-open.desktop
+x-scheme-handler/help=xdg-open.desktop
+EOF
+
+cat >/usr/bin/xdg-settings <<'EOF'
+#!/bin/bash
+#
+set -e
+set -o pipefail
+
+# we need to add a "cut -b4-" everyhwere because
+# `dbus-send --print-reply=literal` indents the output by 3 spaces
+# (hardcoded in dbus-print-message.c:print_iter)
+
+if [ "$1" = "get" ]; then
+   dbus-send --print-reply=literal --session --dest=io.snapcraft.Settings /io/snapcraft/Settings io.snapcraft.Settings.Get string:"$2" | cut -b4-
+elif [ "$1" = "check" ]; then
+   dbus-send --print-reply=literal --session --dest=io.snapcraft.Settings /io/snapcraft/Settings io.snapcraft.Settings.Check string:"$2" string:"$3" | cut -b4-
+elif [ "$1" = "set" ]; then
+   # timeout of 300s to ensure the user has enough time to make a decision
+   dbus-send --reply-timeout=300000 --print-reply=literal --session --dest=io.snapcraft.Settings /io/snapcraft/Settings io.snapcraft.Settings.Set string:"$2" string:"$3" | cut -b4-
+else
+   echo "unknown action $2"
+fi
+EOF
+chmod 755 /usr/bin/xdg-settings
+

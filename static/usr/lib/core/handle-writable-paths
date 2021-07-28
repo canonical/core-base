@@ -1,0 +1,203 @@
+#!/bin/sh
+#
+# Extracted code from:
+# https://github.com/snapcore/core-build/blob/master/initramfs/scripts/ubuntu-core-rootfs
+# to keep in the core20+ snap in sync with the writable-path file.
+#
+# Having it here means we don't need to rebuld all kernels if this file
+# changes.
+
+set -e
+
+panic()
+{
+	echo "PANIC: $*"
+	exit 1
+}
+
+# XXX: we really want the "synced" feature to go away 
+sync_dirs()
+{
+	base="$1"
+	source="$2"
+	target="$3"
+
+	OLD_PWD="$PWD"
+	cd "$base"
+
+	for file in "$source"/*
+	do
+		# Skip empty directories
+		[ ! -e "$base/$file" -a ! -L "$base/$file" ] && continue
+
+		# If the target already exists as a file or link, there's nothing we can do
+		[ -e "$target/$file" -o -L "$target/$file" ] && [ ! -d "$target/$file" ] && continue
+
+		# If the target doesn't exist, just copy it over
+		if [ ! -e "$target/$file" -a ! -L "$target/$file" ]; then
+			cp -Ra "$base/$file" "$target/$file"
+			continue
+		fi
+
+		# That leaves us with directories and a recursive call
+		[ -d "$file" ] && sync_dirs "$base" "$file" "$target"
+	done
+
+	cd "$OLD_PWD"
+}
+
+# Process the list of bind-mounts (but don't mount them - systemd will handle that)
+# File format is documented in writable-paths(5).
+handle_writable_paths()
+{
+	writable_paths="$1"
+	fstab="$2"
+
+	[ -n "$writable_paths" ] || panic "need writeable paths"
+	[ -e "$writable_paths" ] || panic "writeable paths does not exist"
+	[ -n "$fstab" ] || panic "need fstab"
+
+	cat "$writable_paths" | while read line; do
+		# tokenise
+		set -- $line
+
+		# skip invalid/commented entries
+		([ -z "$1" ] || \
+		 [ -z "$2" ] || \
+		 [ -z "$3" ] || \
+		 [ -z "$4" ] || \
+		 [ -z "$5" ]) && continue
+
+		# ignore anything that isn't an absolute path (including comments)
+		case "$1" in
+			/*) ;;
+			*) continue ;;
+		esac
+
+		# skip invalid mount points
+		dstpath="${rootmnt}$1"
+		[ ! -e "$dstpath" ] && continue
+
+		if [ "$3" = "temporary" ]; then
+			# Temporary entries are simple, just mount a tmpfs
+			echo "tmpfs $1 tmpfs $5 0 0" >> "$fstab"
+		elif [ "$3" = "persistent" ] || \
+		     [ "$3" = "synced" ]; then
+			# Figure out the source path
+			if [ "$2" = "auto" ]; then
+				srcpath="${rootmnt}/writable/system-data${1}"
+				path="/writable/system-data${1}"
+			else
+				srcpath="${rootmnt}/writable/$2"
+				path="/writable/$2"
+			fi
+
+			if [ ! -e "$srcpath" ]; then
+				# Process new persistent or synced paths
+				dstown=$(stat -c "%u:%g" "$dstpath")
+				dstmode=$(stat -c "%a" "$dstpath")
+				mkdir -p ${srcpath%/*}
+				if [ ! -d "$dstpath" ]; then
+					# Deal with redirected files
+					if [ "$4" = "transition" ]; then
+						cp -a "$dstpath" "$srcpath"
+					else
+						touch "$srcpath"
+						chown "$dstown" "$srcpath"
+						chmod "$dstmode" "$srcpath"
+					fi
+				else
+					# Deal with redirected directories
+					if [ "$4" = "transition" ] || [ "$3" = "synced" ]; then
+						cp -aR "$dstpath" "$srcpath"
+					else
+						mkdir "$srcpath"
+						chown "$dstown" "$srcpath"
+						chmod "$dstmode" "$srcpath"
+					fi
+				fi
+			elif [ "$3" = "synced" ]; then
+				# Process existing synced paths
+				sync_dirs "$dstpath" . "$srcpath"
+			fi
+
+                        # mount all /etc dirs right now, not later when fstab is
+                        # processed, as it will cause races.
+                        case $1 in
+                            /etc*)
+                                [ -e "${rootmnt}/writable/system-data/$1" ] || mkdir -p "${rootmnt}/writable/system-data/$1"
+                                mount -o bind "${rootmnt}/writable/system-data/$1" "${rootmnt}/$1"
+                                ;;
+                            *)
+                                # Write the fstab entry
+                                if [ "$5" = "none" ]; then
+                                        echo "$path $1 none bind 0 0" >> "$fstab"
+                                else
+                                        echo "$path $1 none bind,$5 0 0" >> "$fstab"
+                                fi
+                                ;;
+                        esac
+		else
+			continue
+		fi
+	done
+
+	# now apply the defaults on top
+	handle_writable_defaults
+}
+
+# handle_writable_default will apply system defaults *once* after
+# the handle_writable_path got populated
+handle_writable_defaults()
+{
+        srcpath="${rootmnt}/writable/system-data/_writable_defaults"
+        if [ ! -d "$srcpath" ] || [ -e "${srcpath}/.done" ]; then
+                return
+        fi
+
+        dstpath="${rootmnt}/writable/system-data"
+        for fileordir in "$srcpath"/* ; do
+            # skip empty $srcpath/
+            [ ! -e "$fileordir" ] && [ ! -L "$fileordir" ] &&  continue
+
+            # copy
+            cp -a "$fileordir" "$dstpath"
+        done
+        touch "$srcpath/.done"
+}
+
+main()
+{
+	writable_paths="${1:-${rootmnt}/etc/system-image/writable-paths}"
+	fstab="${2:-${rootmnt}/etc/fstab}"
+
+	# Add writable overlays
+	if [ -e "$writable_paths" ]; then
+		touch "${rootmnt}/run/image.fstab"
+		mount -o bind "${rootmnt}/run/image.fstab" "$fstab" || panic "Cannot bind mount fstab"
+		echo "# Auto-generated by $0" >> "$fstab"
+		echo "# DO NOT EDIT THIS FILE BY HAND - YOUR CHANGES WILL BE OVERWRITTEN" >> "$fstab"
+		echo "# (See writable-paths(5) for details)" >> "$fstab"
+		echo "/dev/root / rootfs defaults,ro 0 0" >> "$fstab"
+		handle_writable_paths "$writable_paths" "$fstab"
+		echo "/run/mnt/ubuntu-seed /var/lib/snapd/seed none bind,ro 0 0" >> "$fstab"
+	fi
+
+	# IMPORTANT: ensure we synced everything back to disk
+	sync
+}
+
+# for unit test
+if [ "$TEST_IMPORT" = "1" ]; then
+    return
+fi
+
+rootmnt="$1"
+if [ -z "$rootmnt" ]; then
+	echo "need rootmnt as the first argument"
+	exit 1
+fi
+# "$2" is the (optional) writable-paths file
+# "$3" is the (optional) /etc/fstab file
+main "$2" "$3"
+

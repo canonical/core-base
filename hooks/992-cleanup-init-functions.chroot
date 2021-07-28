@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+# Remove including the /etc/lsb-base-logging.sh. The issue here is that
+# the host might have this script. However for snaps that run under
+# confinement including this will fail with a permission error which
+# breaks existing snaps (like mysql).
+#
+# This fixes LP: #1779416
+sed -i -e '/\[ -e \/etc\/lsb-base-logging.sh \]/d' /lib/lsb/init-functions

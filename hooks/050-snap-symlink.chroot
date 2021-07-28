@@ -1,0 +1,4 @@
+#!/bin/sh -ex
+
+echo "Creating the snap binary symlink"
+ln -s /snap/snapd/current/usr/bin/snap /usr/bin/snap

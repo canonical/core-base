@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+if [ -f usr/lib/systemd/system-generators/systemd-gpt-auto-generator ]; then
+    echo "cannot have /usr/lib/systemd/system-generators/systemd-gpt-auto-generator in the image"
+    exit 1
+fi

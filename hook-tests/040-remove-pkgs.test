@@ -1,0 +1,6 @@
+#!/bin/sh -e
+
+if [ -e usr/bin/dh_python3 ]; then
+    echo "dh-python is not removed from the image"
+    exit 1
+fi

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Ubuntu Core has been minimized and does not contain man-pages."
+echo "Please use https://manpages.ubuntu.com/"

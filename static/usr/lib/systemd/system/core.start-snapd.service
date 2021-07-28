@@ -1,0 +1,13 @@
+[Unit]
+Description=Start the snapd services from the snapd snap
+RequiresMountsFor=/run
+Wants=secureboot-db.service
+After=secureboot-db.service
+
+[Service]
+ExecStart=/usr/lib/core/run-snapd-from-snap start
+Type=oneshot
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+#!/bin/sh -ex
+
+cat >/usr/lib/os-release<<EOF
+NAME="Ubuntu Core"
+VERSION="20"
+ID=ubuntu-core
+PRETTY_NAME="Ubuntu Core 20"
+VERSION_ID="20"
+HOME_URL="https://snapcraft.io/"
+BUG_REPORT_URL="https://bugs.launchpad.net/snappy/"
+EOF

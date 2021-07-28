@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+echo "Ensure links worked"
+test -e etc/timezone
+test -e etc/localtime
+test -e etc/hostname
+grep -q "Etc/UTC" etc/timezone
+test $(readlink etc/localtime) = "writable/localtime"
+test $(readlink etc/writable/localtime) = "/usr/share/zoneinfo/Etc/UTC"
+
+echo "Ensure writable dirs are available"
+test -d etc/systemd/system.conf.d
+test -d etc/systemd/user.conf.d
