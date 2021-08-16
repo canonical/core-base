@@ -2,7 +2,7 @@ DPKG_ARCH := $(shell dpkg --print-architecture)
 #LTS=focal
 #BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
 #URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
-DEVEL=hirsute
+DEVEL=impish
 BASE := $(DEVEL)-base-$(DPKG_ARCH).tar.gz
 URL := http://cdimage.ubuntu.com/ubuntu-base/daily/current/$(BASE)
 
