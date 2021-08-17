@@ -1,5 +1,5 @@
 DPKG_ARCH := $(shell dpkg --print-architecture)
-LTS=focal
+LTS=impish
 BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
 URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
 
