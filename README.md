@@ -1,6 +1,8 @@
-# Core20 snap for snapd
+# Core22 snap for snapd & Ubuntu Core
 
-This is a base snap for snapd that is based on Ubuntu 20.04
+This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 22.04
+
+TODO: Not 22.04 actually yet, it will first build with impish rootfs and then we will switch to JJ when rootfs released.
 
 # Building locally
 
