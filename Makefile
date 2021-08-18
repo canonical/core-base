@@ -1,7 +1,11 @@
 DPKG_ARCH := $(shell dpkg --print-architecture)
-LTS=impish
-BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
-URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
+#LTS=jj
+#BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
+#URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
+# Temporarily until JJ is open and released
+DEVEL=impish
+BASE := $(DEVEL)-base-$(DPKG_ARCH).tar.gz
+URL := http://cdimage.ubuntu.com/ubuntu-base/daily/current/$(BASE)
 
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
