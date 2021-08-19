@@ -45,6 +45,7 @@ apt update
 apt dist-upgrade -y
 apt install --no-install-recommends -y \
     systemd \
+    systemd-bootchart \
     systemd-sysv \
     finalrd \
     libnss-extrausers \
