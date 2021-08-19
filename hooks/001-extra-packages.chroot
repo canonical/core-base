@@ -75,7 +75,8 @@ apt install --no-install-recommends -y \
     cloud-init \
     dmsetup \
     cryptsetup \
-    gdbserver
+    gdbserver \
+    bzip2
 
 # Install self-built console-conf and fake avahi-daemon
 find /tmp -name '*.deb' -print0 | xargs -0 apt install -y

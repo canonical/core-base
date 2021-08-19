@@ -28,10 +28,6 @@ echo "Ensure no user 107 (ex-docker)"
 cut -d: -f3 /etc/passwd | grep -q 107
 rc=$?; [ "$rc" = "0" ] && MISMATCH=1
 
-echo "Ensure no group 113 (ex-docker)"
-cut -d: -f3 /etc/group | grep -q 113
-rc=$?; [ "$rc" = "0" ] && MISMATCH=1
-
 if [ -n "$MISMATCH" ]; then
     echo "There were changes to the password database."
     echo "This usually means something wrong happened during the execution of hooks."
