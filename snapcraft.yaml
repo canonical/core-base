@@ -6,7 +6,7 @@ description: |
   The base snap based on the Ubuntu 2X.YY release.
 confinement: strict
 type: base
-build-base: core20
+build-base: core22
 grade: devel
 
 parts:
