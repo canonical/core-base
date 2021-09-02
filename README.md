@@ -26,3 +26,14 @@ worked as expected.
 The `.test` scripts will be run after building with snapcraft or when
 doing a manual "make test" in the source tree.
 
+# Bootchart
+
+It is possible to enable bootcharts by adding
+`systemd.wants=systemd-bootchart.service` to the kernel command
+line. The sample collector will run until the system is seeded (it will
+stop when the `snapd.seeded.service` stops). The bootchart will be saved
+in the `ubuntu-save` partition, under `log/boot<N>/`, being `<N>` the
+boot number since bootcharts were enabled. If a chart has been collected
+by the initramfs, it will be also saved in that folder (this will happen
+if we have also added `rd.systemd.wants=systemd-bootchart.service` to
+the kernel command line).
