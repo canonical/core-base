@@ -1,5 +1,10 @@
 #! /bin/sh -ex
 
+if [ "$(dpkg --print-architecture)" = "riscv64" ]; then
+    echo "core20 riscv64 does not support this functionality"
+    exit 0
+fi
+
 # Rewrite unit that came with the systemd-bootchart package
 
 cat << 'EOF' > /lib/systemd/system/systemd-bootchart.service

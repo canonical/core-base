@@ -45,7 +45,6 @@ apt update
 apt dist-upgrade -y
 apt install --no-install-recommends -y \
     systemd \
-    systemd-bootchart \
     systemd-sysv \
     finalrd \
     libnss-extrausers \
@@ -76,8 +75,15 @@ apt install --no-install-recommends -y \
     cloud-init \
     dmsetup \
     cryptsetup \
-    gdbserver \
     bzip2
+
+case "$(dpkg --print-architecture)" in
+    riscv64)
+        ;;
+    *)
+        apt install --no-install-recommends -y gdbserver systemd-bootchart
+        ;;
+esac
 
 # Install self-built console-conf and fake avahi-daemon
 find /tmp -name '*.deb' -print0 | xargs -0 apt install -y
