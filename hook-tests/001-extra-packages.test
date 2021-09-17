@@ -65,7 +65,6 @@ libdebconfclient0:amd64
 libdevmapper1.02.1:amd64
 libext2fs2:amd64
 libfdisk1:amd64
-libffi8ubuntu1:amd64
 libgcc-s1:amd64
 libgcrypt20:amd64
 libgmp10:amd64
