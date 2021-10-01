@@ -10,6 +10,7 @@ DefaultDependencies=no
 Conflicts=shutdown.target
 Before=shutdown.target
 Requires=stop-systemd-bootchart.service
+ConditionKernelCommandLine=core.bootchart
 
 [Service]
 ExecStartPre=/usr/bin/mkdir -p /run/log/base
@@ -20,6 +21,8 @@ ExecStopPost=/lib/systemd/systemd-bootchart-poststop.sh
 [Install]
 WantedBy=sysinit.target
 EOF
+
+systemctl enable systemd-bootchart.service
 
 # Creating these files could go to static folder, but it seems cleaner to have
 # everything together in one place.
