@@ -77,6 +77,11 @@ parts:
       - shellcheck
       - wget
       - distro-info
+    build-snaps:
+      # XXX: Temporarily force using snapd from edge for building the snap,
+      # as there seems to be an issue with the current snapd on impish, causing
+      # core-dumps of the mksquashfs call (via `snap pack`).
+      - snapd/latest/edge
     # XXX: Dirty hacks to enable building core20 on non-focal systems.
     # Without these overrides both the PATH and LD_LIBRARY_PATH contain paths
     # in the part's install directory which binaries can be incompatible with
