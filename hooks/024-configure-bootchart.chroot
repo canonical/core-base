@@ -43,7 +43,7 @@ EOF
 cat << 'EOF' > /lib/systemd/systemd-bootchart-poststop.sh
 #!/bin/sh -ex
 
-save_d=/run/mnt/ubuntu-save/log
+save_d=/run/mnt/data/system-data/var/log/debug
 last_d=$(find $save_d/ -type d -name boot\* | sort | tail -n1)
 if [ -z "$last_d" ]; then last_d=0; fi
 next_d=$save_d/boot$((${last_d##*boot} + 1))
