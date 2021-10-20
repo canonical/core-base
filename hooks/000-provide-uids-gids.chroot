@@ -213,6 +213,7 @@ tss:x:116:
 input:x:107:
 render:x:117:
 sgx:x:113:
+_ssh:x:118:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
@@ -274,5 +275,6 @@ tss:!::
 input:!::
 render:!::
 sgx:!::
+_ssh:!::
 EOF
 cp /etc/gshadow /etc/gshadow.orig # We make a copy for a later sanity-compare
