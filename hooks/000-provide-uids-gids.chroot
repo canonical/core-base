@@ -212,7 +212,7 @@ pkcs11:x:115:
 tss:x:116:
 input:x:107:
 render:x:117:
-sgx:x:113:
+sgx:x:119:
 _ssh:x:118:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
