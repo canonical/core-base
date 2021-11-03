@@ -1,9 +1,9 @@
 name: core22
 # version: "22"
 adopt-info: bootstrap
-summary: Runtime environment based on Ubuntu 2X.YY
+summary: Runtime environment based on Ubuntu 22.04
 description: |
-  The base snap based on the Ubuntu 2X.YY release.
+  The base snap based on the Ubuntu 22.04 release.
 confinement: strict
 type: base
 build-base: core22
@@ -82,7 +82,7 @@ parts:
       # as there seems to be an issue with the current snapd on impish, causing
       # core-dumps of the mksquashfs call (via `snap pack`).
       - snapd/latest/edge
-    # XXX: Dirty hacks to enable building core20 on non-focal systems.
+    # XXX: Dirty hacks to enable building core22 on non-jammy systems.
     # Without these overrides both the PATH and LD_LIBRARY_PATH contain paths
     # in the part's install directory which binaries can be incompatible with
     # the ones running on our system.  We don't need those while running stage
