@@ -10,6 +10,25 @@ echo "I: Removing the debian legacy"
 install -m755 -d usr/share/snappy
 dpkg -l > usr/share/snappy/dpkg.list
 
+# generate dpkg.yaml needed for OSS compliance
+{
+  # fill in ppa information in yaml file
+  printf 'package-repositories:\n'
+  find /etc/apt/ -name \*.list | while IFS= read -r APT; do
+    grep -o "^deb http://ppa.launchpad.net/[a-z0-9\.\+\-]\+/[a-z0-9\.\+\-]\+/[a-z0-9\.\+\-]\+" "$APT" | while read -r ENTRY ; do
+      USER=$(echo "$ENTRY" | cut -d/ -f4)
+      PPA=$(echo "$ENTRY" | cut -d/ -f5)
+      DISTRO=$(echo "$ENTRY" | cut -d/ -f6)
+      printf -- '- type: apt\n'
+      echo '  ppa: '"$USER/$DISTRO/$PPA"
+    done
+  done
+
+  # fill in yaml section with all installed packages
+  printf 'packages:\n'
+  dpkg-query -W --showformat='- ${binary:Package}=${Version}\n'
+} > /usr/share/snappy/dpkg.yaml
+
 # dpkg-deb and dpkg purposefully left behind
 dpkg --purge --force-depends apt libapt-pkg5.0 debconf
 
