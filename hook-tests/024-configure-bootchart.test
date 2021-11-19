@@ -1,0 +1,6 @@
+#!/bin/sh -ex
+
+test -f usr/lib/systemd/bootchart.conf.d/ubuntu-core.conf
+test -f lib/systemd/system/systemd-bootchart.service
+test -x lib/systemd/systemd-bootchart-poststop.sh
+test -f lib/systemd/system/stop-systemd-bootchart.service
