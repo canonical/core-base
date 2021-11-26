@@ -1,40 +1,124 @@
-project: core20
+project: core22
+
 environment:
-    PROJECT_PATH: /tmp/core20
-    LANG: "$(echo ${LANG:-C.UTF-8})"
-    LANGUAGE: "$(echo ${LANGUAGE:-en})"
+  SETUPDIR: /home/core22
+  PROJECT_PATH: $SETUPDIR
+  PATH: $PATH:$PROJECT_PATH/tests/bin
+  TESTSLIB: $PROJECT_PATH/tests/lib
+  EXTTESTSLIB: $TESTSLIB/external/snapd-testing-tools/lib/core
+  SNAP_BRANCH: "edge" # stable/edge/beta
+  UC_VERSION: 22
+  # TODO: are these vars needed still?
+  LANG: "C.UTF-8"
+  LANGUAGE: "en"
+
 backends:
-    local:
-        type: adhoc
-        allocate: |
-            echo "Allocate called"
-            make -C tests/lib background-start
-            ADDRESS localhost:8022
-        discard: |
-            echo "Discard called"
-            make -C tests/lib background-stop
-        systems:
-            - core20-amd64:
-                username: ubuntu
-                password: ubuntu
-path: /tmp/core20
+  google-nested:
+    type: google
+    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
+    location: snapd-spread/us-east1-b
+    plan: n2-standard-2
+    halt-timeout: 2h
+    systems:
+      - ubuntu-20.04-64:
+          image: ubuntu-2004-64-virt-enabled
+          storage: 20G
+
+  qemu-nested:
+    type: qemu
+    # TODO:UC22: uc22 needs 2G or grub will not loopback the kernel snap
+    #            we use nested VM's, so use 4G for the host until we can boot
+    #            uc22 with less RAM
+    memory: 4G
+    systems:
+      - ubuntu-20.04-64:
+          username: ubuntu
+          password: ubuntu
+
+  lxd-nested:
+    type: lxd
+    container-profiles: core22
+    systems:
+      - ubuntu-20.04:
+          image: ucspread
+
+path: /home/core22
+
 exclude:
-    - "*.raw"
-    - "*.snap"
-    - Makefile
-    - README.md
-    - hooks
-    - parts
-    - prime
-    - snap
-    - spread.yaml
-    - stage
-kill-timeout: 20m
+  - .git
+  - "*.o"
+  - "*.a"
+  - "*.snap"
+  - "*.img"
+
 prepare: |
-    true
-restore: |
-    true
+  # NOTE: This part of the code needs to be in spread.yaml as it runs before
+  # the rest of the source code (including the tests/lib directory) is
+  # around. The purpose of this code is to fix some connectivity issues setup 
+  # spread functions to be more usable outside of the explicit task.yaml 
+  # sections.
+
+  # apt update is hanging on security.ubuntu.com with IPv6, prefer IPv4 over IPv6
+  cat <<EOF > gai.conf
+  precedence  ::1/128       50
+  precedence  ::/0          40
+  precedence  2002::/16     30
+  precedence ::/96          20
+  precedence ::ffff:0:0/96 100
+  EOF
+  if ! mv gai.conf /etc/gai.conf; then
+      echo "/etc/gai.conf is not writable, ubuntu-core system? apt update won't be affected in that case"
+      rm -f gai.conf
+  fi
+
+  # Take the MATCH and REBOOT functions from spread and allow our shell
+  # scripts to use them as shell commands. The replacements are real
+  # executables in tests/lib/bin (which is on PATH) but they source
+  # spread-funcs.sh written here, base on the definitions provided by SPREAD.
+  # This ensures that 1) spread functions define the code 2) both MATCH and
+  # REBOOT are executables and not functions, and can be called from any
+  # context.
+  type MATCH | tail -n +2 > "$TESTSLIB"/spread-funcs.sh
+  unset MATCH
+  type REBOOT | tail -n +2 >> "$TESTSLIB"/spread-funcs.sh
+  unset REBOOT
+
+  # prepare common uc image setup by repacking snaps, etc
+  "$TESTSLIB"/prepare-uc.sh
+restore-each: |
+  # delete the nested VM image after each task finishes so we don't use too much
+  # disk space
+  . "$EXTTESTSLIB/nested.sh"
+  cleanup_nested_core_vm
+debug-each: |
+  . "$EXTTESTSLIB/nested.sh"
+  print_nested_status
+
+warn-timeout: 40m
+kill-timeout: 50m
+
 suites:
-    tests/main/:
-        summary: Tests for core20 snap.
+  tests/spread/:
+    summary: Tests for core-base snap.
+    environment:
+      # since we are only testing uc20 here, disable kvm unless the env
+      # specifically knows kvm works and sets this to true
+      # kvm specifically does not work on GCE with focal L1 VM and focal (UC20)
+      # L2 VM's because the L2 VM intermittently and randomly hangs and GCE's
+      # hypervisor will restart the VM, there is not currently a known
+      # workaround
+      ENABLE_KVM: '$(HOST: echo "${SPREAD_ENABLE_KVM:-false}")'
+      
+      # full encryption has TPM and secure boot
+      ENABLE_TPM/fullenc: true
+      ENABLE_SECURE_BOOT/fullenc: true
+      # only secboot does not have a TPM
+      ENABLE_TPM/onlysecboot: false
+      ENABLE_SECURE_BOOT/onlysecboot: true
+      # only tpm does not have secure boot
+      ENABLE_TPM/onlytpm: true
+      ENABLE_SECURE_BOOT/onlytpm: false
+      # no enc does not have secure boot or tpm
+      ENABLE_TPM/noenc: false
+      ENABLE_SECURE_BOOT/noenc: false
 # vim:ts=4:sw=4:et
