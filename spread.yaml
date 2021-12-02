@@ -101,9 +101,9 @@ suites:
   tests/spread/:
     summary: Tests for core-base snap.
     environment:
-      # since we are only testing uc20 here, disable kvm unless the env
+      # since we are only testing ubuntu core here, disable kvm unless the env
       # specifically knows kvm works and sets this to true
-      # kvm specifically does not work on GCE with focal L1 VM and focal (UC20)
+      # kvm specifically does not work on GCE with focal L1 VM and focal (UC)
       # L2 VM's because the L2 VM intermittently and randomly hangs and GCE's
       # hypervisor will restart the VM, there is not currently a known
       # workaround
