@@ -1,0 +1,36 @@
+summary: Ensure that things worked
+
+prepare: |
+  # for various utilities
+  . "$TESTSLIB/nested.sh"
+
+  # Start the nested UC20 VM
+  start_nested_core_vm_unit
+
+  # At this point we are able to SSH to the nested VM, so things probably worked
+  # but we should wait for snapd to finish seeding anyways, but first we need to
+  # wait for the snap command to exist
+  nested_wait_for_snap_command
+
+execute: |
+  # for various utilities
+  . "$TESTSLIB/nested.sh"
+
+  # Now formally wait for seeding
+  execute_remote sudo snap wait system seed.loaded
+
+  # We should be in run mode
+  execute_remote cat /proc/cmdline | MATCH snapd_recovery_mode=run
+
+  # We should have a modeenv
+  execute_remote test -f /var/lib/snapd/modeenv
+
+  # Verify that the partitions we expect, are present
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-seed
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-boot
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-save
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-data
+  
+  # Verify system services are running
+  execute_remote systemctl -q is-active snapd
+  execute_remote snap change 1

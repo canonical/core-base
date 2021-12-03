@@ -36,7 +36,7 @@ parts:
     stage:
       - -console-conf_*.deb
       - -subiquitycore_*.deb
-    # XXX: Dirty hacks to enable building core20 on non-focal systems.
+    # XXX: Dirty hacks to enable building core22 on non-focal systems.
     # See below for details.
     override-prime: |
       unset LD_LIBRARY_PATH;
