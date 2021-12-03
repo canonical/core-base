@@ -88,10 +88,10 @@ prepare: |
 restore-each: |
   # delete the nested VM image after each task finishes so we don't use too much
   # disk space
-  . "$EXTTESTSLIB/nested.sh"
+  . "$TESTSLIB/nested.sh"
   cleanup_nested_core_vm
 debug-each: |
-  . "$EXTTESTSLIB/nested.sh"
+  . "$TESTSLIB/nested.sh"
   print_nested_status
 
 warn-timeout: 40m

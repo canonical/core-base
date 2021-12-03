@@ -2,7 +2,7 @@ summary: Ensure that things worked
 
 prepare: |
   # for various utilities
-  . "$EXTTESTSLIB/nested.sh"
+  . "$TESTSLIB/nested.sh"
 
   # Start the nested UC20 VM
   start_nested_core_vm_unit
@@ -14,7 +14,7 @@ prepare: |
 
 execute: |
   # for various utilities
-  . "$EXTTESTSLIB/nested.sh"
+  . "$TESTSLIB/nested.sh"
 
   # Now formally wait for seeding
   execute_remote sudo snap wait system seed.loaded
