@@ -3,7 +3,7 @@
 set -e
 set -x 
 
-apt update -yqq
+apt update -qq
 
 # these should already be installed in GCE and LXD images with the google/lxd-nested 
 # backend, but in qemu local images from qemu-nested, we might not have them

@@ -38,8 +38,8 @@ This document will be updated with the upstream version when this happens. To in
 git clone https://github.com/Meulengracht/spread
 cd spread
 cd cmd/spread
-go build .
-go install .
+go build
+go install
 ```
 
 ## QEmu backend

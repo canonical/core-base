@@ -26,10 +26,10 @@ execute: |
   execute_remote test -f /var/lib/snapd/modeenv
 
   # Verify that the partitions we expect, are present
-  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-seed | xargs test
-  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-boot | xargs test
-  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-save | xargs test
-  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-data | xargs test
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-seed
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-boot
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-save
+  execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-data
   
   # Verify system services are running
   execute_remote systemctl -q is-active snapd
