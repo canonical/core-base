@@ -9,6 +9,8 @@ execute: |
     cd $PROJECT_PATH
 
     # install prerequisites
+    apt update -qq
+    apt install retry -yqq
     snap install google-cloud-sdk --classic
     snap install lxd --channel=latest/stable
     lxd init --auto
@@ -22,8 +24,7 @@ execute: |
     # wait a few seconds before proceeding, otherwise we are going to have issues
     # with the container (systemd) not being ready yet, and then the rest of
     # the commands will fail
-    sleep 5s
-    lxc exec $INSTANCE_NAME -- bash -c 'systemctl is-system-running --wait' || true
+    retry -d 1 -t 20 lxc exec $INSTANCE_NAME -- bash -c 'systemctl is-system-running --wait' || true
 
     # we build libtpms and swptm from source and preinstall that in the image for TPM emulation support
     lxc exec $INSTANCE_NAME -- bash -c "apt update -yqq"
