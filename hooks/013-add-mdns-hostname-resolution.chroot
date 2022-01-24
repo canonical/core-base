@@ -3,15 +3,15 @@
 export DEBIAN_FRONTEND=noninteractive
 
 echo "Installing libnss-mdns"
-apt-get install -y libnss-mdns
+apt-get install -y --no-install-recommends libnss-mdns
 
 # Install additional multi-arch versions of modules
 case "$(dpkg --print-architecture)" in
     amd64)
-        apt-get install -y libnss-mdns:i386
+        apt-get install -y --no-install-recommends libnss-mdns:i386
         ;;
     arm64)
-        apt-get install -y libnss-mdns:armhf
+        apt-get install -y --no-install-recommends libnss-mdns:armhf
         ;;
     *)
         ;;
