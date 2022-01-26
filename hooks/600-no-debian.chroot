@@ -15,7 +15,7 @@ dpkg -l > usr/share/snappy/dpkg.list
   # fill in ppa information in yaml file
   printf 'package-repositories:\n'
   find /etc/apt/ -name \*.list | while IFS= read -r APT; do
-    grep -o "^deb http://ppa.launchpad.net/[a-z0-9\.\+\-]\+/[a-z0-9\.\+\-]\+/[a-z0-9\.\+\-]\+" "$APT" | while read -r ENTRY ; do
+    grep -Eo "^deb https?://ppa\.launchpad(content)?\.net/[a-z0-9\.\+\-]+/[a-z0-9\.\+\-]+/[a-z0-9\.\+\-]+" "$APT" | while read -r ENTRY ; do
       USER=$(echo "$ENTRY" | cut -d/ -f4)
       PPA=$(echo "$ENTRY" | cut -d/ -f5)
       DISTRO=$(echo "$ENTRY" | cut -d/ -f6)

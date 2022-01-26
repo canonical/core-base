@@ -22,7 +22,7 @@ mkdir -p /var/log/journal
 # shellcheck disable=SC1091
 CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
 # enable the foundations ubuntu-image PPA
-echo "deb http://ppa.launchpad.net/canonical-foundations/ubuntu-image/ubuntu $CODENAME main" > /etc/apt/sources.list.d/ubuntu-image.list
+echo "deb http://ppa.launchpadcontent.net/canonical-foundations/ubuntu-image/ubuntu $CODENAME main" > /etc/apt/sources.list.d/ubuntu-image.list
 
 cat >/etc/apt/trusted.gpg.d/canonical-foundations-ubuntu-image.asc <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
