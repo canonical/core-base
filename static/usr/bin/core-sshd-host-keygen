@@ -9,10 +9,8 @@ get_config_option() {
 	[ -f /etc/ssh/sshd_config ] || return
 
 	# TODO: actually only one '=' allowed after option
-	perl -lne '
-		s/[[:space:]]+/ /g; s/[[:space:]]+$//;
-		print if s/^[[:space:]]*'"$option"'[[:space:]=]+//i' \
-	   /etc/ssh/sshd_config
+	awk -v option=$option 'tolower($1) == tolower(option) {print $2}' \
+		/etc/ssh/sshd_config
 }
 
 host_keys_required() {
