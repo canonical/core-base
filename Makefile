@@ -45,7 +45,6 @@ install:
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
 	/bin/cp $(SNAPCRAFT_PART_INSTALL)/../../consoleconf-deb/install/*.deb $(DESTDIR)/tmp
-	/bin/cp $(SNAPCRAFT_PART_INSTALL)/../../avahi-daemon-equiv-deb/install/*.deb $(DESTDIR)/tmp
 	# customize
 	set -ex; for f in ./hooks/[0-9]*.chroot; do \
 		/bin/cp -a $$f $(DESTDIR)/tmp && \

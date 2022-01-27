@@ -45,32 +45,9 @@ parts:
       # https://github.com/snapcore/snapcraft/pull/2251
       export PATH="$PATH:/snap/snapcraft/current/bin/scriptlet-bin"
       snapcraftctl prime
-  avahi-daemon-equiv-deb:
-    plugin: nil
-    build-packages:
-      - equivs
-    override-build: |
-      cat > avahi-daemon.control << \EOF
-      Section: misc
-      Priority: optional
-      Standards-Version: 3.9.2
-      Architecture: all
-
-      Package: avahi-daemon
-      Version: 1000
-      Multi-Arch: foreign
-      Description: A dummy version of avahi-daemon
-
-      EOF
-      unset LD_FLAGS LD_LIBRARY_PATH
-      equivs-build avahi-daemon.control
-      cp avahi-daemon_*.deb $SNAPCRAFT_PART_INSTALL
-    stage:
-      - -avahi-daemon_*.deb
   bootstrap:
     after:
       - consoleconf-deb
-      - avahi-daemon-equiv-deb
     plugin: make
     source: .
     build-packages:

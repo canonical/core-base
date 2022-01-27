@@ -85,7 +85,7 @@ case "$(dpkg --print-architecture)" in
         ;;
 esac
 
-# Install self-built console-conf and fake avahi-daemon
+# Install self-built console-conf
 find /tmp -name '*.deb' -print0 | xargs -0 apt install -y
 rm /tmp/*.deb
 
