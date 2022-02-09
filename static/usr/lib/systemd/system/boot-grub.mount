@@ -1,0 +1,8 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-boot
+
+[Mount]
+Where=/boot/grub
+What=/run/mnt/ubuntu-boot/EFI/ubuntu
+Type=none
+Options=bind

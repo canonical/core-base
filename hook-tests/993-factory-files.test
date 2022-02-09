@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# This test verifies that /etc/fstab,
+# /usr/lib/tmpfiles.d/core-writable.conf and /usr/share/factory are
+# synchronized.
+#
+# * /writable/* entries should be present in core-writable.conf
+#   and the other way around.
+#
+# * All and (mostly) only /etc writable entries should be mounted in initrd.
+#
+# * C entries core-writable.conf should have a file/directory in
+#   /usr/share/factory.
+#
+# * Every path but /home should be writable in
+#   /writable/system-data/{path}
+#
+# * /home should be writable in /writable/user-data
+
+set -eu
+
+declare -A known_mounts
+
+sysroot="${PWD}"
+
+# First, we check /etc/fstab
+while read line; do
+    #Skip comments/empty lines
+    if [ "${line%%#*}" = "" ]; then
+        continue
+    fi
+
+    set -- ${line}
+
+    # Read the options
+    unset bind
+    case ",$4," in
+      *,bind,*)
+        bind=1
+      ;;
+    esac
+
+    unset initrd
+    case ",$4," in
+      *,x-initrd.mount,*)
+        initrd=1
+      ;;
+    esac
+
+    if [ "${bind:+set}" = set ]; then
+        case "$1" in
+          /run/mnt/data/system-data/etc/*)
+            if [ "${initrd:+set}" != set ]; then
+                echo "/etc files should be mounted in initrd: $1" 1>&2
+                false
+            fi
+            if [ "${1##/run/mnt/data/system-data}" != "$2" ]; then
+                echo "Expected path ${2}, but got ${1##/run/mnt/data/system-data}" 1>&2
+                false
+            fi
+            known_mounts["$2"]=1
+          ;;
+          /run/mnt/data/*)
+            echo "Files outside /etc can use /writable: $1" 1>&2
+            false
+          ;;
+          /writable/system-data/*)
+            case "$1" in
+              /writable/system-data/etc/*)
+              ;;
+              /writable/system-data/snap)
+              ;;
+              /writable/system-data/var/lib/snapd)
+              ;;
+              /writable/system-data/var/snap)
+              ;;
+              *)
+                if [ "${initrd:+set}" = set ]; then
+                  echo "Files outside /etc should not be mounted in initrd: $1" 1>&2
+                  false
+                fi
+              ;;
+            esac
+            if [ "${1##/writable/system-data}" != "$2" ]; then
+                echo "Expected path ${2}, but got ${1##/writable/system-data}" 1>&2
+                false
+            fi
+            known_mounts["$2"]=1
+          ;;
+          /writable/user-data)
+            if [ "$2" != "/home" ]; then
+                echo "Expected path /home, but got $2" 1>&2
+                false
+            fi
+            if [ "${initrd:+set}" = set ]; then
+                echo "Files outside /etc should not be mounted in initrd: $1" 1>&2
+                false
+            fi
+            known_mounts["$2"]=1
+          ;;
+        esac
+    fi
+done <"${sysroot}/etc/fstab"
+
+# Now we can read core-writable.conf
+while read line; do
+    #Skip comments/empty lines
+    if [ "${line%%#*}" = "" ]; then
+        continue
+    fi
+
+    set -- ${line}
+
+    case "$2" in
+      /writable/system-data/*)
+        path="${2##/writable/system-data}"
+        ;;
+      /writable/user-data)
+        path="/home"
+        ;;
+      *)
+        echo "Unexpected path ${2}" 1>&2
+        false
+        ;;
+    esac
+
+    # Verify that it was declared in /etc/fstab
+    if [ "${known_mounts[${path}]:+set}" = set ]; then
+        unset known_mounts["${path}"]
+    else
+        echo "${path} is not mounted" 1>&2
+        false
+    fi
+
+    # Verify the factory files/directories are present
+    case "$1" in
+      C)
+        copied="/usr/share/factory${2}"
+        if ! [ -e "${sysroot}${copied}" ]; then
+            echo "Missing factory file/directory ${copied}" 1>&2
+            false
+        fi
+        ;;
+      d|f)
+        ;;
+      *)
+        echo "Unknown line ${line}" 2>&1
+        false
+        ;;
+    esac
+done <"${sysroot}/usr/lib/tmpfiles.d/core-writable.conf"
+
+if [ "${#known_mounts[@]}" != 0 ]; then
+    echo "Writable mounts that are not prepared: ${!known_mounts[@]}" 1>&2
+    false
+fi
