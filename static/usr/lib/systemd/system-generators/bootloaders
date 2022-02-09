@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -eu
+
+mode="$(/usr/libexec/core/get-mode mode)" || mode="$(/usr/libexec/core/get-arg snapd_recovery_mode)" || mode="unknown"
+
+WANTS="${1}/local-fs.target.wants"
+
+enable() {
+    ln -s "/usr/lib/systemd/systemd/${1}" "${WANTS}/"
+}
+
+if [ "${mode}" = "run" ]; then
+    mkdir -p "${WANTS}"
+    if [ -f /run/mnt/ubuntu-boot/EFI/ubuntu/grub.cfg ]; then
+        enable boot-grub.mount
+        # ensure ESP efi dir is available for fwupdate (LP: 1892392)
+        enable boot-efi.mount
+    elif [ -f /run/mnt/ubuntu-boot/uboot/ubuntu/boot.sel ]; then
+        enable boot-uboot.mount
+    elif [ -f /run/mnt/ubuntu-seed/piboot/ubuntu/piboot.conf ]; then
+        enable boot-piboot.mount
+    fi
+fi
