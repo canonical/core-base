@@ -1,0 +1,10 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-seed
+ConditionPathExists=/run/mnt/ubuntu-seed/piboot/ubuntu/piboot.conf
+ConditionKernelCommandLine=snapd_recovery_mode=run
+
+[Mount]
+Where=/boot/piboot
+What=/run/mnt/ubuntu-seed/piboot/ubuntu
+Type=none
+Options=bind

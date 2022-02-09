@@ -1,0 +1,10 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-boot
+ConditionPathExists=/run/mnt/ubuntu-boot/uboot/ubuntu/boot.sel
+ConditionKernelCommandLine=snapd_recovery_mode=run
+
+[Mount]
+Where=/boot/uboot
+What=/run/mnt/ubuntu-boot/uboot/ubuntu
+Type=none
+Options=bind
