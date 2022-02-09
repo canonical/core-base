@@ -78,9 +78,6 @@ test:
 			if !(cd $(TESTDIR) && $$f); then \
 				exit 1; \
 			fi; \
-	    	done; \
-	set -ex; for f in $$(pwd)/tests/test_*.sh; do \
-		sh -e $$f; \
 	done
 
 # Display a report of files that are (still) present in /etc

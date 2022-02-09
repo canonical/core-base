@@ -128,3 +128,56 @@ this is currently not possible as `systemd-bootchart` needs some changes
 so it can survive the switch root between initramfs and data
 partition. With those changes, we could also have `systemd-bootchart` as
 init process so we get an even more accurate picture.
+
+
+# Writable paths
+
+In Ubuntu Core some paths are bind mounted from `/writable`.
+
+In order to add a new path you need to
+ * Add an fstab entry in static/etc/fstab
+ * Add a tmpfiles.d entry in static/usr/lib/tmpfiles.d/core-writable.conf
+ * Eventually install template directory or file into /usr/share/factory
+
+## Entry in fstab
+
+If your mount is for a path within `/etc`, then you need t make sure
+that prefix of the source path uses `/run/mnt/data` rather than
+`/writable`. You also need to make sure that the directory or empty
+file exists in the file system.
+
+For aother paths (other than `/etc`), just bind mount
+`/writable/system-data/some/path` to `/some/path`.
+
+## Entry in tmpfiles.d
+
+### Without template data
+
+If you are binding a file that starts empty, add a `f` entry. For
+example:
+```
+f /writable/system-data/var/lib/mydata
+```
+
+If you are binding a directory that starts empty, add a `d` entry.
+For example:
+```
+d /writable/system-data/var/lib/mydir
+```
+
+### With template data
+
+If you are binding a file or a directory that is initialized by a
+template, then add a `C` entry.
+```
+C /writable/system-data/var/lib/mydir
+```
+
+You also need to install the initial data in `/usr/share/factory`.  In
+the previous example, data has to be installed in
+`/usr/share/factory/writable/system-data/var/lib/mydir`.
+
+If the data is already installed in the sysroot. In the previous example
+it would be installed in `/var/lib/mydir`. The you can use hook
+`993-factory-files.chroot` to copy the files. Just add the path
+(in this case `/var/lib/mydir`) in the `dirs` variable.

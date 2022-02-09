@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# tmpfiles.d(5) will copy files from /usr/share/factory. So
+# files/directories that need to be populated in /writable have to be
+# copied there.
+#
+# /usr/lib/tmpfiles.d/core-writable.conf is the configuration file
+# that describes the copy of those files/directories.
+
+set -eu
+
+# cp -a requires /proc/self/fd in some cases
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+mkdir -p /usr/share/factory/writable/user-data
+cp -aT /home /usr/share/factory/writable/user-data/home
+
+dirs=(
+    /root
+    /etc/cloud
+    /etc/dbus-1
+    /etc/default/swapfile
+    /etc/environment
+    /etc/hosts
+    /etc/iproute2
+    /etc/machine-id
+    /etc/modprobe.d
+    /etc/modules-load.d
+    /etc/netplan
+    /etc/network/if-up.d
+    /etc/ssh
+    /etc/sudoers.d
+    /etc/sysctl.d
+    /etc/systemd
+    /etc/udev/rules.d
+    /etc/update-motd.d
+    /etc/writable
+    /var/cache/apparmor
+    /var/cache/snapd
+    /var/lib/console-conf
+    /var/lib/extrausers
+    /var/lib/misc
+    /var/lib/private/systemd
+    /var/lib/snapd
+    /var/lib/systemd
+    /var/log
+    /var/snap
+    /var/tmp
+)
+
+for dir in "${dirs[@]}"; do
+  parent="$(dirname "${dir}")"
+  mkdir -p "/usr/share/factory/writable/system-data/${parent}"
+  cp -aT "${dir}" "/usr/share/factory/writable/system-data/${dir}"
+done
