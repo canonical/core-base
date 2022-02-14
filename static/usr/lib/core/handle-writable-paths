@@ -2,7 +2,7 @@
 #
 # Extracted code from:
 # https://github.com/snapcore/core-build/blob/master/initramfs/scripts/ubuntu-core-rootfs
-# to keep in the core20+ snap in sync with the writable-path file.
+# to keep in the core22+ snap in sync with the writable-path file.
 #
 # Having it here means we don't need to rebuld all kernels if this file
 # changes.
