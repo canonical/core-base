@@ -46,6 +46,7 @@ apt dist-upgrade -y
 apt install --no-install-recommends -y \
     systemd \
     systemd-sysv \
+    systemd-timesyncd \
     finalrd \
     libnss-extrausers \
     libpam-systemd \
