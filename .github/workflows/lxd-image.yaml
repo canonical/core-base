@@ -18,7 +18,7 @@ jobs:
           SPREAD_GOOGLE_KEY: ${{ secrets.SPREAD_GOOGLE_KEY }}
         run: |
           echo $SPREAD_GOOGLE_KEY > sa.json
-          spread google-nested:tests/spread/ci
+          spread google-nested:tests/spread/ci/
 
       - name: Discard spread workers
         if: always()

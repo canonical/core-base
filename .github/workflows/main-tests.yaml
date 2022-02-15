@@ -1,4 +1,4 @@
-name: Test
+name: Spread tests (main)
 on:
   schedule:
     # Weekly sunday testing for bitrot
@@ -23,7 +23,7 @@ jobs:
 
       - name: Run tests
         run: |
-          spread google-nested:
+          spread google-nested:tests/spread/main/
 
       - name: Discard spread workers
         if: always()

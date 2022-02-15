@@ -74,14 +74,14 @@ This backend requires that your host machine supports KVM.
 1. Setup any prerequisites and build the LXD image needed for testing. The following commands will install lxd
 and yq (needed for yaml manipulation), download the newest image and import it into LXD.
 ```
-sudo snap install lxd --channel=latest/stable
-sudo snap install yq --channel=latest/stable
+sudo snap install lxd
+sudo snap install yq
 curl -o lxd-core22-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core22-img.tar.gz
-lxc image import lxd-core22-img.tar.gz --alias ucspread
-lxc image show ucspread > temp.profile
-yq e '.properties.aliases = "ucspread,amd64"' -i ./temp.profile
+lxc image import lxd-core22-img.tar.gz --alias ucspread22
+lxc image show ucspread22 > temp.profile
+yq e '.properties.aliases = "ucspread22,amd64"' -i ./temp.profile
 yq e '.properties.remote = "images"' -i ./temp.profile
-cat ./temp.profile | lxc image edit ucspread
+cat ./temp.profile | lxc image edit ucspread22
 rm ./temp.profile ./lxd-core22-img.tar.gz
 ```
 2. Import the LXD core22 test profile. Make sure your working directory is the root of this repository.
