@@ -17,6 +17,7 @@ execute: |
     gcloud auth activate-service-account --key-file="./sa.json"
 
     # launch the new lxc instance from an ubuntu 22.04 base
+    # TODO when 22.04 is released should we use that instead of ubuntu/jammy?
     lxc launch images:ubuntu/jammy $INSTANCE_NAME
 
     # wait a few seconds before proceeding, otherwise we are going to have issues
