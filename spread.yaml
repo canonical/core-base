@@ -20,8 +20,8 @@ backends:
     plan: n2-standard-2
     halt-timeout: 2h
     systems:
-      - ubuntu-20.04-64:
-          image: ubuntu-2004-64-virt-enabled
+      - ubuntu-22.04-64:
+          image: ubuntu-2204-64-virt-enabled
           storage: 20G
 
   qemu-nested:
@@ -31,7 +31,7 @@ backends:
     #            uc22 with less RAM
     memory: 4G
     systems:
-      - ubuntu-20.04-64:
+      - ubuntu-22.04-64:
           username: ubuntu
           password: ubuntu
 
@@ -39,8 +39,8 @@ backends:
     type: lxd
     container-profiles: core22
     systems:
-      - ubuntu-20.04:
-          image: ucspread
+      - ubuntu-22.04:
+          image: ucspread22
 
 path: /home/core22
 
@@ -98,7 +98,10 @@ warn-timeout: 40m
 kill-timeout: 50m
 
 suites:
-  tests/spread/:
+  tests/spread/ci/:
+    summary: CI specific tasks for core-base.
+  
+  tests/spread/main/:
     summary: Tests for core-base snap.
     environment:
       # since we are only testing ubuntu core here, disable kvm unless the env
