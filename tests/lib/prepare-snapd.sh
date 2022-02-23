@@ -7,7 +7,7 @@ SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
 
 execute_remote(){
-    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@localhost "$*"
+    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no test@localhost "$*"
 }
 
 wait_for_ssh(){
@@ -144,16 +144,15 @@ download_core22_snaps() {
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
 
+# create two new users that used during testing when executing
+# snapd tests, external for the external backend, and 'test'
+# for the snapd test setup
 create_cloud_init_cdimage_config() {
     local CONFIG_PATH=$1
     cat << 'EOF' > "$CONFIG_PATH"
 #cloud-config
 datasource_list: [NoCloud]
 users:
-  - name: ubuntu
-    sudo: "ALL=(ALL) NOPASSWD:ALL"
-    lock_passwd: false
-    plain_text_passwd: 'ubuntu'
   - name: external
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: false
@@ -163,10 +162,6 @@ users:
     lock_passwd: false
     plain_text_passwd: 'ubuntu'
     uid: "12345"
-
-bootcmd:
-  - mkdir -p /var/lib/console-conf
-  - touch /var/lib/console-conf/complete
 
 EOF
 }
