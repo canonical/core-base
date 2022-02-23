@@ -45,7 +45,7 @@ jobs:
           echo "************* DOWNLOADING SNAPS *************"
           download_core22_snaps 'edge'
 
-          echo "************* WRITING SSH CONFIG *************"
+          echo "************* WRITING CLOUD-INIT CONFIG *************"
           prepare_core22_cloudinit
 
           echo "************* BUILDING CORE22 SNAP *************"
