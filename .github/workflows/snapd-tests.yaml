@@ -56,6 +56,8 @@ jobs:
           start_snapd_core_vm '${{ github.workspace }}'
 
           cd snapd
+          
+          # add any test suites that should be tested here
           SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
 
       - name: Discard spread workers
