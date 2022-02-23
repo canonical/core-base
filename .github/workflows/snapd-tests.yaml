@@ -1,0 +1,69 @@
+name: Spread tests (snapd)
+on:
+  schedule:
+    # Weekly sunday testing for bitrot
+    - cron: '0 12 * * 0'
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup job workspace
+        id: cleanup-job-workspace
+        run: |
+          rm -rf "${{ github.workspace }}"
+          mkdir "${{ github.workspace }}"
+      
+      - uses: actions/checkout@v2
+        with:
+          path: core-base
+          ref: main
+      - uses: actions/checkout@v2
+        with:
+          repository: 'snapcore/snapd'
+          path: snapd
+          ref: master
+      
+      - name: Install spread
+        run: curl -s https://storage.googleapis.com/snapd-spread-tests/spread/spread-amd64.tar.gz | sudo tar xzv -C /usr/bin
+
+      - name: Build image
+        working-directory: '${{ github.workspace }}'
+        run: |
+          . "core-base/tests/lib/prepare-snapd.sh"
+
+          echo "************* INSTALLING DEPS *************"
+          install_core22_deps
+
+          echo "************* DOWNLOADING SNAPS *************"
+          download_core22_snaps 'edge'
+
+          echo "************* WRITING SSH CONFIG *************"
+          prepare_core22_cloudinit
+
+          echo "************* BUILDING CORE22 SNAP *************"
+          build_core22_snap '${{ github.workspace }}/core-base'
+
+          echo "************* BUILDING CORE22 IMAGE *************"
+          build_core22_image
+
+          echo "************* STARTING CORE22 VM *************"
+          start_snapd_core_vm '${{ github.workspace }}'
+
+          cd snapd
+          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
+
+      - name: Discard spread workers
+        if: always()
+        run: |
+          shopt -s nullglob
+          for r in .spread-reuse.*.yaml; do
+            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
+          done
