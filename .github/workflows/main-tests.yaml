@@ -11,7 +11,7 @@ on:
       - main
 
 jobs:
-  test:
+  build:
     runs-on: self-hosted
     steps:
       - name: Cleanup job workspace
@@ -21,6 +21,35 @@ jobs:
           mkdir "${{ github.workspace }}"
       - uses: actions/checkout@v2
 
+      - name: Build snap
+        run: |
+          spread google-nested:tests/spread/build/ -artifacts="${{ github.workspace }}"
+
+      - name: Discard spread workers
+        if: always()
+        run: |
+          shopt -s nullglob
+          for r in .spread-reuse.*.yaml; do
+            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
+          done
+      - uses: actions/upload-artifact@v2
+        with:
+          name: core-snap
+          path: ${{ github.workspace }}/core22.snap
+
+  tests-main:
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - name: Cleanup job workspace
+        id: cleanup-job-workspace
+        run: |
+          rm -rf "${{ github.workspace }}"
+          mkdir "${{ github.workspace }}"
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: core-snap
       - name: Run tests
         run: |
           spread google-nested:tests/spread/main/
@@ -32,3 +61,62 @@ jobs:
           for r in .spread-reuse.*.yaml; do
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
+  tests-snapd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup job workspace
+        id: cleanup-job-workspace
+        run: |
+          rm -rf "${{ github.workspace }}"
+          mkdir "${{ github.workspace }}"
+      
+      - uses: actions/checkout@v2
+        with:
+          path: core-base
+      - uses: actions/checkout@v2
+        with:
+          repository: 'snapcore/snapd'
+          path: snapd
+      - uses: actions/download-artifact@v2
+        with:
+          name: core-snap
+      
+      - name: Install spread
+        run: curl -s https://storage.googleapis.com/snapd-spread-tests/spread/spread-amd64.tar.gz | sudo tar xzv -C /usr/bin
+
+      - name: Build image
+        working-directory: '${{ github.workspace }}'
+        run: |
+          . "core-base/tests/lib/prepare-snapd.sh"
+
+          echo "************* INSTALLING DEPS *************"
+          install_core22_deps
+
+          echo "************* DOWNLOADING SNAPS *************"
+          download_core22_snaps 'edge'
+
+          echo "************* WRITING CLOUD-INIT CONFIG *************"
+          prepare_core22_cloudinit
+
+          echo "************* BUILDING CORE22 SNAP *************"
+          build_core22_snap '${{ github.workspace }}/core-base'
+
+          echo "************* BUILDING CORE22 IMAGE *************"
+          build_core22_image
+
+          echo "************* STARTING CORE22 VM *************"
+          start_snapd_core_vm '${{ github.workspace }}'
+
+          cd snapd
+          
+          # add any test suites that should be tested here
+          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
+
+      - name: Discard spread workers
+        if: always()
+        run: |
+          shopt -s nullglob
+          for r in .spread-reuse.*.yaml; do
+            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
+          done
+

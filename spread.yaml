@@ -98,6 +98,9 @@ warn-timeout: 40m
 kill-timeout: 50m
 
 suites:
+  tests/spread/build/:
+    summary: Build task for the core snap.
+  
   tests/spread/ci/:
     summary: CI specific tasks for core-base.
   
