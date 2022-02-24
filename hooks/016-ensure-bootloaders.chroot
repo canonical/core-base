@@ -5,6 +5,7 @@ mkdir -p /boot/androidboot
 mkdir -p /boot/uboot
 mkdir -p /boot/grub
 mkdir -p /boot/efi
+mkdir -p /boot/piboot
 
 echo "Add uboot config on arm"
 case "$(dpkg --print-architecture)" in
