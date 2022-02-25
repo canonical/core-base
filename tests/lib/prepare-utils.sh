@@ -114,6 +114,11 @@ start_snapd_core_vm() {
     nested_wait_for_snap_command
 }
 
+get_core_snap_name() {
+    printf -v date '%(%Y%m%d)T' -1
+    echo "core22_${date}_amd64.snap"
+}
+
 install_core22_deps() {
     sudo apt update -qq
 
@@ -175,7 +180,8 @@ prepare_core22_cloudinit() {
     create_cloud_init_cdimage_config "${gadgetdir}/cloud.conf"
 
     # repack kernel snap
-    snap pack --filename=pc-gadget.snap "$gadgetdir"
+    rm upstream-pc-gadget.snap
+    snap pack --filename=upstream-pc-gadget.snap "$gadgetdir"
     rm -r $gadgetdir
 }
 
@@ -187,18 +193,21 @@ build_core22_snap() {
     (
         cd "$project_dir"
         sudo snapcraft --destructive-mode
-        cp *.snap "$current_dir"
+
+        # copy the snap to the calling directory if they are not the same
+        if [ "$project_dir" != "$current_dir" ]; then
+            cp "$(get_core_snap_name)" "$current_dir"
+        fi
     )
 }
 
 build_core22_image() {
-    # finally build the uc image
-    printf -v date '%(%Y%m%d)T' -1
+    local core_snap_name="$(get_core_snap_name)"
     ubuntu-image snap \
         -i 8G \
-        --snap core22_${date}_amd64.snap \
+        --snap $core_snap_name \
         --snap upstream-snapd.snap \
         --snap upstream-pc-kernel.snap \
-        --snap pc-gadget.snap \
+        --snap upstream-pc-gadget.snap \
         ubuntu-core-amd64-dangerous.model
 }

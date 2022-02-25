@@ -1,31 +1,16 @@
 #!/bin/bash
 
 set -e
-set -x 
+set -x
 
-apt update -qq
+# include auxiliary functions from this script
+. "$TESTSLIB/prepare-utils.sh"
 
-# these should already be installed in GCE and LXD images with the google/lxd-nested 
-# backend, but in qemu local images from qemu-nested, we might not have them
-apt install psmisc fdisk snapd mtools ovmf qemu-system-x86 sshpass whois -yqq
+# install dependencies
+install_core22_deps
 
-# TODO: https://bugs.launchpad.net/snapd/+bug/1712808
-# There is a bug in snapd that prevents udev rules from reloading in privileged containers
-# with the following error message: 'cannot reload udev rules: exit status 1' when installing
-# snaps. However it seems that retrying the installation fixes it
-if ! snap install snapcraft --classic; then
-    echo "FIXME: snapcraft install failed, retrying"
-    snap install snapcraft --classic
-fi
-snap install ubuntu-image --classic
-
-# get the model
-curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-$UC_VERSION-amd64-dangerous.model
-
-# download neccessary images
-snap download pc-kernel --channel=$UC_VERSION/$SNAP_BRANCH --basename=upstream-pc-kernel
-snap download pc --channel=$UC_VERSION/$SNAP_BRANCH --basename=upstream-pc-gadget
-snap download snapd --channel=$SNAP_BRANCH --basename=upstream-snapd
+# download snaps required for us to build the image
+download_core22_snaps "$SNAP_BRANCH"
 
 # create test user for spread to use
 groupadd --gid 12345 test
@@ -126,24 +111,21 @@ touch /root/spread-setup-done
 EOF
 chmod 0755 "$snapddir/usr/lib/snapd/snapd.spread-tests-run-mode-tweaks.sh"
 
-snap pack --filename=snapd.snap "$snapddir"
+rm upstream-snapd.snap
+snap pack --filename=upstream-snapd.snap "$snapddir"
 rm -r $snapddir
 
-# run snapcraft
-(
-    cd "$SETUPDIR"
-    snapcraft --destructive-mode
-)
+# build the core22 snap if it has not been provided to us by CI
+uc_snap="$(get_core_snap_name)"
+if [ ! -f "$PROJECT_PATH/core${UC_VERSION}.artifact" ]; then
+    build_core22_snap "$PROJECT_PATH"
+else
+    # use provided core22 snap
+    cp "$PROJECT_PATH/core${UC_VERSION}.artifact" "$uc_snap"
+fi
 
 # finally build the uc image
-printf -v date '%(%Y%m%d)T' -1
-ubuntu-image snap \
-    -i 8G \
-    --snap core${UC_VERSION}_${date}_amd64.snap \
-    --snap snapd.snap \
-    --snap upstream-pc-kernel.snap \
-    --snap upstream-pc-gadget.snap \
-    ubuntu-core-amd64-dangerous.model
+build_core22_image
 
 # setup some data we will inject into ubuntu-seed partition of the image above
 # that snapd.spread-tests-run-mode-tweaks.service will ingest
@@ -191,3 +173,4 @@ partoffset=$(fdisk -lu pc.img | awk '/EFI System$/ {print $2}')
 mcopy -i pc.img@@$(($partoffset * 512)) run-mode-overlay-data.tar.gz ::run-mode-overlay-data.tar.gz
 
 # the image is now ready to be booted
+mv pc.img "$PROJECT_PATH/pc.img"

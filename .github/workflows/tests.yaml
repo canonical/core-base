@@ -1,4 +1,4 @@
-name: Spread tests (main)
+name: Spread tests
 on:
   schedule:
     # Weekly sunday testing for bitrot
@@ -23,7 +23,13 @@ jobs:
 
       - name: Build snap
         run: |
-          spread google-nested:tests/spread/build/ -artifacts="${{ github.workspace }}"
+          spread -artifacts=./artifacts google-nested:tests/spread/build/
+          find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: core-snap
+          path: "${{ github.workspace }}/core22.artifact"
 
       - name: Discard spread workers
         if: always()
@@ -32,10 +38,6 @@ jobs:
           for r in .spread-reuse.*.yaml; do
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
-      - uses: actions/upload-artifact@v2
-        with:
-          name: core-snap
-          path: ${{ github.workspace }}/core22.snap
 
   tests-main:
     runs-on: self-hosted
@@ -50,6 +52,8 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: core-snap
+          path: "${{ github.workspace }}/core22.artifact"
+      
       - name: Run tests
         run: |
           spread google-nested:tests/spread/main/
@@ -63,6 +67,7 @@ jobs:
           done
   tests-snapd:
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Cleanup job workspace
         id: cleanup-job-workspace
@@ -87,7 +92,7 @@ jobs:
       - name: Build image
         working-directory: '${{ github.workspace }}'
         run: |
-          . "core-base/tests/lib/prepare-snapd.sh"
+          . "core-base/tests/lib/prepare-utils.sh"
 
           echo "************* INSTALLING DEPS *************"
           install_core22_deps
@@ -98,10 +103,9 @@ jobs:
           echo "************* WRITING CLOUD-INIT CONFIG *************"
           prepare_core22_cloudinit
 
-          echo "************* BUILDING CORE22 SNAP *************"
-          build_core22_snap '${{ github.workspace }}/core-base'
-
           echo "************* BUILDING CORE22 IMAGE *************"
+          uc_snap="$(get_core_snap_name)"
+          mv core22.artifact "$uc_snap"
           build_core22_image
 
           echo "************* STARTING CORE22 VM *************"
