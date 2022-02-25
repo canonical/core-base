@@ -5,7 +5,6 @@ environment:
   PROJECT_PATH: $SETUPDIR
   PATH: $PATH:$PROJECT_PATH/tests/bin
   TESTSLIB: $PROJECT_PATH/tests/lib
-  EXTTESTSLIB: $TESTSLIB/external/snapd-testing-tools/lib/core
   SNAP_BRANCH: "edge" # stable/edge/beta
   UC_VERSION: 22
   # TODO: are these vars needed still?
@@ -83,17 +82,6 @@ prepare: |
   type REBOOT | tail -n +2 >> "$TESTSLIB"/spread-funcs.sh
   unset REBOOT
 
-  # prepare common uc image setup by repacking snaps, etc
-  "$TESTSLIB"/prepare-uc.sh
-restore-each: |
-  # delete the nested VM image after each task finishes so we don't use too much
-  # disk space
-  . "$TESTSLIB/nested.sh"
-  cleanup_nested_core_vm
-debug-each: |
-  . "$TESTSLIB/nested.sh"
-  print_nested_status
-
 warn-timeout: 40m
 kill-timeout: 50m
 
@@ -127,4 +115,17 @@ suites:
       # no enc does not have secure boot or tpm
       ENABLE_TPM/noenc: false
       ENABLE_SECURE_BOOT/noenc: false
+    
+    prepare: |
+      # prepare common uc image setup by repacking snaps, etc
+      "$TESTSLIB"/prepare-uc.sh
+    restore-each: |
+      # delete the nested VM image after each task finishes so we don't use too much
+      # disk space
+      . "$TESTSLIB/nested.sh"
+      cleanup_nested_core_vm
+    debug-each: |
+      . "$TESTSLIB/nested.sh"
+      print_nested_status
+
 # vim:ts=4:sw=4:et

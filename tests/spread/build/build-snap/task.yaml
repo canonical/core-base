@@ -1,0 +1,21 @@
+summary: Builds the core snap
+manual: true
+
+artifacts:
+  - core22.artifact
+
+prepare: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  # install dependencies
+  install_core22_deps
+
+execute: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  build_core22_snap "$PROJECT_PATH"
+  
+  SNAP_NAME="$(get_core_snap_name)"
+  cp "$PROJECT_PATH/$SNAP_NAME" "core22.artifact"
