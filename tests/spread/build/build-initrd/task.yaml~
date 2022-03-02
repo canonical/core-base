@@ -1,0 +1,22 @@
+summary: Builds the core initrd
+manual: true
+
+artifacts:
+  - core22.artifact
+
+prepare: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  # install dependencies
+  install_core22_deps
+
+execute: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  install_core_initrd_deps core-initrd "$PROJECT_PATH/core-initrd"
+  build_core_initrd core-initrd "$PROJECT_PATH/core-initrd"
+  
+  SNAP_NAME="$(get_core_snap_name)"
+  cp "$PROJECT_PATH/$SNAP_NAME" "core22.artifact"

@@ -1,0 +1,18 @@
+summary: Builds the core initrd
+manual: true
+
+artifacts:
+  - "*.deb"
+
+prepare: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  # install dependencies
+  install_core_initrd_deps core-initrd "$PROJECT_PATH/core-initrd"
+
+execute: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  build_core_initrd core-initrd "$PROJECT_PATH/core-initrd"

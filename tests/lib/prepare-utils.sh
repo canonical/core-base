@@ -30,6 +30,74 @@ wait_for_ssh(){
     done
 }
 
+install_core_initrd_deps() {
+    local project_dir="$1"
+
+    # needed for dracut which is a build-dep of ubuntu-core-initramfs
+    # and for the version of snapd here which we want to use to pull snap-bootstrap
+    # from when we build the debian package
+    sudo add-apt-repository ppa:snappy-dev/image -y
+    sudo apt update -qq
+    sudo apt upgrade -yqq
+
+    # these are already installed in the lxd image which speeds things up, but they
+    # are missing in qemu and google images.
+    sudo apt install initramfs-tools-core psmisc fdisk snapd mtools ovmf qemu-system-x86 sshpass whois openssh-server -yqq
+
+    # use the snapd snap explicitly
+    # TODO: since ubuntu-image ships it's own version of `snap prepare-image`, 
+    # should we instead install beta/edge snapd here and point ubuntu-image to this
+    # version of snapd?
+    # TODO: https://bugs.launchpad.net/snapd/+bug/1712808
+    # There is a bug in snapd that prevents udev rules from reloading in privileged containers
+    # with the following error message: 'cannot reload udev rules: exit status 1' when installing
+    # snaps. However it seems that retrying the installation fixes it
+    if ! sudo snap install snapd; then
+        echo "FIXME: snapd install failed, retrying"
+        sudo snap install snapd
+    fi
+    sudo snap install ubuntu-image --classic
+}
+
+build_core_initrd() {
+    local project_dir="$1"
+    local current_dir="$(pwd)"
+    
+    # build the debian package of ubuntu-core-initramfs
+    (
+        cd "$project_dir"
+        sudo apt update -qq
+        sudo apt upgrade -yqq
+        sudo apt -y build-dep ./
+
+        DEB_BUILD_OPTIONS='nocheck testkeys' dpkg-buildpackage -tc -b -Zgzip
+
+        # save our debs somewhere safe
+        cp ../*.deb "$current_dir"
+    )
+}
+
+inject_initramfs() {
+    # extract the kernel snap, including extracting the initrd from the kernel.efi
+    kerneldir="$(mktemp --tmpdir -d kernel-workdirXXXXXXXXXX)"
+    trap 'rm -rf "${kerneldir}"' EXIT
+
+    unsquashfs -f -d "${kerneldir}" upstream-pc-kernel.snap
+    (
+        cd "${kerneldir}"
+        config="$(echo config-*)"
+        kernelver="${config#config-}"
+        objcopy -O binary -j .linux kernel.efi kernel.img-"${kernelver}"
+        ubuntu-core-initramfs create-initrd --kerneldir modules/"${kernelver}" --kernelver "${kernelver}" --firmwaredir firmware --output ubuntu-core-initramfs.img
+        ubuntu-core-initramfs create-efi --initrd ubuntu-core-initramfs.img --kernel kernel.img --output kernel.efi --kernelver "${kernelver}"
+        mv "kernel.efi-${kernelver}" kernel.efi
+        rm kernel.img-"${kernelver}"
+        rm ubuntu-core-initramfs.img-"${kernelver}"
+    )
+
+    snap pack --filename=pc-kernel.snap "${kerneldir}"
+}
+
 nested_wait_for_snap_command(){
   retry=800
   wait=1
@@ -207,7 +275,7 @@ build_core22_image() {
         -i 8G \
         --snap $core_snap_name \
         --snap upstream-snapd.snap \
-        --snap upstream-pc-kernel.snap \
+        --snap pc-kernel.snap \
         --snap upstream-pc-gadget.snap \
         ubuntu-core-amd64-dangerous.model
 }

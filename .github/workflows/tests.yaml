@@ -23,13 +23,29 @@ jobs:
 
       - name: Build snap
         run: |
-          spread -artifacts=./artifacts google-nested:tests/spread/build/
+          spread -artifacts=./artifacts google-nested:tests/spread/build/build-snap/
           find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
-      
+
       - uses: actions/upload-artifact@v2
         with:
           name: core-snap
           path: "${{ github.workspace }}/core22.artifact"
+
+      - uses: actions/checkout@v3
+        with:
+          repository: 'valentindavid/core-initrd'
+          ref: 34e7f2ac3a67a8ca8c86d03c1a3628cf6fef96e1
+          path: core-initrd
+
+      - name: Build core-initrd
+        run: |
+          spread -artifacts=./artifacts-initrd google-nested:tests/spread/build/build-initrd/
+          find ./artifacts-initrd -type f -name "*.deb" | head -n 1 | while read line ; do cp "$line" "${{ github.workspace }}/uc-initramfs.deb" ; done
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: core-initrd
+          path: "${{ github.workspace }}/uc-initramfs.deb"
 
       - name: Discard spread workers
         if: always()
@@ -54,6 +70,11 @@ jobs:
           name: core-snap
           path: "${{ github.workspace }}/core22.artifact"
       
+      - uses: actions/download-artifact@v2
+        with:
+          name: core-initrd
+          path: "${{ github.workspace }}/uc-initramfs.deb"
+
       - name: Run tests
         run: |
           spread google-nested:tests/spread/main/
@@ -93,6 +114,8 @@ jobs:
         working-directory: '${{ github.workspace }}'
         run: |
           . "core-base/tests/lib/prepare-utils.sh"
+
+          inject_initramfs
 
           echo "************* INSTALLING DEPS *************"
           install_core22_deps
