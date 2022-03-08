@@ -24,6 +24,9 @@ mkdir -p /var/cache/snapd
 # workaround for seeding bug
 mkdir -p /var/lib/snapd/apparmor/profiles
 
+# workaround for cups interface to prevent creating writable mimics
+mkdir -p /var/cups
+
 echo "creating extra systemd dirs"
 mkdir -p /var/lib/systemd/coredump
 mkdir -p /var/lib/private/systemd
