@@ -1,0 +1,9 @@
+[Unit]
+Description=Auto import assertions from a specific block device
+After=snapd.service snapd.socket snapd.seeded.service
+ConditionKernelCommandLine=snapd_recovery_mode=run
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/snap auto-import --mount=/dev/%i
+PrivateMounts=yes

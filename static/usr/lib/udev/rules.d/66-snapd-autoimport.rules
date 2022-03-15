@@ -1,3 +1,2 @@
-# probe for assertions, must run before udisks2
-ACTION=="add", SUBSYSTEM=="block", KERNEL!="loop*", KERNEL!="ram*" \
-    RUN+="/usr/bin/unshare -m /usr/bin/snap auto-import --mount=/dev/%k"
+ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="loop*", KERNEL!="ram*" \
+    ENV{SYSTEMD_WANTS}+="snapd.autoimport-device@%k.service"
