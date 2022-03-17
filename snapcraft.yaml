@@ -14,7 +14,7 @@ parts:
     plugin: nil
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-branch: server/jammy
+    source-branch: 639255e5ddceb00cb21c2436e7ce1f7430aa710f
     override-pull: |
       snapcraftctl pull
       # install build dependencies
@@ -48,9 +48,9 @@ parts:
     after:
       - probert-deb
     plugin: nil
-    source: https://github.com/CanonicalLtd/subiquity.git
+    source: https://github.com/canonical/subiquity.git
     source-type: git
-    source-branch: main
+    source-branch: 8f9f97c69bb36048ea4c9e16be34bca3ac141771
     override-pull: |
       snapcraftctl pull
       # install build dependencies
