@@ -35,6 +35,8 @@ parts:
       cp ../probert-{network,common}*.deb $SNAPCRAFT_PART_INSTALL
     stage:
       - -probert*.deb
+    # XXX: Dirty hacks to enable building core22 on non-focal systems.
+    # See below for details.
     override-prime: |
       unset LD_LIBRARY_PATH;
       export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
