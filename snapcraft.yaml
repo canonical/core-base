@@ -50,7 +50,7 @@ parts:
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
-    source-branch: 8f9f97c69bb36048ea4c9e16be34bca3ac141771
+    source-commit: 8f9f97c69bb36048ea4c9e16be34bca3ac141771
     override-pull: |
       snapcraftctl pull
       # install build dependencies
