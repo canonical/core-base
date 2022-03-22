@@ -14,6 +14,7 @@ parts:
     plugin: nil
     source: https://github.com/canonical/probert.git
     source-type: git
+    # following branch server/jammy
     source-commit: 639255e5ddceb00cb21c2436e7ce1f7430aa710f
     override-pull: |
       snapcraftctl pull
@@ -50,6 +51,7 @@ parts:
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
+    # following branch server/jammy
     source-commit: 8f9f97c69bb36048ea4c9e16be34bca3ac141771
     override-pull: |
       snapcraftctl pull
