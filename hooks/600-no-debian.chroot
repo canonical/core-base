@@ -54,4 +54,7 @@ rm -f var/log/bootstrap.log \
 # also remove obsolete cron jobs
 rm -f /etc/cron.daily/dpkg \
       /etc/cron.daily/passwd
-    
+# and services from dpkg
+rm -f usr/lib/systemd/system/dpkg-db-backup.service \
+      usr/lib/systemd/system/timers.target.wants/dpkg-db-backup.timer \
+      usr/lib/systemd/system/dpkg-db-backup.timer
