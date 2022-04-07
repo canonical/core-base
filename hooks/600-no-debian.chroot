@@ -36,6 +36,8 @@ rm -r \
         var/lib/dpkg \
         var/log/apt
 rm \
+        usr/bin/deb-systemd-helper \
+        usr/bin/deb-systemd-invoke \
         usr/bin/dpkg \
         usr/bin/dpkg-query \
         usr/bin/dpkg-split \
@@ -43,6 +45,9 @@ rm \
         usr/bin/dpkg-trigger \
         usr/bin/dpkg-statoverride \
         usr/bin/dpkg-maintscript-helper
+rm -rf var/lib/systemd/deb-systemd-helper-enabled/ \
+       var/lib/systemd/deb-systemd-helper-masked/ \
+       usr/libexec/dpkg/
 
 # remove generated locales for packages we do not use
 rm -f usr/share/locale/*/LC_MESSAGES/dpkg*
@@ -54,4 +59,7 @@ rm -f var/log/bootstrap.log \
 # also remove obsolete cron jobs
 rm -f /etc/cron.daily/dpkg \
       /etc/cron.daily/passwd
-    
+# and services from dpkg
+rm -f usr/lib/systemd/system/dpkg-db-backup.service \
+      usr/lib/systemd/system/timers.target.wants/dpkg-db-backup.timer \
+      usr/lib/systemd/system/dpkg-db-backup.timer
