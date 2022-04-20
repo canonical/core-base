@@ -2,3 +2,12 @@
 
 echo "Creating the snap binary symlink"
 ln -s /snap/snapd/current/usr/bin/snap /usr/bin/snap
+
+echo "Creating the symlink to snap's bash completion"
+ln -s /snap/snapd/current/usr/share/bash-completion/completions/snap /usr/share/bash-completion/completions/snap
+
+echo "Creating the symlink snap's shell environment configuration"
+ln -s /snap/snapd/current/etc/profile.d/apps-bin-path.sh /etc/profile.d/apps-bin-path.sh
+
+echo "Creating the symlink snap's user services' environment configuration"
+ln -s /snap/snapd/current/usr/lib/environment.d/990-snapd.conf /usr/lib/environment.d/990-snapd.conf
