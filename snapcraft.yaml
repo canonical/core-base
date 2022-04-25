@@ -7,7 +7,7 @@ description: |
 confinement: strict
 type: base
 build-base: core22
-grade: devel
+grade: stable
 
 parts:
   probert-deb:
