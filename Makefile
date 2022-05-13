@@ -1,11 +1,7 @@
 DPKG_ARCH := $(shell dpkg --print-architecture)
-#LTS=jj
-#BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
-#URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
-# Temporarily until JJ is released
-DEVEL=jammy
-BASE := $(DEVEL)-base-$(DPKG_ARCH).tar.gz
-URL := http://cdimage.ubuntu.com/ubuntu-base/daily/current/$(BASE)
+LTS=22.04
+BASE := ubuntu-base-$(LTS)-base-$(DPKG_ARCH).tar.gz
+URL := http://cdimage.ubuntu.com/ubuntu-base/releases/$(LTS)/release/$(BASE)
 
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
