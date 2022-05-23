@@ -8,6 +8,7 @@ confinement: strict
 type: base
 build-base: core22
 grade: stable
+assumes: [snapd2.55.5]
 
 parts:
   probert-deb:
