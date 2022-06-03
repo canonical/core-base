@@ -41,3 +41,7 @@ execute: |
   execute_remote systemctl -q is-active systemd-journald.service
   execute_remote systemctl -q is-active systemd-resolved.service
   execute_remote systemctl -q is-active systemd-timesyncd.service
+
+  # Verify that ubuntu-seed and ubuntu-save has been mounted
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/seed") { exit 0}} ENDFILE{exit -1}'
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/save") { exit 0}} ENDFILE{exit -1}'
