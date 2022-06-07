@@ -43,5 +43,7 @@ execute: |
   execute_remote systemctl -q is-active systemd-timesyncd.service
 
   # Verify that ubuntu-seed and ubuntu-save has been mounted
-  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/seed") { exit 0}} ENDFILE{exit -1}'
-  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/save") { exit 0}} ENDFILE{exit -1}'
+  # ubuntu-seed should be mounted readonly
+  # ubuntu-save should be mounted readwrite
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/seed" && index($6, "ro")) { exit 0}} ENDFILE{exit -1}'
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/save" && index($6, "rw")) { exit 0}} ENDFILE{exit -1}'
