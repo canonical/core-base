@@ -1,0 +1,8 @@
+[Unit]
+ConditionPathIsMountPoint=/run/mnt/ubuntu-save
+
+[Mount]
+What=/run/mnt/ubuntu-save
+Where=/var/lib/snapd/save
+Options=bind
+Type=none
