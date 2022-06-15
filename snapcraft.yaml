@@ -16,7 +16,7 @@ parts:
     source: https://github.com/canonical/probert.git
     source-type: git
     # following branch server/jammy
-    source-commit: 639255e5ddceb00cb21c2436e7ce1f7430aa710f
+    source-commit: 253acbe1480fba69d12d6e72f53412da79e27410
     override-pull: |
       craftctl default
       # install build dependencies
