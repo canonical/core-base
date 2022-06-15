@@ -75,11 +75,6 @@ parts:
       - shellcheck
       - wget
       - distro-info
-    build-snaps:
-      # XXX: Temporarily force using snapd from edge for building the snap,
-      # as there seems to be an issue with the current snapd on impish, causing
-      # core-dumps of the mksquashfs call (via `snap pack`).
-      - snapd/latest/edge
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
