@@ -54,7 +54,7 @@ parts:
     source: https://github.com/canonical/subiquity.git
     source-type: git
     # following branch server/jammy
-    source-commit: 8f9f97c69bb36048ea4c9e16be34bca3ac141771
+    source-commit: eb99b18d7aed92754053806cb5a812557637955d
     override-pull: |
       craftctl default
       # install build dependencies
