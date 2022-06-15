@@ -38,8 +38,6 @@ parts:
     stage:
       - -probert*.deb
   consoleconf-deb:
-    after:
-      - probert-deb
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
@@ -68,6 +66,7 @@ parts:
       - -subiquitycore_*.deb
   bootstrap:
     after:
+      - probert-deb
       - consoleconf-deb
     plugin: make
     source: .
