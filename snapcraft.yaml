@@ -66,14 +66,45 @@ parts:
     stage:
       - -console-conf_*.deb
       - -subiquitycore_*.deb
+
+  base:
+    plugin: nil
+    source: keyrings
+    build-packages:
+      - wget
+    build-environment:
+      - LTS: jammy
+      - BASE: ${LTS}-base-${CRAFT_TARGET_ARCH}.tar.gz
+      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/${LTS}/daily/current
+      - URL: ${DIR_URL}/${BASE}
+      - SHA256: ${DIR_URL}/SHA256SUMS
+      - SIG: ${SHA256}.gpg
+    override-pull: |
+      craftctl default
+      wget "${SHA256}" -O sha265sum
+      wget "${SIG}" -O sha265sum.gpg
+      gpg --no-default-keyring \
+          --keyring ./cd-image-keying.gpg \
+          --verify sha265sum.gpg sha265sum
+      wget "${URL}" -O "${BASE}"
+      awk -v "file=${BASE}" '$2=="*"file' sha265sum | sha256sum -c
+    override-build: |
+      mkdir -p "${CRAFT_PART_INSTALL}/base"
+      tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"
+    override-stage: |
+      rm -rf "${CRAFT_STAGE}/base"
+      craftctl default
+    override-prime: |
+      # Do nothing
+
   bootstrap:
     after:
       - consoleconf-deb
+      - base
     plugin: make
     source: .
     build-packages:
       - shellcheck
-      - wget
       - distro-info
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"

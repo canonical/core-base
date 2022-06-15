@@ -1,8 +1,3 @@
-DPKG_ARCH := $(shell dpkg --print-architecture)
-LTS = jammy
-BASE := $(LTS)-base-$(DPKG_ARCH).tar.gz
-URL := http://cdimage.ubuntu.com/ubuntu-base/$(LTS)/daily/current/$(BASE)
-
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
 
@@ -17,12 +12,7 @@ install:
 		echo "no DESTDIR set"; \
 		exit 1; \
 	fi
-	if [ ! -f ../$(BASE) ]; then \
-		wget -P ../ $(URL); \
-	fi
-	rm -rf $(DESTDIR)
-	mkdir -p $(DESTDIR)
-	tar -x --xattrs-include=* -f ../$(BASE) -C $(DESTDIR)
+	cp -aT $(CRAFT_STAGE)/base $(DESTDIR)
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
