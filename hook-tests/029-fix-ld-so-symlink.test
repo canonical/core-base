@@ -1,31 +1,39 @@
-#!/bin/sh
+#!/bin/bash
 
-set -e
+set -eu
 
 # amd64
-abis="/lib64/ld-linux-x86-64.so.2"
+abis=("/lib64/ld-linux-x86-64.so.2")
 # i386
-abis="$abis /lib/ld-linux.so.2"
+abis+=("/lib/ld-linux.so.2")
 # ppc64el
-abis="$abis /lib64/ld64.so.2"
+abis+=("/lib64/ld64.so.2")
 # s390x
-abis="$abis /lib/ld64.so.1"
+abis+=("/lib/ld64.so.1")
 # armhf
-abis="$abis /lib/ld-linux-armhf.so.3"
+abis+=("/lib/ld-linux-armhf.so.3")
 # arm64
-abis="$abis /lib/ld-linux-aarch64.so.1"
+abis+=("/lib/ld-linux-aarch64.so.1")
 # riscv64
-abis="$abis /lib/ld-linux-riscv64-ld64d.so.1"
+abis+=("/lib/ld-linux-riscv64-ld64d.so.1")
+
+absolute_paths=()
 
 for abi in $abis; do
 	if [ -e ".$abi" ]; then
-		target=$(readlink ".$abi")
-		case $target in
+		target="$(readlink ".$abi")"
+		case "${target}" in
 			/*)
-				echo "ld linker .$abi is absolute"
-				echo "$target"
-				exit 1
+				absolute_paths+=("${abi} => ${target}")
 				;;
 		esac
 	fi
 done
+
+if [ ${#absolute_paths[@]} -gt 0 ]; then
+	echo "Found some absolute paths to dynamic linkers:" 1>&2
+	for p in "${absolute_paths[@]}"; do
+		echo "  ${p}" 1>&2
+	done
+	exit 1
+fi
