@@ -118,6 +118,10 @@ _apt:x:117:65534:Reserved:/nonexistent:/bin/false
 syslog:x:108:114:Reserved:/home/syslog:/bin/false
 dnsmasq:x:109:65534:Reserved:/var/lib/misc:/bin/false
 tss:x:110:116:Reserved:/var/lib/tpm:/bin/false
+geoclue:x:111:120::/var/lib/geoclue:/bin/false
+gdm:x:112:121:Gnome Display Manager:/var/lib/gdm3:/bin/false
+colord:x:113:123:colord colour management daemon:/var/lib/colord:/usr/sbin/nologin
+gnome-initial-setup:x:114:65534::/run/gnome-initial-setup/:/bin/false
 EOF
 cp /etc/passwd /etc/passwd.orig # We make a copy for a later sanity-compare
 
@@ -152,6 +156,10 @@ _apt:*:16780:0:99999:7:::
 syslog:*:16521:0:99999:7:::
 dnsmasq:*:16644:0:99999:7:::
 tss:*:16701:0:99999:7:::
+geoclue:*:18459:0:99999:7:::
+gdm:*:18459:0:99999:7:::
+colord:*:18495:0:99999:7:::
+gnome-initial-setup:*:18495:0:99999:7:::
 EOF
 cp /etc/shadow /etc/shadow.orig # We make a copy for a later sanity-compare
 
@@ -214,6 +222,10 @@ input:x:107:
 render:x:117:
 sgx:x:119:
 _ssh:x:118:
+geoclue:x:120:
+gdm:x:121:
+scanner:x:122:
+colord:x:123:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
@@ -276,5 +288,9 @@ input:!::
 render:!::
 sgx:!::
 _ssh:!::
+geoclue:!::
+gdm:!::
+scanner:!::
+colord:!::
 EOF
 cp /etc/gshadow /etc/gshadow.orig # We make a copy for a later sanity-compare

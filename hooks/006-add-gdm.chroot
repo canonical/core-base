@@ -1,0 +1,89 @@
+#!/bin/sh
+
+set -e
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Ensure /proc is available
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+apt install --no-install-recommends -y \
+    xterm \
+    gdm3 \
+    gnome-initial-setup \
+    policykit-1 \
+    xwayland \
+    libgl1-mesa-dri \
+    locales-all \
+    zenity \
+    yaru-theme-gtk \
+    yaru-theme-gnome-shell \
+    yaru-theme-icon \
+    fonts-ubuntu \
+    ubuntu-settings
+
+# Install a basic Ubuntu session
+apt install --no-install-recommends -y \
+    ubuntu-session \
+    gnome-terminal \
+    gnome-settings-daemon \
+    gnome-shell-extension-appindicator \
+    gnome-shell-extension-desktop-icons-ng \
+    gnome-shell-extension-ubuntu-dock \
+    gnome-control-center \
+    xdg-desktop-portal \
+    xdg-desktop-portal-gtk
+
+# Remove Ubuntu X11 session
+rm /usr/share/xsessions/ubuntu.desktop
+
+# Move D-Bus policy out of /etc
+mv /etc/dbus-1/system.d/gdm.conf /usr/share/dbus-1/system.d/
+
+# Move display-manager.service symlink out of /etc
+rm /etc/systemd/system/display-manager.service
+ln -s gdm.service /lib/systemd/system/display-manager.service
+
+# Remove D-Bus service activation files provided by
+# ubuntu-desktop-session snap.
+rm /usr/share/dbus-1/services/org.gnome.Nautilus.service
+rm /usr/share/dbus-1/services/org.gnome.Terminal.service
+rm /usr/share/dbus-1/services/org.freedesktop.portal.Desktop.service
+rm /usr/share/dbus-1/services/org.freedesktop.portal.Documents.service
+rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.gtk.service
+rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.PermissionStore.service
+
+# Disable console-conf, since it interferes with GDM taking over
+# /dev/tty1.  Due to the ExecStartPre/ExecStopPost commands, we can't
+# reliably get rid of it with Conflicts/After
+touch /var/lib/console-conf/complete
+
+# gnome-initial-setup uses AccountsService to create the user account.
+# AccountsService in turn calls /usr/sbin/adduser.  Replace that
+# script with a wrapper that adds the --extrausers argument.
+#
+# Unfortunately this does not work for the addusers call to add the
+# user to the sudo group.
+mv /usr/sbin/adduser /usr/sbin/adduser.real
+cat <<\EOF > /usr/sbin/adduser
+#!/bin/sh
+exec /usr/sbin/adduser.real --extrausers "$@"
+EOF
+chmod a+x /usr/sbin/adduser
+
+# Re-enable the language page of gnome-initial-setup
+sed -i '/skip=/ s/language;//' /usr/share/gnome-initial-setup/vendor.conf
+
+# Write an X session that launches xterm
+mkdir -p /usr/share/xsessions
+cat <<\EOF > /usr/share/xsessions/xterm-session.desktop
+[Desktop Entry]
+Name=Xterm Session
+Comment=This session spawns an xterm
+Exec=/usr/bin/xterm -geometry 80x40+10+10
+TryExec=/usr/bin/gnome-shell
+Type=Application
+DesktopNames=ubuntu:GNOME
+X-GDM-SessionRegisters=false
+EOF

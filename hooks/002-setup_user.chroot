@@ -10,6 +10,8 @@ for name in group gshadow passwd shadow subuid subgid; do
     touch /var/lib/extrausers/$name
 done
 
+echo "sudo:x:27:" >> /var/lib/extrausers/group
+
 for name in gshadow shadow; do
     chmod 640 /var/lib/extrausers/$name
     chown root:shadow /var/lib/extrausers/$name
@@ -17,7 +19,7 @@ done
 
 # Enable libnss-extrusers
 sed -i 's/^passwd:.*files/\0 extrausers/' /etc/nsswitch.conf
-sed -i 's/^group:.*files/\0 extrausers/' /etc/nsswitch.conf
+sed -i 's/^group:.*files/\0 [SUCCESS=merge] extrausers/' /etc/nsswitch.conf
 sed -i 's/^shadow:.*files/\0 extrausers/' /etc/nsswitch.conf
 
 # Enable pam configuration for extrausers

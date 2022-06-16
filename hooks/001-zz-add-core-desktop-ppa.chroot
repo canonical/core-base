@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -eux
+
+export DEBIAN_FRONTEND=noninteractive
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# enable desktop-snappers PPA
+cat << \EOF > /etc/apt/trusted.gpg.d/desktop-snappers-core-desktop.asc
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xsFNBF9y96cBEADYO8RUQ92fvHYzsJzQLzgFNHIDJcmbo/mtrhA66QaJtnplWDqm
+2CaW4LLM1ReJglvYLjZW+1llrYPvb4Jl+OkrO/XeWsXYzmKpzaiFtYdti8vf9Smb
+Zzyrb/HlKcJcvmP+V/l8VCDY3uSQHZ3wRaQeDh/7khFAdYpKQIVi27gOWnDV3j1L
+ccOfhbc25fiM40G2ZyknfoY6k7D+riLRlzLsAq3oMI/Y99HJ0+rzZtsv3uJozIPe
+4q9s8/EObGyc+Y2kd26elsLSQuJXmotbxKXi/0wUORvGDkmSm2RsDdNNmF2Gt9RA
+zKTD5BnpeO+Y6yPIhzBNC3UzUamO0wURlg/Nw6fzN2AnCXG0EFy7b/8jqnB3g7zh
+bmn5E6mZ2Bg/wbPghV9EaZMPthA8j9/Qumvx46jgk6j7Of4qeZPFMZcnaYDmZiei
+tXv3Iw5k8BwEHjWZF2Us6erIhGQEKKuFn+UswZt6Zo9/wCdtovc5tDO1nsaqLjZW
+CjoBODAsmEmo3Yn0kMkZy3u7aUqWDP7d+cmyBRWzRABzLwd9STuc6+raW1qB0FQY
+dqHaEd17kvpSFDjJeUkK5u4TwGPoeQygqeatESyPprqXjU6vF3Fj06V8mRw8kdcA
+7sd2iXwJ/hMbA65zB4R5vEnyyLgJ1fGrc/1jLSklfwP0Pn8vBpvPsSrSfwARAQAB
+zSdMYXVuY2hwYWQgUFBBIGZvciBEZXNrdG9wIFNuYXBwZXJzIFRlYW3CwY4EEwEK
+ADgWIQTsWJe2DsUvpea2KqBsUC2rWIvOOQUCX3L3pwIbAwULCQgHAgYVCgkICwIE
+FgIDAQIeAQIXgAAKCRBsUC2rWIvOOffXD/9GAKdtoa3ELNbPk+S4szgtDAEfxqvu
+pHpInD9MWc6FFVyfF7SL2QTt/GfdDnvUlVkBN5Bs0edptvDwJYkSQB+sSvMgdaI3
+tFkG99tk3sbMhRjU9KD4JbJVSHgolSaE0f5tffT8oSwbj/UrFlVSLRN7DwnThStw
+BYtw5iz/ae6qfNfQNfndiKo+f9WFxApbCKR/f0/6V2j8XuGUStK+D+NjiSGZ7O3u
+YIgc1S3stIaI5EmjinYFFitmK+DOXMK/0+0Qwhdm0syyjlCZRJfF854+vqVuWyBf
+swUQRo2IMsc1D/vNj44BKc++RLcCHY/ijeBjbw1Ay+Cgx8Tc/anWspG+iewz0Ruh
+82mbNVlQ6hZrlIqsf0fpkG5HXhVl1FdeZQjX3bpr9K168BnmzZbLRtaSgj6K8CO6
+sbuPz6Hc/kkZmyVzBcFnlELkitcqw4wk5o+dLyn6RjKNkxVfTJHTtARkiAZqFr8I
+X20gR6js0RO1ko84kFQTmHmnnf6gW7MSnGB5pwmkDZuFYNmxIV67IxQlkO9HkASD
+iX0ACDU+nEBxL8WXNq0/eQ6st4kmAesF08cB7rwrfTB+UOdjuG53GLdNgkxps0W5
+7Jn6mWI6Am1RzIBlYazOMJbi0ZLOIASeRe/LTEsor+37uXRjibHFO/dWwGqwH6aX
+jXjiWv0P2PA0Vg==
+=4TcO
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+echo "deb http://ppa.launchpad.net/desktop-snappers/core-desktop/ubuntu jammy main" > /etc/apt/sources.list.d/desktop-snappers.list
+
+apt-get update
+apt-get upgrade -y

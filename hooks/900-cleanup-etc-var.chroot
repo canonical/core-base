@@ -67,6 +67,9 @@ rm -rf /var/log/journal
 # systemd-tmpfiles creates this new dir now
 rmdir /var/log/private
 
+# gdm3 creates this
+rm -rf /var/log/gdm3
+
 # clean leftovers from the build
 rm /var/log/*
 

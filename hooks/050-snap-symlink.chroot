@@ -2,3 +2,6 @@
 
 echo "Creating the snap binary symlink"
 ln -s /snap/snapd/current/usr/bin/snap /usr/bin/snap
+
+echo "Creating snap polkit policy symlink"
+ln -s /snap/snapd/current/usr/share/polkit-1/actions/io.snapcraft.snapd.policy /usr/share/polkit-1/actions/io.snapcraft.snapd.policy
