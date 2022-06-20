@@ -10,7 +10,19 @@ for name in group gshadow passwd shadow subuid subgid; do
     touch /var/lib/extrausers/$name
 done
 
-echo "sudo:x:27:" >> /var/lib/extrausers/group
+# Make sure we include stubs for the admin groups accounts-daemon will
+# try to add new users to (controlled by the admin_group and
+# extra_admin_groups meson options).
+#
+# This skips over lpadmin, sambashare, libvirtd, and lxd, which aren't
+# defined in /etc/group.
+cat >> /var/lib/extrausers/group <<\EOF
+adm:x:4:
+cdrom:x:24:
+sudo:x:27:
+dip:x:27:
+plugdev:x:46:
+EOF
 
 for name in gshadow shadow; do
     chmod 640 /var/lib/extrausers/$name
