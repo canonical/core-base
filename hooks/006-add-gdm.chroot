@@ -78,8 +78,8 @@ chmod a+x /usr/sbin/adduser
 sed -i "/^ReadWritePaths=/ a \\  /var/lib/extrausers/ \\\\" \
     /usr/lib/systemd/system/accounts-daemon.service
 
-# Re-enable the language page of gnome-initial-setup
-sed -i '/skip=/ s/language;*//' /usr/share/gnome-initial-setup/vendor.conf
+## Re-enable the language page of gnome-initial-setup
+#sed -i '/skip=/ s/language;*//' /usr/share/gnome-initial-setup/vendor.conf
 
 # Write an X session that launches xterm
 mkdir -p /usr/share/xsessions
