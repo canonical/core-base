@@ -72,8 +72,14 @@ exec /usr/sbin/adduser.real --extrausers "$@"
 EOF
 chmod a+x /usr/sbin/adduser
 
+# accounts-daemon uses systemd to lock down the paths it can write
+# to. That list of paths does not include the extrausers database used
+# by Ubuntu Core.
+sed -i "/^ReadWritePaths=/ a \\  /var/lib/extrausers/ \\\\" \
+    /usr/lib/systemd/system/accounts-daemon.service
+
 # Re-enable the language page of gnome-initial-setup
-sed -i '/skip=/ s/language;//' /usr/share/gnome-initial-setup/vendor.conf
+sed -i '/skip=/ s/language;*//' /usr/share/gnome-initial-setup/vendor.conf
 
 # Write an X session that launches xterm
 mkdir -p /usr/share/xsessions
