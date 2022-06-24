@@ -12,38 +12,29 @@ assumes: [snapd2.55.5]
 
 parts:
   probert-deb:
-    plugin: nil
-    build-packages:
-      - devscripts
     source: https://github.com/canonical/probert.git
     source-type: git
     # following branch server/jammy
     source-commit: 253acbe1480fba69d12d6e72f53412da79e27410
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
+    <<: &build-package
+      plugin: nil
+      build-packages:
+        - devscripts
+      override-pull: |
+        "${CRAFT_PROJECT_DIR}/build-package.sh" pull
+      override-build: |
+        "${CRAFT_PROJECT_DIR}/build-package.sh" build
+      override-stage: |
+        "${CRAFT_PROJECT_DIR}/build-package.sh" stage
+      prime:
+        - -local-debs
 
   consoleconf-deb:
-    build-packages:
-      - devscripts
-    plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
     # following branch server/jammy
     source-commit: abc053508fa27656f1016e32585077ef567ad591
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
+    <<: *build-package
 
   base:
     plugin: nil
