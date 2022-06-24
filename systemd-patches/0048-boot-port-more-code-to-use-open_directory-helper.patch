@@ -1,0 +1,34 @@
+From 4972efedde7546227d85c8fa3eb12895629796ea Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 21 Sep 2021 15:13:29 +0200
+Subject: [PATCH 48/73] boot: port more code to use open_directory() helper
+
+---
+ src/boot/efi/boot.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index f1777d8de..dd7731c4d 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1498,7 +1498,7 @@ static VOID config_load_entries(
+         assert(root_dir);
+         assert(loaded_image_path);
+ 
+-        err = uefi_call_wrapper(root_dir->Open, 5, root_dir, &entries_dir, (CHAR16*) L"\\loader\\entries", EFI_FILE_MODE_READ, 0ULL);
++        err = open_directory(root_dir, L"\\loader\\entries", &entries_dir);
+         if (EFI_ERROR(err))
+                 return;
+ 
+@@ -1969,7 +1969,7 @@ static VOID config_entry_add_linux(
+         assert(device);
+         assert(root_dir);
+ 
+-        err = uefi_call_wrapper(root_dir->Open, 5, root_dir, &linux_dir, (CHAR16*) L"\\EFI\\Linux", EFI_FILE_MODE_READ, 0ULL);
++        err = open_directory(root_dir, L"\\EFI\\Linux", &linux_dir);
+         if (EFI_ERROR(err))
+                 return;
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,91 @@
+From 281b0ecaec67aa8976775ec6164fec2c1b81d04d Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 21 Sep 2021 15:29:03 +0200
+Subject: [PATCH 51/73] boot: port more code over to get_file_info_harder()
+
+---
+ src/boot/efi/boot.c        | 25 ++++---------------------
+ src/boot/efi/devicetree.c  |  6 +++---
+ src/boot/efi/random-seed.c |  6 +++---
+ 3 files changed, 10 insertions(+), 27 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 40fb933af..386ee678e 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1226,7 +1226,7 @@ static VOID config_entry_bump_counters(
+         _cleanup_(FileHandleClosep) EFI_FILE_HANDLE handle = NULL;
+         static const EFI_GUID EfiFileInfoGuid = EFI_FILE_INFO_ID;
+         _cleanup_freepool_ EFI_FILE_INFO *file_info = NULL;
+-        UINTN file_info_size, a, b;
++        UINTN file_info_size;
+         EFI_STATUS r;
+ 
+         assert(entry);
+@@ -1244,26 +1244,9 @@ static VOID config_entry_bump_counters(
+         if (EFI_ERROR(r))
+                 return;
+ 
+-        a = StrLen(entry->current_name);
+-        b = StrLen(entry->next_name);
+-
+-        file_info_size = OFFSETOF(EFI_FILE_INFO, FileName) + (a > b ? a : b) + 1;
+-
+-        for (;;) {
+-                file_info = AllocatePool(file_info_size);
+-
+-                r = uefi_call_wrapper(handle->GetInfo, 4, handle, (EFI_GUID*) &EfiFileInfoGuid, &file_info_size, file_info);
+-                if (!EFI_ERROR(r))
+-                        break;
+-
+-                if (r != EFI_BUFFER_TOO_SMALL || file_info_size * 2 < file_info_size) {
+-                        log_error_stall(L"Failed to get file info for '%s': %r", old_path, r);
+-                        return;
+-                }
+-
+-                file_info_size *= 2;
+-                FreePool(file_info);
+-        }
++        r = get_file_info_harder(handle, &file_info, &file_info_size);
++        if (EFI_ERROR(r))
++                return;
+ 
+         /* And rename the file */
+         StrCpy(file_info->FileName, entry->next_name);
+diff --git a/src/boot/efi/devicetree.c b/src/boot/efi/devicetree.c
+index c65936bdb..87ae97a52 100644
+--- a/src/boot/efi/devicetree.c
++++ b/src/boot/efi/devicetree.c
+@@ -91,9 +91,9 @@ EFI_STATUS devicetree_install(struct devicetree_state *state,
+         if (EFI_ERROR(err))
+                 return err;
+ 
+-        info = LibFileInfo(handle);
+-        if (!info)
+-                return EFI_OUT_OF_RESOURCES;
++        err = get_file_info_harder(handle, &info, NULL);
++        if (EFI_ERROR(err))
++                return err;
+         if (info->FileSize < FDT_V1_SIZE || info->FileSize > 32 * 1024 * 1024)
+                 /* 32MB device tree blob doesn't seem right */
+                 return EFI_INVALID_PARAMETER;
+diff --git a/src/boot/efi/random-seed.c b/src/boot/efi/random-seed.c
+index d20923eac..1505b9d93 100644
+--- a/src/boot/efi/random-seed.c
++++ b/src/boot/efi/random-seed.c
+@@ -263,9 +263,9 @@ EFI_STATUS process_random_seed(EFI_FILE *root_dir, RandomSeedMode mode) {
+                 return err;
+         }
+ 
+-        info = LibFileInfo(handle);
+-        if (!info)
+-                return log_oom();
++        err = get_file_info_harder(handle, &info, NULL);
++        if (EFI_ERROR(err))
++                return log_error_status_stall(err, L"Failed to get file info for random seed: %r");
+ 
+         size = info->FileSize;
+         if (size < RANDOM_MAX_SIZE_MIN)
+-- 
+2.34.1
+

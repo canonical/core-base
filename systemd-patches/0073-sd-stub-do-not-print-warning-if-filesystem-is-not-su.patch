@@ -1,0 +1,55 @@
+From d30c4bd3de41641f4d2593344e93cf11aec29a3e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Thu, 3 Mar 2022 11:42:41 +0100
+Subject: [PATCH 73/73] sd-stub: do not print warning if filesystem is not
+ supported
+
+Do not print a warning in case we try to load the file system protocol for an
+unsupported file system, just return EFI_SUCCESS instead.
+---
+ src/boot/efi/cpio.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/src/boot/efi/cpio.c b/src/boot/efi/cpio.c
+index e20615633..fbcb32137 100644
+--- a/src/boot/efi/cpio.c
++++ b/src/boot/efi/cpio.c
+@@ -336,15 +336,31 @@ EFI_STATUS pack_cpio(
+         _cleanup_freepool_ VOID *buffer = NULL;
+         UINT32 inode = 1; /* inode counter, so that each item gets a new inode */
+         EFI_STATUS err;
++        EFI_FILE_IO_INTERFACE *volume;
+ 
+         assert(loaded_image);
+         assert(target_dir_prefix);
+         assert(ret_buffer);
+         assert(ret_buffer_size);
+ 
+-        root = LibOpenRoot(loaded_image->DeviceHandle);
+-        if (!root)
+-                return log_error_status_stall(EFI_LOAD_ERROR, L"Unable to open root directory.");
++        err = BS->HandleProtocol(loaded_image->DeviceHandle,
++                                 &FileSystemProtocol, (void*)&volume);
++        /* Error will be unsupported if the bootloader doesn't implement the
++         * file system protocol on its file handles.
++         */
++        if (err == EFI_UNSUPPORTED) {
++                *ret_buffer = NULL;
++                *ret_buffer_size = 0;
++                return EFI_SUCCESS;
++        }
++        if (EFI_ERROR(err))
++                return log_error_status_stall(
++                                err, L"Unable to load file system protocol: %r", err);
++
++        err = volume->OpenVolume(volume, &root);
++        if (EFI_ERROR(err))
++                return log_error_status_stall(
++                                err, L"Unable to open root directory: %r", err);
+ 
+         loaded_image_path = DevicePathToStr(loaded_image->FilePath);
+         if (!loaded_image_path)
+-- 
+2.34.1
+

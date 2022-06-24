@@ -1,0 +1,69 @@
+From 3656c6bb1bb416526896fd1933622a8831178260 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Mon, 27 Sep 2021 12:20:15 +0200
+Subject: [PATCH 65/73] sd-boot: Use backup LBA location from first GPT header
+
+If a disk were dd'd to a lager block device, the last block on it
+is not necessarily the backup header.
+---
+ src/boot/efi/xbootldr.c | 27 ++++++++++++++++++++++-----
+ 1 file changed, 22 insertions(+), 5 deletions(-)
+
+diff --git a/src/boot/efi/xbootldr.c b/src/boot/efi/xbootldr.c
+index 4f66c1f85..ef7ca6cf4 100644
+--- a/src/boot/efi/xbootldr.c
++++ b/src/boot/efi/xbootldr.c
+@@ -76,6 +76,7 @@ static BOOLEAN verify_gpt(union GptHeaderBuffer *gpt_header_buffer, EFI_LBA lba_
+ static EFI_STATUS try_gpt(
+                 EFI_BLOCK_IO *block_io,
+                 EFI_LBA lba,
++                EFI_LBA *ret_backup_lba, /* May be changed even on error! */
+                 UINT32 *ret_part_number,
+                 UINT64 *ret_part_start,
+                 UINT64 *ret_part_size,
+@@ -103,6 +104,10 @@ static EFI_STATUS try_gpt(
+         if (EFI_ERROR(err))
+                 return err;
+ 
++        /* Indicate the location of backup LBA even if the rest of the header is corrupt. */
++        if (ret_backup_lba)
++                *ret_backup_lba = gpt.gpt_header.AlternateLBA;
++
+         if (!verify_gpt(&gpt, lba))
+                 return EFI_NOT_FOUND;
+ 
+@@ -210,14 +215,26 @@ static EFI_STATUS find_device(
+                     block_io->Media->LastBlock <= 1)
+                         continue;
+ 
+-                /* Try both copies of the GPT header, in case one is corrupted */
+-                for (UINTN nr = 0; nr < 2; nr++) {
+-                        /* Read the first copy at LBA 1 and then try backup GPT header at the very last
+-                         * LBA of this block device if it was corrupted. */
+-                        EFI_LBA lba = nr == 0 ? 1 : block_io->Media->LastBlock;
++                /* Try several copies of the GPT header, in case one is corrupted */
++                EFI_LBA backup_lba = 0;
++                for (UINTN nr = 0; nr < 3; nr++) {
++                        EFI_LBA lba;
++
++                        /* Read the first copy at LBA 1 and then try the backup GPT header pointed
++                         * to by the first header if that one was corrupted. As a last resort,
++                         * try the very last LBA of this block device. */
++                        if (nr == 0)
++                                lba = 1;
++                        else if (nr == 1 && backup_lba != 0)
++                                lba = backup_lba;
++                        else if (nr == 2 && backup_lba != block_io->Media->LastBlock)
++                                lba = block_io->Media->LastBlock;
++                        else
++                                continue;
+ 
+                         err = try_gpt(
+                                 block_io, lba,
++                                nr == 0 ? &backup_lba : NULL, /* Only get backup LBA location from first GPT header. */
+                                 ret_part_number,
+                                 ret_part_start,
+                                 ret_part_size,
+-- 
+2.34.1
+

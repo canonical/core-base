@@ -1,0 +1,17 @@
+[Unit]
+OnFailure=emergency.target
+OnFailureJobMode=replace-irreversibly
+DefaultDependencies=no
+After=systemd-tmpfiles-setup.service
+After=systemd-modules-load.service
+Wants=systemd-modules-load.service
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/lib/the-tool
+ExecStartPost=/usr/bin/systemctl --no-block isolate initrd.target
+StandardOutput=journal+console
+StandardError=journal+console

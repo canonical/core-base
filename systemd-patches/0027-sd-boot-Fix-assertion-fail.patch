@@ -1,0 +1,35 @@
+From 7a077e70e74a735334dc05b075d9d754f6a9bc81 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Sat, 11 Sep 2021 11:14:06 +0200
+Subject: [PATCH 27/73] sd-boot: Fix assertion fail
+
+The UEFI Platform Initialization Specification says that both
+parameters may be NULL.
+---
+ src/boot/efi/shim.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/src/boot/efi/shim.c b/src/boot/efi/shim.c
+index 849598f1c..e3fb073fd 100644
+--- a/src/boot/efi/shim.c
++++ b/src/boot/efi/shim.c
+@@ -112,14 +112,13 @@ static EFIAPI EFI_STATUS security2_policy_authentication (const EFI_SECURITY2_PR
+         EFI_STATUS status;
+ 
+         assert(this);
+-        assert(device_path);
+-        assert(file_buffer);
++        /* device_path and file_buffer may be NULL */
+ 
+         /* Chain original security policy */
+         status = uefi_call_wrapper(es2fa, 5, this, device_path, file_buffer, file_size, boot_policy);
+ 
+         /* if OK, don't bother with MOK check */
+-        if (status == EFI_SUCCESS)
++        if (!EFI_ERROR(status))
+                 return status;
+ 
+         if (shim_validate(file_buffer, file_size))
+-- 
+2.34.1
+

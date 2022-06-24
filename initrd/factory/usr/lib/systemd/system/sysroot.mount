@@ -1,0 +1,11 @@
+[Unit]
+DefaultDependencies=no
+Before=initrd-root-fs.target
+
+After=run-mnt-base.mount
+After=snap-initramfs-mounts.service
+
+[Mount]
+What=/run/mnt/base
+Type=none
+Options=bind

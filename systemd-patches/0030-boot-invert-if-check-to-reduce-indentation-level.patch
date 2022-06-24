@@ -1,0 +1,79 @@
+From 28f9198e67d3f0c06294f5baabba194d22aed7fa Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 16 Sep 2021 16:02:36 +0200
+Subject: [PATCH 30/73] boot: invert if check, to reduce indentation level
+
+---
+ src/boot/efi/boot.c | 52 +++++++++++++++++++++++----------------------
+ 1 file changed, 27 insertions(+), 25 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index af02cfb7e..cfe20c27f 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1501,35 +1501,37 @@ static VOID config_load_entries(
+         assert(loaded_image_path);
+ 
+         err = uefi_call_wrapper(root_dir->Open, 5, root_dir, &entries_dir, (CHAR16*) L"\\loader\\entries", EFI_FILE_MODE_READ, 0ULL);
+-        if (!EFI_ERROR(err)) {
+-                for (;;) {
+-                        CHAR16 buf[256];
+-                        UINTN bufsize;
+-                        EFI_FILE_INFO *f;
+-                        _cleanup_freepool_ CHAR8 *content = NULL;
+-
+-                        bufsize = sizeof(buf);
+-                        err = uefi_call_wrapper(entries_dir->Read, 3, entries_dir, &bufsize, buf);
+-                        if (bufsize == 0 || EFI_ERROR(err))
+-                                break;
++        if (EFI_ERROR(err))
++                return;
+ 
+-                        f = (EFI_FILE_INFO *) buf;
+-                        if (f->FileName[0] == '.')
+-                                continue;
+-                        if (f->Attribute & EFI_FILE_DIRECTORY)
+-                                continue;
++        for (;;) {
++                CHAR16 buf[256];
++                UINTN bufsize;
++                EFI_FILE_INFO *f;
++                _cleanup_freepool_ CHAR8 *content = NULL;
+ 
+-                        if (!endswith_no_case(f->FileName, L".conf"))
+-                                continue;
+-                        if (startswith(f->FileName, L"auto-"))
+-                                continue;
++                bufsize = sizeof(buf);
++                err = uefi_call_wrapper(entries_dir->Read, 3, entries_dir, &bufsize, buf);
++                if (bufsize == 0 || EFI_ERROR(err))
++                        break;
+ 
+-                        err = file_read(entries_dir, f->FileName, 0, 0, &content, NULL);
+-                        if (!EFI_ERROR(err))
+-                                config_entry_add_from_file(config, device, root_dir, L"\\loader\\entries", f->FileName, content, loaded_image_path);
+-                }
+-                uefi_call_wrapper(entries_dir->Close, 1, entries_dir);
++                f = (EFI_FILE_INFO *) buf;
++                if (f->FileName[0] == '.')
++                        continue;
++                if (f->Attribute & EFI_FILE_DIRECTORY)
++                        continue;
++
++                if (!endswith_no_case(f->FileName, L".conf"))
++                        continue;
++                if (startswith(f->FileName, L"auto-"))
++                        continue;
++
++                err = file_read(entries_dir, f->FileName, 0, 0, &content, NULL);
++                if (!EFI_ERROR(err))
++                        config_entry_add_from_file(config, device, root_dir, L"\\loader\\entries", f->FileName, content, loaded_image_path);
+         }
++
++        uefi_call_wrapper(entries_dir->Close, 1, entries_dir);
+ }
+ 
+ static INTN config_entry_compare(ConfigEntry *a, ConfigEntry *b) {
+-- 
+2.34.1
+

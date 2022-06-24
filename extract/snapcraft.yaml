@@ -1,0 +1,31 @@
+name: core22
+adopt-info: extract
+summary: Runtime environment based on Ubuntu 22.04
+description: |
+  The base snap based on the Ubuntu 22.04 release.
+confinement: strict
+type: base
+build-base: core22
+assumes: [snapd2.55.5]
+
+parts:
+  extract:
+    plugin: nil
+    source: ./core22.snap
+    source-type: snap
+    build-packages:
+      - python3
+      - python3-yaml
+    override-pull: |
+      craftctl default
+      EXTRACT_INFO="${CRAFT_PROJECT_DIR}/extract_info.py"
+      version="$("${EXTRACT_INFO}" version "${CRAFT_PART_SRC}/meta.core22/snap.yaml")"
+      grade="$("${EXTRACT_INFO}" grade "${CRAFT_PART_SRC}/meta.core22/snap.yaml")"
+      craftctl set version="${version%~*}"
+      craftctl set grade="${grade}"
+
+    override-build: |
+      mv "${CRAFT_PART_BUILD}/snap.core22" "${CRAFT_PART_BUILD}/snap"
+      rm -rf "${CRAFT_PART_BUILD}/meta.core22"
+      rm -rf "${CRAFT_PART_BUILD}/usr/lib/ubuntu-core-initramfs"
+      cp -aT "${CRAFT_PART_BUILD}" "${CRAFT_PART_INSTALL}"

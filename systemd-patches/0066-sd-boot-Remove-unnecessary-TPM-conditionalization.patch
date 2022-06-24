@@ -1,0 +1,33 @@
+From da1539a02a779a51dd0beaa634d2703dca38ac11 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Mon, 27 Sep 2021 12:29:00 +0200
+Subject: [PATCH 66/73] sd-boot: Remove unnecessary TPM conditionalization
+
+This is already done in measure.h.
+---
+ src/boot/efi/cpio.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/boot/efi/cpio.c b/src/boot/efi/cpio.c
+index 10a044cc9..e20615633 100644
+--- a/src/boot/efi/cpio.c
++++ b/src/boot/efi/cpio.c
+@@ -449,7 +449,6 @@ EFI_STATUS pack_cpio(
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Failed to pack cpio trailer: %r");
+ 
+-#if ENABLE_TPM
+         err = tpm_log_event(
+                         tpm_pcr,
+                         POINTER_TO_PHYSICAL_ADDRESS(buffer),
+@@ -457,7 +456,6 @@ EFI_STATUS pack_cpio(
+                         tpm_description);
+         if (EFI_ERROR(err))
+                 log_error_stall(L"Unable to add initrd TPM measurement for PCR %u (%s), ignoring: %r", tpm_pcr, tpm_description, err);
+-#endif
+ 
+         *ret_buffer = TAKE_PTR(buffer);
+         *ret_buffer_size = buffer_size;
+-- 
+2.34.1
+

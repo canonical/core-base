@@ -1,0 +1,86 @@
+From 33c2f3e1cc3c1d3a1658d78e652113870d1e326a Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Sat, 14 Aug 2021 13:06:37 +0200
+Subject: [PATCH 16/73] sd-boot: Allow automatic entries to be default
+
+---
+ man/loader.conf.xml | 39 ++++++++++++++++++++++++++++++++++++++-
+ src/boot/efi/boot.c |  5 +----
+ 2 files changed, 39 insertions(+), 5 deletions(-)
+
+diff --git a/man/loader.conf.xml b/man/loader.conf.xml
+index 4c0355800..ffbd897a1 100644
+--- a/man/loader.conf.xml
++++ b/man/loader.conf.xml
+@@ -58,7 +58,44 @@
+         <listitem><para>A glob pattern to select the default entry. The default entry
+         may be changed in the boot menu itself, in which case the name of the
+         selected entry will be stored as an EFI variable, overriding this option.
+-        </para></listitem>
++        </para>
++
++        <table>
++          <title>Automatically detected entries will use the following names:</title>
++
++          <tgroup cols='2'>
++            <colspec colname='name' />
++            <colspec colname='expl' />
++            <thead>
++              <row>
++                <entry>Name</entry>
++                <entry>Description</entry>
++              </row>
++            </thead>
++            <tbody>
++              <row>
++                <entry>auto-efi-default</entry>
++                <entry>EFI Default Loader</entry>
++              </row>
++              <row>
++                <entry>auto-efi-shell</entry>
++                <entry>EFI Shell</entry>
++              </row>
++              <row>
++                <entry>auto-osx</entry>
++                <entry>macOS</entry>
++              </row>
++              <row>
++                <entry>auto-reboot-to-firmware-setup</entry>
++                <entry>Reboot Into Firmware Interface</entry>
++              </row>
++              <row>
++                <entry>auto-windows</entry>
++                <entry>Windows Boot Manager</entry>
++              </row>
++            </tbody>
++          </tgroup>
++        </table></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 56cd4a489..474a7e7d3 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1590,8 +1590,7 @@ static VOID config_default_entry_select(Config *config) {
+         /*
+          * The EFI variable to select the default boot entry overrides the
+          * configured pattern. The variable can be set and cleared by pressing
+-         * the 'd' key in the loader selection menu, the entry is marked with
+-         * an '*'.
++         * the 'd' key in the loader selection menu.
+          */
+         err = efivar_get(LOADER_GUID, L"LoaderEntryDefault", &entry_default);
+         if (!EFI_ERROR(err)) {
+@@ -1615,8 +1614,6 @@ static VOID config_default_entry_select(Config *config) {
+         if (config->entry_default_pattern) {
+                 i = config->entry_count;
+                 while (i--) {
+-                        if (config->entries[i]->no_autoselect)
+-                                continue;
+                         if (MetaiMatch(config->entries[i]->id, config->entry_default_pattern)) {
+                                 config->idx_default = i;
+                                 return;
+-- 
+2.34.1
+

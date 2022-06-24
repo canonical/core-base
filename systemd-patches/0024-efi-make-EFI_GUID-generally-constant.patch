@@ -1,0 +1,278 @@
+From 4883dee9d5f0b184ef4631079a3c634765300d1a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 1 Sep 2021 11:33:06 +0200
+Subject: [PATCH 24/73] efi: make EFI_GUID generally constant
+
+The GUIDs we usually deal with should be considered constant. Hence make
+them so. Unfortunately the prototypes for various functions doesn't mark
+them as const (but still decorates them with "IN", clarifying they are
+input-only), hence we need to cast things at various places. We already
+cast in similar fashion in many other cases, hence unify things here in
+one style.
+
+Making the EFI_GUID constant (and in particular so when specified in C99
+compound literal style) allows compilers to merge multiple instances of
+them.
+---
+ src/boot/efi/boot.c        |  6 +++---
+ src/boot/efi/console.c     |  9 +++++----
+ src/boot/efi/graphics.c    |  4 ++--
+ src/boot/efi/measure.c     |  8 ++++----
+ src/boot/efi/random-seed.c |  4 ++--
+ src/boot/efi/shim.c        | 18 +++++++++---------
+ src/boot/efi/splash.c      |  4 ++--
+ src/boot/efi/util.c        |  2 +-
+ 8 files changed, 28 insertions(+), 27 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index ecd18f592..bf27309d6 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1185,7 +1185,7 @@ static VOID config_entry_bump_counters(
+ 
+         _cleanup_freepool_ CHAR16* old_path = NULL, *new_path = NULL;
+         _cleanup_(FileHandleClosep) EFI_FILE_HANDLE handle = NULL;
+-        static EFI_GUID EfiFileInfoGuid = EFI_FILE_INFO_ID;
++        static const EFI_GUID EfiFileInfoGuid = EFI_FILE_INFO_ID;
+         _cleanup_freepool_ EFI_FILE_INFO *file_info = NULL;
+         UINTN file_info_size, a, b;
+         EFI_STATUS r;
+@@ -1213,7 +1213,7 @@ static VOID config_entry_bump_counters(
+         for (;;) {
+                 file_info = AllocatePool(file_info_size);
+ 
+-                r = uefi_call_wrapper(handle->GetInfo, 4, handle, &EfiFileInfoGuid, &file_info_size, file_info);
++                r = uefi_call_wrapper(handle->GetInfo, 4, handle, (EFI_GUID*) &EfiFileInfoGuid, &file_info_size, file_info);
+                 if (!EFI_ERROR(r))
+                         break;
+ 
+@@ -1228,7 +1228,7 @@ static VOID config_entry_bump_counters(
+ 
+         /* And rename the file */
+         StrCpy(file_info->FileName, entry->next_name);
+-        r = uefi_call_wrapper(handle->SetInfo, 4, handle, &EfiFileInfoGuid, file_info_size, file_info);
++        r = uefi_call_wrapper(handle->SetInfo, 4, handle, (EFI_GUID*) &EfiFileInfoGuid, file_info_size, file_info);
+         if (EFI_ERROR(r)) {
+                 log_error_stall(L"Failed to rename '%s' to '%s', ignoring: %r", old_path, entry->next_name, r);
+                 return;
+diff --git a/src/boot/efi/console.c b/src/boot/efi/console.c
+index 3f405113b..12d3047ac 100644
+--- a/src/boot/efi/console.c
++++ b/src/boot/efi/console.c
+@@ -9,7 +9,8 @@
+ #define SYSTEM_FONT_WIDTH 8
+ #define SYSTEM_FONT_HEIGHT 19
+ 
+-#define EFI_SIMPLE_TEXT_INPUT_EX_GUID &(EFI_GUID) EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID
++#define EFI_SIMPLE_TEXT_INPUT_EX_GUID                           \
++        &(const EFI_GUID) EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID
+ 
+ static inline void EventClosep(EFI_EVENT *event) {
+         if (!*event)
+@@ -46,7 +47,7 @@ EFI_STATUS console_key_read(UINT64 *key, UINT64 timeout_usec) {
+         assert(key);
+ 
+         if (!checked) {
+-                err = LibLocateProtocol(EFI_SIMPLE_TEXT_INPUT_EX_GUID, (VOID **)&TextInputEx);
++                err = LibLocateProtocol((EFI_GUID*) EFI_SIMPLE_TEXT_INPUT_EX_GUID, (VOID **)&TextInputEx);
+                 if (EFI_ERROR(err) ||
+                     uefi_call_wrapper(BS->CheckEvent, 1, TextInputEx->WaitForKeyEx) == EFI_INVALID_PARAMETER)
+                         /* If WaitForKeyEx fails here, the firmware pretends it talks this
+@@ -148,7 +149,7 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+         const UINT32 VERTICAL_MAX_OK = 1080;
+         const UINT64 VIEWPORT_RATIO = 10;
+         UINT64 screen_area, text_area;
+-        EFI_GUID GraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
++        static const EFI_GUID GraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+         EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
+         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+         EFI_STATUS err;
+@@ -156,7 +157,7 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+ 
+         assert(mode);
+ 
+-        err = LibLocateProtocol(&GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
++        err = LibLocateProtocol((EFI_GUID*) &GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
+         if (!EFI_ERROR(err) && GraphicsOutput->Mode && GraphicsOutput->Mode->Info) {
+                 Info = GraphicsOutput->Mode->Info;
+ 
+diff --git a/src/boot/efi/graphics.c b/src/boot/efi/graphics.c
+index ddfe68cc7..3f6f3f75c 100644
+--- a/src/boot/efi/graphics.c
++++ b/src/boot/efi/graphics.c
+@@ -11,7 +11,7 @@
+ #include "util.h"
+ 
+ #define EFI_CONSOLE_CONTROL_GUID \
+-        &(EFI_GUID) { 0xf42f7782, 0x12e, 0x4c12, { 0x99, 0x56, 0x49, 0xf9, 0x43, 0x4, 0xf7, 0x21 } }
++        &(const EFI_GUID) { 0xf42f7782, 0x12e, 0x4c12, { 0x99, 0x56, 0x49, 0xf9, 0x43, 0x4, 0xf7, 0x21 } }
+ 
+ EFI_STATUS graphics_mode(BOOLEAN on) {
+ 
+@@ -53,7 +53,7 @@ EFI_STATUS graphics_mode(BOOLEAN on) {
+         BOOLEAN stdin_locked;
+         EFI_STATUS err;
+ 
+-        err = LibLocateProtocol(EFI_CONSOLE_CONTROL_GUID, (VOID **)&ConsoleControl);
++        err = LibLocateProtocol((EFI_GUID*) EFI_CONSOLE_CONTROL_GUID, (VOID **)&ConsoleControl);
+         if (EFI_ERROR(err))
+                 /* console control protocol is nonstandard and might not exist. */
+                 return err == EFI_NOT_FOUND ? EFI_SUCCESS : err;
+diff --git a/src/boot/efi/measure.c b/src/boot/efi/measure.c
+index 1d19366f7..3e64ab6be 100644
+--- a/src/boot/efi/measure.c
++++ b/src/boot/efi/measure.c
+@@ -9,7 +9,7 @@
+ #include "measure.h"
+ 
+ #define EFI_TCG_GUID \
+-        &(EFI_GUID) { 0xf541796d, 0xa62e, 0x4954, { 0xa7, 0x75, 0x95, 0x84, 0xf6, 0x1b, 0x9c, 0xdd } }
++        &(const EFI_GUID) { 0xf541796d, 0xa62e, 0x4954, { 0xa7, 0x75, 0x95, 0x84, 0xf6, 0x1b, 0x9c, 0xdd } }
+ 
+ typedef struct _TCG_VERSION {
+         UINT8 Major;
+@@ -104,7 +104,7 @@ typedef struct _EFI_TCG {
+ } EFI_TCG;
+ 
+ #define EFI_TCG2_GUID \
+-        &(EFI_GUID) { 0x607f766c, 0x7455, 0x42be, { 0x93, 0x0b, 0xe4, 0xd7, 0x6d, 0xb2, 0x72, 0x0f } }
++        &(const EFI_GUID) { 0x607f766c, 0x7455, 0x42be, { 0x93, 0x0b, 0xe4, 0xd7, 0x6d, 0xb2, 0x72, 0x0f } }
+ 
+ typedef struct tdEFI_TCG2_PROTOCOL EFI_TCG2_PROTOCOL;
+ 
+@@ -253,7 +253,7 @@ static EFI_TCG * tcg1_interface_check(void) {
+         EFI_PHYSICAL_ADDRESS event_log_location;
+         EFI_PHYSICAL_ADDRESS event_log_last_entry;
+ 
+-        status = LibLocateProtocol(EFI_TCG_GUID, (void **) &tcg);
++        status = LibLocateProtocol((EFI_GUID*) EFI_TCG_GUID, (void **) &tcg);
+ 
+         if (EFI_ERROR(status))
+                 return NULL;
+@@ -278,7 +278,7 @@ static EFI_TCG2 * tcg2_interface_check(void) {
+         EFI_TCG2 *tcg;
+         EFI_TCG2_BOOT_SERVICE_CAPABILITY capability;
+ 
+-        status = LibLocateProtocol(EFI_TCG2_GUID, (void **) &tcg);
++        status = LibLocateProtocol((EFI_GUID*) EFI_TCG2_GUID, (void **) &tcg);
+ 
+         if (EFI_ERROR(status))
+                 return NULL;
+diff --git a/src/boot/efi/random-seed.c b/src/boot/efi/random-seed.c
+index 55348a64e..d20923eac 100644
+--- a/src/boot/efi/random-seed.c
++++ b/src/boot/efi/random-seed.c
+@@ -12,7 +12,7 @@
+ #define RANDOM_MAX_SIZE_MIN (32U)
+ #define RANDOM_MAX_SIZE_MAX (32U*1024U)
+ 
+-#define EFI_RNG_GUID &(EFI_GUID) EFI_RNG_PROTOCOL_GUID
++#define EFI_RNG_GUID &(const EFI_GUID) EFI_RNG_PROTOCOL_GUID
+ 
+ /* SHA256 gives us 256/8=32 bytes */
+ #define HASH_VALUE_SIZE 32
+@@ -26,7 +26,7 @@ static EFI_STATUS acquire_rng(UINTN size, VOID **ret) {
+ 
+         /* Try to acquire the specified number of bytes from the UEFI RNG */
+ 
+-        err = LibLocateProtocol(EFI_RNG_GUID, (VOID**) &rng);
++        err = LibLocateProtocol((EFI_GUID*) EFI_RNG_GUID, (VOID**) &rng);
+         if (EFI_ERROR(err))
+                 return err;
+         if (!rng)
+diff --git a/src/boot/efi/shim.c b/src/boot/efi/shim.c
+index 9bcbb3476..849598f1c 100644
+--- a/src/boot/efi/shim.c
++++ b/src/boot/efi/shim.c
+@@ -30,18 +30,18 @@ struct ShimLock {
+         EFI_STATUS __sysv_abi__ (*read_header) (VOID *data, UINT32 datasize, VOID *context);
+ };
+ 
+-#define SIMPLE_FS_GUID &(EFI_GUID) SIMPLE_FILE_SYSTEM_PROTOCOL
++#define SIMPLE_FS_GUID &(const EFI_GUID) SIMPLE_FILE_SYSTEM_PROTOCOL
+ #define SECURITY_PROTOCOL_GUID \
+-        &(EFI_GUID) { 0xa46423e3, 0x4617, 0x49f1, { 0xb9, 0xff, 0xd1, 0xbf, 0xa9, 0x11, 0x58, 0x39 } }
++        &(const EFI_GUID) { 0xa46423e3, 0x4617, 0x49f1, { 0xb9, 0xff, 0xd1, 0xbf, 0xa9, 0x11, 0x58, 0x39 } }
+ #define SECURITY_PROTOCOL2_GUID \
+-        &(EFI_GUID) { 0x94ab2f58, 0x1438, 0x4ef1, { 0x91, 0x52, 0x18, 0x94, 0x1a, 0x3a, 0x0e, 0x68 } }
++        &(const EFI_GUID) { 0x94ab2f58, 0x1438, 0x4ef1, { 0x91, 0x52, 0x18, 0x94, 0x1a, 0x3a, 0x0e, 0x68 } }
+ #define SHIM_LOCK_GUID \
+-        &(EFI_GUID) { 0x605dab50, 0xe046, 0x4300, { 0xab, 0xb6, 0x3d, 0xd8, 0x10, 0xdd, 0x8b, 0x23 } }
++        &(const EFI_GUID) { 0x605dab50, 0xe046, 0x4300, { 0xab, 0xb6, 0x3d, 0xd8, 0x10, 0xdd, 0x8b, 0x23 } }
+ 
+ BOOLEAN shim_loaded(void) {
+         struct ShimLock *shim_lock;
+ 
+-        return uefi_call_wrapper(BS->LocateProtocol, 3, SHIM_LOCK_GUID, NULL, (VOID**) &shim_lock) == EFI_SUCCESS;
++        return uefi_call_wrapper(BS->LocateProtocol, 3, (EFI_GUID*) SHIM_LOCK_GUID, NULL, (VOID**) &shim_lock) == EFI_SUCCESS;
+ }
+ 
+ static BOOLEAN shim_validate(VOID *data, UINT32 size) {
+@@ -50,7 +50,7 @@ static BOOLEAN shim_validate(VOID *data, UINT32 size) {
+         if (!data)
+                 return FALSE;
+ 
+-        if (uefi_call_wrapper(BS->LocateProtocol, 3, SHIM_LOCK_GUID, NULL, (VOID**) &shim_lock) != EFI_SUCCESS)
++        if (uefi_call_wrapper(BS->LocateProtocol, 3, (EFI_GUID*) SHIM_LOCK_GUID, NULL, (VOID**) &shim_lock) != EFI_SUCCESS)
+                 return FALSE;
+ 
+         if (!shim_lock)
+@@ -155,7 +155,7 @@ static EFIAPI EFI_STATUS security_policy_authentication (const EFI_SECURITY_PROT
+ 
+         dev_path = DuplicateDevicePath((EFI_DEVICE_PATH*) device_path_const);
+ 
+-        status = uefi_call_wrapper(BS->LocateDevicePath, 3, SIMPLE_FS_GUID, &dev_path, &h);
++        status = uefi_call_wrapper(BS->LocateDevicePath, 3, (EFI_GUID*) SIMPLE_FS_GUID, &dev_path, &h);
+         if (status != EFI_SUCCESS)
+                 return status;
+ 
+@@ -189,9 +189,9 @@ EFI_STATUS security_policy_install(void) {
+          * to fail, since SECURITY2 was introduced in PI 1.2.1.
+          * Use security2_protocol == NULL as indicator.
+          */
+-        uefi_call_wrapper(BS->LocateProtocol, 3, SECURITY_PROTOCOL2_GUID, NULL, (VOID**) &security2_protocol);
++        uefi_call_wrapper(BS->LocateProtocol, 3, (EFI_GUID*) SECURITY_PROTOCOL2_GUID, NULL, (VOID**) &security2_protocol);
+ 
+-        status = uefi_call_wrapper(BS->LocateProtocol, 3, SECURITY_PROTOCOL_GUID, NULL, (VOID**) &security_protocol);
++        status = uefi_call_wrapper(BS->LocateProtocol, 3, (EFI_GUID*) SECURITY_PROTOCOL_GUID, NULL, (VOID**) &security_protocol);
+          /* This one is mandatory, so there's a serious problem */
+         if (status != EFI_SUCCESS)
+                 return status;
+diff --git a/src/boot/efi/splash.c b/src/boot/efi/splash.c
+index 23627a794..0286a5a90 100644
+--- a/src/boot/efi/splash.c
++++ b/src/boot/efi/splash.c
+@@ -248,7 +248,7 @@ static EFI_STATUS bmp_to_blt(EFI_GRAPHICS_OUTPUT_BLT_PIXEL *buf,
+ 
+ EFI_STATUS graphics_splash(UINT8 *content, UINTN len, const EFI_GRAPHICS_OUTPUT_BLT_PIXEL *background) {
+         EFI_GRAPHICS_OUTPUT_BLT_PIXEL pixel = {};
+-        EFI_GUID GraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
++        static const EFI_GUID GraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+         EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput = NULL;
+         struct bmp_dib *dib;
+         struct bmp_map *map;
+@@ -270,7 +270,7 @@ EFI_STATUS graphics_splash(UINT8 *content, UINTN len, const EFI_GRAPHICS_OUTPUT_
+                 background = &pixel;
+         }
+ 
+-        err = LibLocateProtocol(&GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
++        err = LibLocateProtocol((EFI_GUID*) &GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
+         if (EFI_ERROR(err))
+                 return err;
+ 
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index c0d1d6dad..b78408e1a 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -101,7 +101,7 @@ EFI_STATUS efivar_set_raw(const EFI_GUID *vendor, const CHAR16 *name, const VOID
+         assert(buf || size == 0);
+ 
+         flags |= EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
+-        return uefi_call_wrapper(RT->SetVariable, 5, (CHAR16*) name, (EFI_GUID *)vendor, flags, size, (VOID*) buf);
++        return uefi_call_wrapper(RT->SetVariable, 5, (CHAR16*) name, (EFI_GUID *) vendor, flags, size, (VOID*) buf);
+ }
+ 
+ EFI_STATUS efivar_set(const EFI_GUID *vendor, const CHAR16 *name, const CHAR16 *value, UINT32 flags) {
+-- 
+2.34.1
+

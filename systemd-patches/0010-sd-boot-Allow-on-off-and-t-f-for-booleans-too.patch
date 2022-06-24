@@ -1,0 +1,54 @@
+From 579f04bdc9a1708f7d7b655653b15f977c8c5a87 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Wed, 11 Aug 2021 14:59:46 +0200
+Subject: [PATCH 10/73] sd-boot: Allow on/off and t/f for booleans too
+
+---
+ man/loader.conf.xml | 4 ++--
+ src/boot/efi/util.c | 8 ++++++--
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/man/loader.conf.xml b/man/loader.conf.xml
+index 29315ceb1..4c0355800 100644
+--- a/man/loader.conf.xml
++++ b/man/loader.conf.xml
+@@ -41,8 +41,8 @@
+     a comment line. Empty and comment lines are ignored.</para>
+ 
+     <para>Boolean arguments may be written as
+-    <literal>yes</literal>/<literal>y</literal>/<literal>true</literal>/<literal>1</literal> or
+-    <literal>no</literal>/<literal>n</literal>/<literal>false</literal>/<literal>0</literal>.
++    <literal>yes</literal>/<literal>y</literal>/<literal>true</literal>/<literal>t</literal>/<literal>on</literal>/<literal>1</literal> or
++    <literal>no</literal>/<literal>n</literal>/<literal>false</literal>/<literal>f</literal>/<literal>off</literal>/<literal>0</literal>.
+     </para>
+   </refsect1>
+ 
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index b2977546a..0c28cab24 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -75,7 +75,9 @@ EFI_STATUS parse_boolean(const CHAR8 *v, BOOLEAN *b) {
+         if (strcmpa(v, (CHAR8 *)"1") == 0 ||
+             strcmpa(v, (CHAR8 *)"yes") == 0 ||
+             strcmpa(v, (CHAR8 *)"y") == 0 ||
+-            strcmpa(v, (CHAR8 *)"true") == 0) {
++            strcmpa(v, (CHAR8 *)"true") == 0 ||
++            strcmpa(v, (CHAR8 *)"t") == 0 ||
++            strcmpa(v, (CHAR8 *)"on") == 0) {
+                 *b = TRUE;
+                 return EFI_SUCCESS;
+         }
+@@ -83,7 +85,9 @@ EFI_STATUS parse_boolean(const CHAR8 *v, BOOLEAN *b) {
+         if (strcmpa(v, (CHAR8 *)"0") == 0 ||
+             strcmpa(v, (CHAR8 *)"no") == 0 ||
+             strcmpa(v, (CHAR8 *)"n") == 0 ||
+-            strcmpa(v, (CHAR8 *)"false") == 0) {
++            strcmpa(v, (CHAR8 *)"false") == 0 ||
++            strcmpa(v, (CHAR8 *)"f") == 0 ||
++            strcmpa(v, (CHAR8 *)"off") == 0) {
+                 *b = FALSE;
+                 return EFI_SUCCESS;
+         }
+-- 
+2.34.1
+

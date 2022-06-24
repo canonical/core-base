@@ -1,0 +1,14 @@
+[Unit]
+DefaultDependencies=no
+Before=initrd-fs.target
+
+After=sysroot.mount
+Wants=sysroot.mount
+
+After=run-mnt-kernel.mount
+After=snap-initramfs-mounts.service
+
+[Mount]
+What=/run/mnt/kernel/modules
+Type=none
+Options=bind

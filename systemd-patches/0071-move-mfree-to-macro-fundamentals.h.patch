@@ -1,0 +1,52 @@
+From d6c8cbeed917292958f91e2c23d8471e156ff1fd Mon Sep 17 00:00:00 2001
+From: Max Resch <resch.max@gmail.com>
+Date: Tue, 12 Oct 2021 01:26:00 +0200
+Subject: [PATCH 71/73] move mfree to macro-fundamentals.h
+
+---
+ src/basic/alloc-util.h              | 6 ------
+ src/fundamental/macro-fundamental.h | 7 +++++++
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/src/basic/alloc-util.h b/src/basic/alloc-util.h
+index fc3531344..f245fe8c6 100644
+--- a/src/basic/alloc-util.h
++++ b/src/basic/alloc-util.h
+@@ -44,12 +44,6 @@ typedef void (*free_func_t)(void *p);
+ 
+ #define malloc0(n) (calloc(1, (n) ?: 1))
+ 
+-#define mfree(memory)                           \
+-        ({                                      \
+-                free(memory);                   \
+-                (typeof(memory)) NULL;          \
+-        })
+-
+ #define free_and_replace(a, b)                  \
+         ({                                      \
+                 free(a);                        \
+diff --git a/src/fundamental/macro-fundamental.h b/src/fundamental/macro-fundamental.h
+index e76df3424..c965f2dd7 100644
+--- a/src/fundamental/macro-fundamental.h
++++ b/src/fundamental/macro-fundamental.h
+@@ -61,6 +61,7 @@
+         #endif
+ 
+         #define memcpy(a, b, c) CopyMem((a), (b), (c))
++        #define free(a) FreePool(a)
+ #endif
+ 
+ #if defined(static_assert)
+@@ -249,3 +250,9 @@
+  * @x: a string literal.
+  */
+ #define STRLEN(x) (sizeof(""x"") - sizeof(typeof(x[0])))
++
++#define mfree(memory)                           \
++        ({                                      \
++                free(memory);                   \
++                (typeof(memory)) NULL;          \
++        })
+-- 
+2.34.1
+

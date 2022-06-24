@@ -1,0 +1,90 @@
+From 0d28ec1e1da57e96f3e5b2e3b426db6587971e3f Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Wed, 11 Aug 2021 14:59:46 +0200
+Subject: [PATCH 06/73] sd-boot: Add assert implementation
+
+There is a ASSERT() macro from gnu-efi, but that does not show any
+output to ConOut. Having to do some additional setup just to get
+some debug output is tedious and outright difficult on real hardware.
+---
+ src/boot/efi/assert.c               | 15 +++++++++++++++
+ src/boot/efi/meson.build            |  9 +++++++--
+ src/fundamental/macro-fundamental.h |  9 ++++++++-
+ 3 files changed, 30 insertions(+), 3 deletions(-)
+ create mode 100644 src/boot/efi/assert.c
+
+diff --git a/src/boot/efi/assert.c b/src/boot/efi/assert.c
+new file mode 100644
+index 000000000..350b2b016
+--- /dev/null
++++ b/src/boot/efi/assert.c
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++
++#ifndef NDEBUG
++
++#include <efi.h>
++#include <efilib.h>
++#include "util.h"
++
++void efi_assert(const char *expr, const char *file, unsigned line, const char *function) {
++      log_error_stall(L"systemd-boot assertion '%a' failed at %a:%u, function %a(). Halting.", expr, file, line, function);
++      for (;;)
++            uefi_call_wrapper(BS->Stall, 1, 60 * 1000 * 1000);
++}
++
++#endif
+diff --git a/src/boot/efi/meson.build b/src/boot/efi/meson.build
+index 62d826bec..16eeb4ebb 100644
+--- a/src/boot/efi/meson.build
++++ b/src/boot/efi/meson.build
+@@ -17,6 +17,7 @@ efi_headers = files('''
+ '''.split())
+ 
+ common_sources = '''
++        assert.c
+         disk.c
+         graphics.c
+         measure.c
+@@ -219,12 +220,16 @@ if have_gnu_efi
+                 compile_args += ['-Werror']
+         endif
+         if get_option('buildtype') == 'debug'
+-                compile_args += ['-ggdb', '-O0']
++                compile_args += ['-ggdb', '-O0', '-DEFI_DEBUG']
+         elif get_option('buildtype') == 'debugoptimized'
+-                compile_args += ['-ggdb', '-Og']
++                compile_args += ['-ggdb', '-Og', '-DEFI_DEBUG']
+         else
+                 compile_args += ['-O2']
+         endif
++        if get_option('b_ndebug') == 'true' or (
++           get_option('b_ndebug') == 'if-release' and ['plain', 'release'].contains(get_option('buildtype')))
++                compile_args += ['-DNDEBUG']
++        endif
+ 
+         efi_ldflags = ['-T', efi_lds,
+                        '-shared',
+diff --git a/src/fundamental/macro-fundamental.h b/src/fundamental/macro-fundamental.h
+index 533ac1b7e..8fe79cc02 100644
+--- a/src/fundamental/macro-fundamental.h
++++ b/src/fundamental/macro-fundamental.h
+@@ -50,7 +50,14 @@
+ #define CONCATENATE(x, y) XCONCATENATE(x, y)
+ 
+ #ifdef SD_BOOT
+-#define assert(expr) do {} while (false)
++        #ifdef NDEBUG
++                #define assert(expr)
++                #define assert_not_reached() __builtin_unreachable()
++        #else
++                void efi_assert(const char *expr, const char *file, unsigned line, const char *function) _noreturn_;
++                #define assert(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); })
++                #define assert_not_reached() efi_assert("Code should not be reached", __FILE__, __LINE__, __PRETTY_FUNCTION__)
++        #endif
+ #endif
+ 
+ #if defined(static_assert)
+-- 
+2.34.1
+

@@ -1,0 +1,45 @@
+From 1bd6f2ed890c46e0d9967d8e9e36356916393086 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 11 Oct 2021 13:29:57 +0200
+Subject: [PATCH 59/73] stub: also move magic string in stub into .sdmagic PE
+ section
+
+We already did that for sd-boot, hence do it for sd-stub the same way.
+
+Also, move the __attribute__ stuff to the beginning of the statement,
+rather than the middle. Mostly just because we usually put it first for
+implementations for identifiers (for prototypes we put it last).
+---
+ src/boot/efi/boot.c | 2 +-
+ src/boot/efi/stub.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index e1d8c935c..30e9516dd 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -25,7 +25,7 @@
+ #define TEXT_ATTR_SWAP(c) EFI_TEXT_ATTR(((c) & 0b11110000) >> 4, (c) & 0b1111)
+ 
+ /* magic string to find in the binary image */
+-static const char _used_ _section_(".sdmagic") magic[] = "#### LoaderInfo: systemd-boot " GIT_VERSION " ####";
++_used_ _section_(".sdmagic") static const char magic[] = "#### LoaderInfo: systemd-boot " GIT_VERSION " ####";
+ 
+ enum loader_type {
+         LOADER_UNDEFINED,
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index 555d08fb8..636baa442 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -14,7 +14,7 @@
+ #include "util.h"
+ 
+ /* magic string to find in the binary image */
+-static const char __attribute__((used)) magic[] = "#### LoaderInfo: systemd-stub " GIT_VERSION " ####";
++_used_ _section_(".sdmagic") static const char magic[] = "#### LoaderInfo: systemd-stub " GIT_VERSION " ####";
+ 
+ static EFI_STATUS combine_initrd(
+                 EFI_PHYSICAL_ADDRESS initrd_base, UINTN initrd_size,
+-- 
+2.34.1
+

@@ -1,0 +1,9 @@
+#!/bin/sh
+if ! grep -q 'snapd_recovery_mode=install' /proc/cmdline
+then
+    exit 0
+fi
+
+mkdir -p /run/systemd/journald.conf.d
+echo [Journal] >> /run/systemd/journald.conf.d/core-override.conf
+echo ForwardToConsole=true >> /run/systemd/journald.conf.d/core-override.conf

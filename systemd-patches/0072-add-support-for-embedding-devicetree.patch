@@ -1,0 +1,144 @@
+From 48fc0d3a17e2fb6be969f12e6996a035228f5caf Mon Sep 17 00:00:00 2001
+From: Max Resch <resch.max@gmail.com>
+Date: Fri, 15 Oct 2021 14:18:57 +0200
+Subject: [PATCH 72/73] add support for embedding devicetree
+
+---
+ src/boot/efi/devicetree.c | 25 +++++++++++++++++++++++++
+ src/boot/efi/devicetree.h |  2 ++
+ src/boot/efi/meson.build  |  2 +-
+ src/boot/efi/stub.c       | 19 +++++++++++++++++--
+ 4 files changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/src/boot/efi/devicetree.c b/src/boot/efi/devicetree.c
+index fd4b9c406..d8a279e82 100644
+--- a/src/boot/efi/devicetree.c
++++ b/src/boot/efi/devicetree.c
+@@ -109,6 +109,31 @@ EFI_STATUS devicetree_install(struct devicetree_state *state,
+         return uefi_call_wrapper(BS->InstallConfigurationTable, 2, &EfiDtbTableGuid, PHYSICAL_ADDRESS_TO_POINTER(state->addr));
+ }
+ 
++EFI_STATUS devicetree_install_from_memory(struct devicetree_state *state,
++                const VOID *dtb_buffer, UINTN dtb_length) {
++
++        EFI_STATUS err;
++
++        assert(state);
++        assert(dtb_buffer && dtb_length > 0);
++
++        err = LibGetSystemConfigurationTable(&EfiDtbTableGuid, &state->orig);
++        if (EFI_ERROR(err))
++                return EFI_UNSUPPORTED;
++
++        err = devicetree_allocate(state, dtb_length);
++        if (EFI_ERROR(err))
++                return err;
++
++        CopyMem(PHYSICAL_ADDRESS_TO_POINTER(state->addr), dtb_buffer, dtb_length);
++
++        err = devicetree_fixup(state, dtb_length);
++        if (EFI_ERROR(err))
++                return err;
++
++        return uefi_call_wrapper(BS->InstallConfigurationTable, 2, &EfiDtbTableGuid, PHYSICAL_ADDRESS_TO_POINTER(state->addr));
++}
++
+ void devicetree_cleanup(struct devicetree_state *state) {
+         EFI_STATUS err;
+ 
+diff --git a/src/boot/efi/devicetree.h b/src/boot/efi/devicetree.h
+index 2839cb681..25f93f97f 100644
+--- a/src/boot/efi/devicetree.h
++++ b/src/boot/efi/devicetree.h
+@@ -8,4 +8,6 @@ struct devicetree_state {
+ };
+ 
+ EFI_STATUS devicetree_install(struct devicetree_state *state, EFI_FILE_HANDLE root_dir, CHAR16 *name);
++EFI_STATUS devicetree_install_from_memory(
++                struct devicetree_state *state, const VOID *dtb_buffer, UINTN dtb_length);
+ void devicetree_cleanup(struct devicetree_state *state);
+diff --git a/src/boot/efi/meson.build b/src/boot/efi/meson.build
+index c99150536..c45b86f17 100644
+--- a/src/boot/efi/meson.build
++++ b/src/boot/efi/meson.build
+@@ -20,6 +20,7 @@ efi_headers = files('''
+ 
+ common_sources = '''
+         assert.c
++        devicetree.c
+         disk.c
+         graphics.c
+         measure.c
+@@ -31,7 +32,6 @@ common_sources = '''
+ systemd_boot_sources = '''
+         boot.c
+         console.c
+-        devicetree.c
+         drivers.c
+         random-seed.c
+         shim.c
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index f8735e556..1bda47b94 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -4,6 +4,7 @@
+ #include <efilib.h>
+ 
+ #include "cpio.h"
++#include "devicetree.h"
+ #include "disk.h"
+ #include "graphics.h"
+ #include "linux.h"
+@@ -141,6 +142,7 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                 SECTION_LINUX,
+                 SECTION_INITRD,
+                 SECTION_SPLASH,
++                SECTION_DTB,
+                 _SECTION_MAX,
+         };
+ 
+@@ -149,12 +151,15 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                 [SECTION_LINUX]   = (const CHAR8*) ".linux",
+                 [SECTION_INITRD]  = (const CHAR8*) ".initrd",
+                 [SECTION_SPLASH]  = (const CHAR8*) ".splash",
++                [SECTION_DTB]     = (const CHAR8*) ".dtb",
+                 NULL,
+         };
+ 
+-        UINTN cmdline_len = 0, linux_size, initrd_size, credential_initrd_size = 0, sysext_initrd_size = 0;
++        UINTN cmdline_len = 0, linux_size, initrd_size, dt_size;
++        UINTN credential_initrd_size = 0, sysext_initrd_size = 0;
+         _cleanup_freepool_ VOID *credential_initrd = NULL, *sysext_initrd = NULL;
+-        EFI_PHYSICAL_ADDRESS linux_base, initrd_base;
++        EFI_PHYSICAL_ADDRESS linux_base, initrd_base, dt_base;
++        _cleanup_(devicetree_cleanup) struct devicetree_state dt_state = {};
+         EFI_LOADED_IMAGE *loaded_image;
+         UINTN addrs[_SECTION_MAX] = {};
+         UINTN szs[_SECTION_MAX] = {};
+@@ -228,6 +233,9 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+         initrd_size = szs[SECTION_INITRD];
+         initrd_base = initrd_size != 0 ? POINTER_TO_PHYSICAL_ADDRESS(loaded_image->ImageBase) + addrs[SECTION_INITRD] : 0;
+ 
++        dt_size = szs[SECTION_DTB];
++        dt_base = dt_size != 0 ? POINTER_TO_PHYSICAL_ADDRESS(loaded_image->ImageBase) + addrs[SECTION_DTB] : 0;
++
+         if (credential_initrd || sysext_initrd) {
+                 /* If we have generated initrds dynamically, let's combine them with the built-in initrd. */
+                 err = combine_initrd(
+@@ -250,6 +258,13 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                 }
+         }
+ 
++        if (dt_size > 0) {
++                err = devicetree_install_from_memory(
++                                &dt_state, PHYSICAL_ADDRESS_TO_POINTER(dt_base), dt_size);
++                if (EFI_ERROR(err))
++                        log_error_stall(L"Error loading embedded devicetree: %r", err);
++        }
++
+         err = linux_exec(image, cmdline, cmdline_len,
+                          PHYSICAL_ADDRESS_TO_POINTER(linux_base), linux_size,
+                          PHYSICAL_ADDRESS_TO_POINTER(initrd_base), initrd_size);
+-- 
+2.34.1
+

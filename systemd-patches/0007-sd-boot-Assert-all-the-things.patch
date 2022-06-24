@@ -1,0 +1,906 @@
+From 1c938c5ee91a059dbbb2441c61218764471cc8d4 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Wed, 11 Aug 2021 14:59:46 +0200
+Subject: [PATCH 07/73] sd-boot: Assert all the things!
+
+---
+ src/boot/efi/boot.c        | 101 +++++++++++++++++++++++++++++++++++++
+ src/boot/efi/console.c     |   6 +++
+ src/boot/efi/crc32.c       |   5 ++
+ src/boot/efi/disk.c        |   2 +
+ src/boot/efi/linux.c       |   5 ++
+ src/boot/efi/measure.c     |   9 ++++
+ src/boot/efi/pe.c          |   6 +++
+ src/boot/efi/random-seed.c |  30 ++++++++---
+ src/boot/efi/sha256.c      |  13 +++++
+ src/boot/efi/shim.c        |   7 +++
+ src/boot/efi/splash.c      |  14 +++++
+ src/boot/efi/util.c        |  56 +++++++++++++++++++-
+ 12 files changed, 247 insertions(+), 7 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index b4f3b9605..8a67b665d 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -72,6 +72,9 @@ typedef struct {
+ } Config;
+ 
+ static VOID cursor_left(UINTN *cursor, UINTN *first) {
++        assert(cursor);
++        assert(first);
++
+         if ((*cursor) > 0)
+                 (*cursor)--;
+         else if ((*first) > 0)
+@@ -84,6 +87,9 @@ static VOID cursor_right(
+                 UINTN x_max,
+                 UINTN len) {
+ 
++        assert(cursor);
++        assert(first);
++
+         if ((*cursor)+1 < x_max)
+                 (*cursor)++;
+         else if ((*first) + (*cursor) < len)
+@@ -100,6 +106,8 @@ static BOOLEAN line_edit(
+         UINTN size, len, first, cursor, clear;
+         BOOLEAN exit, enter;
+ 
++        assert(line_out);
++
+         if (!line_in)
+                 line_in = L"";
+         size = StrLen(line_in) + 1024;
+@@ -332,6 +340,8 @@ static BOOLEAN line_edit(
+ }
+ 
+ static UINTN entry_lookup_key(Config *config, UINTN start, CHAR16 key) {
++        assert(config);
++
+         if (key == 0)
+                 return -1;
+ 
+@@ -362,6 +372,9 @@ static VOID print_status(Config *config, CHAR16 *loaded_image_path) {
+         _cleanup_freepool_ CHAR16 *partstr = NULL, *defaultstr = NULL;
+         UINTN x, y;
+ 
++        assert(config);
++        assert(loaded_image_path);
++
+         uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
+         uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+ 
+@@ -493,6 +506,10 @@ static BOOLEAN menu_run(
+                 ConfigEntry **chosen_entry,
+                 CHAR16 *loaded_image_path) {
+ 
++        assert(config);
++        assert(chosen_entry);
++        assert(loaded_image_path);
++
+         EFI_STATUS err;
+         UINTN visible_max;
+         UINTN idx_highlight;
+@@ -868,6 +885,9 @@ static BOOLEAN menu_run(
+ }
+ 
+ static VOID config_add_entry(Config *config, ConfigEntry *entry) {
++        assert(config);
++        assert(entry);
++
+         if ((config->entry_count & 15) == 0) {
+                 UINTN i;
+ 
+@@ -908,6 +928,12 @@ static CHAR8 *line_get_key_value(
+         CHAR8 *line, *value;
+         UINTN linelen;
+ 
++        assert(content);
++        assert(sep);
++        assert(pos);
++        assert(key_ret);
++        assert(value_ret);
++
+ skip:
+         line = content + *pos;
+         if (*line == '\0')
+@@ -970,6 +996,9 @@ static VOID config_defaults_load_from_file(Config *config, CHAR8 *content) {
+         UINTN pos = 0;
+         CHAR8 *key, *value;
+ 
++        assert(config);
++        assert(content);
++
+         while ((line = line_get_key_value(content, (CHAR8 *)" \t", &pos, &key, &value))) {
+                 if (strcmpa((CHAR8 *)"timeout", key) == 0) {
+                         _cleanup_freepool_ CHAR16 *s = NULL;
+@@ -1063,6 +1092,10 @@ static VOID config_entry_parse_tries(
+         UINTN left = UINTN_MAX, done = UINTN_MAX, factor = 1, i, next_left, next_done;
+         _cleanup_freepool_ CHAR16 *prefix = NULL;
+ 
++        assert(entry);
++        assert(path);
++        assert(file);
++
+         /*
+          * Parses a suffix of two counters (one going down, one going up) in the form "+LEFT-DONE" from the end of the
+          * filename (but before the .efi/.conf suffix), where the "-DONE" part is optional and may be left out (in
+@@ -1180,6 +1213,9 @@ static VOID config_entry_bump_counters(
+         UINTN file_info_size, a, b;
+         EFI_STATUS r;
+ 
++        assert(entry);
++        assert(root_dir);
++
+         if (entry->tries_left == UINTN_MAX)
+                 return;
+ 
+@@ -1253,6 +1289,14 @@ static VOID config_entry_add_from_file(
+         EFI_FILE_HANDLE handle;
+         _cleanup_freepool_ CHAR16 *initrd = NULL;
+ 
++        assert(config);
++        assert(device);
++        assert(root_dir);
++        assert(path);
++        assert(file);
++        assert(content);
++        assert(loaded_image_path);
++
+         entry = AllocatePool(sizeof(ConfigEntry));
+ 
+         *entry = (ConfigEntry) {
+@@ -1381,6 +1425,8 @@ static VOID config_load_defaults(Config *config, EFI_FILE *root_dir) {
+         UINTN sec;
+         EFI_STATUS err;
+ 
++        assert(root_dir);
++
+         *config = (Config) {
+                 .editor = TRUE,
+                 .auto_entries = TRUE,
+@@ -1418,6 +1464,11 @@ static VOID config_load_entries(
+         EFI_FILE_HANDLE entries_dir;
+         EFI_STATUS err;
+ 
++        assert(config);
++        assert(device);
++        assert(root_dir);
++        assert(loaded_image_path);
++
+         err = uefi_call_wrapper(root_dir->Open, 5, root_dir, &entries_dir, (CHAR16*) L"\\loader\\entries", EFI_FILE_MODE_READ, 0ULL);
+         if (!EFI_ERROR(err)) {
+                 for (;;) {
+@@ -1453,6 +1504,9 @@ static VOID config_load_entries(
+ static INTN config_entry_compare(ConfigEntry *a, ConfigEntry *b) {
+         INTN r;
+ 
++        assert(a);
++        assert(b);
++
+         /* Order entries that have no tries left to the beginning of the list */
+         if (a->tries_left != 0 && b->tries_left == 0)
+                 return 1;
+@@ -1483,6 +1537,8 @@ static INTN config_entry_compare(ConfigEntry *a, ConfigEntry *b) {
+ }
+ 
+ static VOID config_sort_entries(Config *config) {
++        assert(config);
++
+         for (UINTN i = 1; i < config->entry_count; i++) {
+                 BOOLEAN more;
+ 
+@@ -1504,6 +1560,9 @@ static VOID config_sort_entries(Config *config) {
+ }
+ 
+ static INTN config_entry_find(Config *config, CHAR16 *id) {
++        assert(config);
++        assert(id);
++
+         for (UINTN i = 0; i < config->entry_count; i++)
+                 if (StrCmp(config->entries[i]->id, id) == 0)
+                         return (INTN) i;
+@@ -1516,6 +1575,8 @@ static VOID config_default_entry_select(Config *config) {
+         EFI_STATUS err;
+         INTN i;
+ 
++        assert(config);
++
+         /*
+          * The EFI variable to specify a boot entry for the next, and only the
+          * next reboot. The variable is always cleared directly after it is read.
+@@ -1586,6 +1647,8 @@ static VOID config_default_entry_select(Config *config) {
+ static BOOLEAN find_nonunique(ConfigEntry **entries, UINTN entry_count) {
+         BOOLEAN non_unique = FALSE;
+ 
++        assert(entries);
++
+         for (UINTN i = 0; i < entry_count; i++)
+                 entries[i]->non_unique = FALSE;
+ 
+@@ -1604,6 +1667,8 @@ static BOOLEAN find_nonunique(ConfigEntry **entries, UINTN entry_count) {
+ 
+ /* generate a unique title, avoiding non-distinguishable menu entries */
+ static VOID config_title_generate(Config *config) {
++        assert(config);
++
+         /* set title */
+         for (UINTN i = 0; i < config->entry_count; i++) {
+                 CHAR16 *title;
+@@ -1676,6 +1741,11 @@ static BOOLEAN config_entry_add_call(
+ 
+         ConfigEntry *entry;
+ 
++        assert(config);
++        assert(id);
++        assert(title);
++        assert(call);
++
+         entry = AllocatePool(sizeof(ConfigEntry));
+         *entry = (ConfigEntry) {
+                 .id = StrDuplicate(id),
+@@ -1702,6 +1772,12 @@ static ConfigEntry *config_entry_add_loader(
+ 
+         ConfigEntry *entry;
+ 
++        assert(config);
++        assert(device);
++        assert(id);
++        assert(title);
++        assert(loader);
++
+         entry = AllocatePool(sizeof(ConfigEntry));
+         *entry = (ConfigEntry) {
+                 .type = type,
+@@ -1735,6 +1811,13 @@ static BOOLEAN config_entry_add_loader_auto(
+         ConfigEntry *entry;
+         EFI_STATUS err;
+ 
++        assert(config);
++        assert(device);
++        assert(root_dir);
++        assert(id);
++        assert(title);
++        assert(loader);
++
+         if (!config->auto_entries)
+                 return FALSE;
+ 
+@@ -1775,6 +1858,8 @@ static VOID config_entry_add_osx(Config *config) {
+         UINTN handle_count = 0;
+         _cleanup_freepool_ EFI_HANDLE *handles = NULL;
+ 
++        assert(config);
++
+         if (!config->auto_entries)
+                 return;
+ 
+@@ -1805,6 +1890,10 @@ static VOID config_entry_add_linux(
+         EFI_STATUS err;
+         ConfigEntry *entry;
+ 
++        assert(config);
++        assert(device);
++        assert(root_dir);
++
+         err = uefi_call_wrapper(root_dir->Open, 5, root_dir, &linux_dir, (CHAR16*) L"\\EFI\\Linux", EFI_FILE_MODE_READ, 0ULL);
+         if (EFI_ERROR(err))
+                 return;
+@@ -1939,6 +2028,9 @@ static EFI_DEVICE_PATH *path_parent(EFI_DEVICE_PATH *path, EFI_DEVICE_PATH *node
+         EFI_DEVICE_PATH *parent;
+         UINTN len;
+ 
++        assert(path);
++        assert(node);
++
+         len = (UINT8*) NextDevicePathNode(node) - (UINT8*) path;
+         parent = (EFI_DEVICE_PATH*) AllocatePool(len + sizeof(EFI_DEVICE_PATH));
+         CopyMem(parent, path, len);
+@@ -1960,6 +2052,9 @@ static VOID config_load_xbootldr(
+         EFI_FILE *root_dir;
+         EFI_STATUS r;
+ 
++        assert(config);
++        assert(device);
++
+         partition_path = DevicePathFromHandle(device);
+         if (!partition_path)
+                 return;
+@@ -2146,6 +2241,9 @@ static EFI_STATUS image_start(
+         CHAR16 *options;
+         EFI_STATUS err;
+ 
++        assert(config);
++        assert(entry);
++
+         path = FileDevicePath(entry->device, entry->loader);
+         if (!path)
+                 return log_error_status_stall(EFI_INVALID_PARAMETER, L"Error getting device path.");
+@@ -2208,6 +2306,7 @@ static EFI_STATUS reboot_into_firmware(VOID) {
+ }
+ 
+ static VOID config_free(Config *config) {
++        assert(config);
+         for (UINTN i = 0; i < config->entry_count; i++)
+                 config_entry_free(config->entries[i]);
+         FreePool(config->entries);
+@@ -2221,6 +2320,8 @@ static VOID config_write_entries_to_variable(Config *config) {
+         UINTN sz = 0;
+         CHAR16 *p;
+ 
++        assert(config);
++
+         for (UINTN i = 0; i < config->entry_count; i++)
+                 sz += StrLen(config->entries[i]->id) + 1;
+ 
+diff --git a/src/boot/efi/console.c b/src/boot/efi/console.c
+index 369c549da..3f405113b 100644
+--- a/src/boot/efi/console.c
++++ b/src/boot/efi/console.c
+@@ -43,6 +43,8 @@ EFI_STATUS console_key_read(UINT64 *key, UINT64 timeout_usec) {
+         EFI_EVENT events[3] = { ST->ConIn->WaitForKey };
+         UINTN n_events = 1;
+ 
++        assert(key);
++
+         if (!checked) {
+                 err = LibLocateProtocol(EFI_SIMPLE_TEXT_INPUT_EX_GUID, (VOID **)&TextInputEx);
+                 if (EFI_ERROR(err) ||
+@@ -152,6 +154,8 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+         EFI_STATUS err;
+         BOOLEAN keep = FALSE;
+ 
++        assert(mode);
++
+         err = LibLocateProtocol(&GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
+         if (!EFI_ERROR(err) && GraphicsOutput->Mode && GraphicsOutput->Mode->Info) {
+                 Info = GraphicsOutput->Mode->Info;
+@@ -200,6 +204,8 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+ }
+ 
+ EFI_STATUS console_set_mode(UINTN *mode, enum console_mode_change_type how) {
++        assert(mode);
++
+         if (how == CONSOLE_MODE_AUTO)
+                 return mode_auto(mode);
+ 
+diff --git a/src/boot/efi/crc32.c b/src/boot/efi/crc32.c
+index c9e5501ff..5130ae73d 100644
+--- a/src/boot/efi/crc32.c
++++ b/src/boot/efi/crc32.c
+@@ -42,6 +42,7 @@
+  */
+ 
+ #include "crc32.h"
++#include "macro-fundamental.h"
+ 
+ static const UINT32 crc32_tab[] = {
+         0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
+@@ -111,6 +112,8 @@ UINT32 crc32(UINT32 seed, const VOID *buf, UINTN len) {
+         const UINT8 *p = buf;
+         UINT32 crc = seed;
+ 
++        assert(buf);
++
+         while (len > 0) {
+                 crc = crc32_add_char(crc, *p++);
+                 len--;
+@@ -129,6 +132,8 @@ UINT32 crc32_exclude_offset(
+         const UINT8 *p = buf;
+         UINT32 crc = seed;
+ 
++        assert(buf);
++
+         for (UINTN i = 0; i < len; i++) {
+                 UINT8 x = *p++;
+ 
+diff --git a/src/boot/efi/disk.c b/src/boot/efi/disk.c
+index 122f08dd5..196dc52be 100644
+--- a/src/boot/efi/disk.c
++++ b/src/boot/efi/disk.c
+@@ -9,6 +9,8 @@
+ EFI_STATUS disk_get_part_uuid(EFI_HANDLE *handle, CHAR16 uuid[static 37]) {
+         EFI_DEVICE_PATH *device_path;
+ 
++        assert(handle);
++
+         /* export the device path this image is started from */
+         device_path = DevicePathFromHandle(handle);
+         if (device_path) {
+diff --git a/src/boot/efi/linux.c b/src/boot/efi/linux.c
+index b5d612049..529325fef 100644
+--- a/src/boot/efi/linux.c
++++ b/src/boot/efi/linux.c
+@@ -17,6 +17,8 @@ static VOID linux_efi_handover(EFI_HANDLE image, struct boot_params *params) {
+         handover_f handover;
+         UINTN start = (UINTN)params->hdr.code32_start;
+ 
++        assert(params);
++
+ #ifdef __x86_64__
+         asm volatile ("cli");
+         start += 512;
+@@ -35,6 +37,9 @@ EFI_STATUS linux_exec(EFI_HANDLE image,
+         EFI_PHYSICAL_ADDRESS addr;
+         EFI_STATUS err;
+ 
++        assert(image);
++        assert(cmdline);
++
+         image_params = (struct boot_params *) linux_addr;
+ 
+         if (image_params->hdr.boot_flag != 0xAA55 ||
+diff --git a/src/boot/efi/measure.c b/src/boot/efi/measure.c
+index c272d0855..4a8a2c7cc 100644
+--- a/src/boot/efi/measure.c
++++ b/src/boot/efi/measure.c
+@@ -5,6 +5,7 @@
+ #include <efi.h>
+ #include <efilib.h>
+ 
++#include "macro-fundamental.h"
+ #include "measure.h"
+ 
+ #define EFI_TCG_GUID \
+@@ -184,6 +185,9 @@ static EFI_STATUS tpm1_measure_to_pcr_and_event_log(const EFI_TCG *tcg, UINT32 p
+         EFI_PHYSICAL_ADDRESS event_log_last;
+         UINTN desc_len;
+ 
++        assert(tcg);
++        assert(description);
++
+         desc_len = (StrLen(description) + 1) * sizeof(CHAR16);
+ 
+         tcg_event = AllocateZeroPool(desc_len + sizeof(TCG_PCR_EVENT));
+@@ -215,6 +219,9 @@ static EFI_STATUS tpm2_measure_to_pcr_and_event_log(const EFI_TCG2 *tcg, UINT32
+         EFI_TCG2_EVENT *tcg_event;
+         UINTN desc_len;
+ 
++        assert(tcg);
++        assert(description);
++
+         desc_len = StrLen(description) * sizeof(CHAR16);
+ 
+         tcg_event = AllocateZeroPool(sizeof(*tcg_event) - sizeof(tcg_event->Event) + desc_len + 1);
+@@ -302,6 +309,8 @@ EFI_STATUS tpm_log_event(UINT32 pcrindex, const EFI_PHYSICAL_ADDRESS buffer, UIN
+         EFI_TCG *tpm1;
+         EFI_TCG2 *tpm2;
+ 
++        assert(description);
++
+         tpm2 = tcg2_interface_check();
+         if (tpm2)
+                 return tpm2_measure_to_pcr_and_event_log(tpm2, pcrindex, buffer, buffer_size, description);
+diff --git a/src/boot/efi/pe.c b/src/boot/efi/pe.c
+index e65701734..5c20acc9f 100644
+--- a/src/boot/efi/pe.c
++++ b/src/boot/efi/pe.c
+@@ -66,6 +66,9 @@ EFI_STATUS pe_memory_locate_sections(CHAR8 *base, CHAR8 **sections, UINTN *addrs
+         struct PeHeader *pe;
+         UINTN offset;
+ 
++        assert(base);
++        assert(sections);
++
+         dos = (struct DosFileHeader *)base;
+ 
+         if (CompareMem(dos->Magic, "MZ", 2) != 0)
+@@ -118,6 +121,9 @@ EFI_STATUS pe_file_locate_sections(EFI_FILE *dir, CHAR16 *path, CHAR8 **sections
+         EFI_STATUS err;
+         _cleanup_freepool_ CHAR8 *header = NULL;
+ 
++        assert(dir);
++        assert(path);
++
+         err = uefi_call_wrapper(dir->Open, 5, dir, &handle, path, EFI_FILE_MODE_READ, 0ULL);
+         if (EFI_ERROR(err))
+                 return err;
+diff --git a/src/boot/efi/random-seed.c b/src/boot/efi/random-seed.c
+index 939daf3e4..55348a64e 100644
+--- a/src/boot/efi/random-seed.c
++++ b/src/boot/efi/random-seed.c
+@@ -22,6 +22,8 @@ static EFI_STATUS acquire_rng(UINTN size, VOID **ret) {
+         EFI_RNG_PROTOCOL *rng;
+         EFI_STATUS err;
+ 
++        assert(ret);
++
+         /* Try to acquire the specified number of bytes from the UEFI RNG */
+ 
+         err = LibLocateProtocol(EFI_RNG_GUID, (VOID**) &rng);
+@@ -63,6 +65,10 @@ static VOID hash_once(
+ 
+         struct sha256_ctx hash;
+ 
++        assert(old_seed);
++        assert(rng);
++        assert(system_token);
++
+         sha256_init_ctx(&hash);
+         sha256_process_bytes(old_seed, size, &hash);
+         if (rng)
+@@ -85,6 +91,11 @@ static EFI_STATUS hash_many(
+ 
+         _cleanup_freepool_ VOID *output = NULL;
+ 
++        assert(old_seed);
++        assert(rng);
++        assert(system_token);
++        assert(ret);
++
+         /* Hashes the specified parameters in counter mode, generating n hash values, with the counter in the
+          * range counter_start…counter_start+n-1. */
+ 
+@@ -115,6 +126,12 @@ static EFI_STATUS mangle_random_seed(
+         EFI_STATUS err;
+         UINTN n;
+ 
++        assert(old_seed);
++        assert(rng);
++        assert(system_token);
++        assert(ret_new_seed);
++        assert(ret_for_kernel);
++
+         /* This takes the old seed file contents, an (optional) random number acquired from the UEFI RNG, an
+          * (optional) system 'token' installed once by the OS installer in an EFI variable, and hashes them
+          * together in counter mode, generating a new seed (to replace the file on disk) and the seed for the
+@@ -144,6 +161,9 @@ static EFI_STATUS acquire_system_token(VOID **ret, UINTN *ret_size) {
+         EFI_STATUS err;
+         UINTN size;
+ 
++        assert(ret);
++        assert(ret_size);
++
+         err = efivar_get_raw(LOADER_GUID, L"LoaderSystemToken", &data, &size);
+         if (EFI_ERROR(err)) {
+                 if (err != EFI_NOT_FOUND)
+@@ -162,7 +182,7 @@ static EFI_STATUS acquire_system_token(VOID **ret, UINTN *ret_size) {
+ 
+ static VOID validate_sha256(void) {
+ 
+-#ifndef __OPTIMIZE__
++#ifdef EFI_DEBUG
+         /* Let's validate our SHA256 implementation. We stole it from glibc, and converted it to UEFI
+          * style. We better check whether it does the right stuff. We use the simpler test vectors from the
+          * SHA spec. Note that we strip this out in optimization builds. */
+@@ -204,13 +224,9 @@ static VOID validate_sha256(void) {
+                 sha256_process_bytes(array[i].string, strlena((const CHAR8*) array[i].string), &hash);
+                 sha256_finish_ctx(&hash, result);
+ 
+-                if (CompareMem(result, array[i].hash, HASH_VALUE_SIZE) != 0) {
+-                        log_error_stall(L"SHA256 failed validation.");
+-                        return;
+-                }
++                assert(CompareMem(result, array[i].hash, HASH_VALUE_SIZE) == 0);
+         }
+ 
+-        Print(L"SHA256 validated\n");
+ #endif
+ }
+ 
+@@ -221,6 +237,8 @@ EFI_STATUS process_random_seed(EFI_FILE *root_dir, RandomSeedMode mode) {
+         _cleanup_freepool_ EFI_FILE_INFO *info = NULL;
+         EFI_STATUS err;
+ 
++        assert(root_dir);
++
+         validate_sha256();
+ 
+         if (mode == RANDOM_SEED_OFF)
+diff --git a/src/boot/efi/sha256.c b/src/boot/efi/sha256.c
+index 6585fdb9b..5df7e5316 100644
+--- a/src/boot/efi/sha256.c
++++ b/src/boot/efi/sha256.c
+@@ -23,6 +23,7 @@
+ 
+ /* Written by Ulrich Drepper <drepper@redhat.com>, 2007.  */
+ 
++#include "macro-fundamental.h"
+ #include "sha256.h"
+ 
+ #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+@@ -73,6 +74,8 @@ static void sha256_process_block(const void *, UINTN, struct sha256_ctx *);
+ /* Initialize structure containing state of computation.
+    (FIPS 180-2:5.3.2)  */
+ void sha256_init_ctx(struct sha256_ctx *ctx) {
++        assert(ctx);
++
+         ctx->H[0] = 0x6a09e667;
+         ctx->H[1] = 0xbb67ae85;
+         ctx->H[2] = 0x3c6ef372;
+@@ -96,6 +99,9 @@ void *sha256_finish_ctx(struct sha256_ctx *ctx, void *resbuf) {
+         UINT32 bytes = ctx->buflen;
+         UINTN pad;
+ 
++        assert(ctx);
++        assert(resbuf);
++
+         /* Now count remaining bytes.  */
+         ctx->total64 += bytes;
+ 
+@@ -118,6 +124,9 @@ void *sha256_finish_ctx(struct sha256_ctx *ctx, void *resbuf) {
+ }
+ 
+ void sha256_process_bytes(const void *buffer, UINTN len, struct sha256_ctx *ctx) {
++        assert(buffer);
++        assert(ctx);
++
+         /* When we already have some bits in our internal buffer concatenate
+            both inputs first.  */
+ 
+@@ -191,6 +200,10 @@ void sha256_process_bytes(const void *buffer, UINTN len, struct sha256_ctx *ctx)
+ static void sha256_process_block(const void *buffer, UINTN len, struct sha256_ctx *ctx) {
+         const UINT32 *words = buffer;
+         UINTN nwords = len / sizeof (UINT32);
++
++        assert(buffer);
++        assert(ctx);
++
+         UINT32 a = ctx->H[0];
+         UINT32 b = ctx->H[1];
+         UINT32 c = ctx->H[2];
+diff --git a/src/boot/efi/shim.c b/src/boot/efi/shim.c
+index 48602627b..9bcbb3476 100644
+--- a/src/boot/efi/shim.c
++++ b/src/boot/efi/shim.c
+@@ -111,6 +111,10 @@ static EFIAPI EFI_STATUS security2_policy_authentication (const EFI_SECURITY2_PR
+                                                           VOID *file_buffer, UINTN file_size, BOOLEAN boot_policy) {
+         EFI_STATUS status;
+ 
++        assert(this);
++        assert(device_path);
++        assert(file_buffer);
++
+         /* Chain original security policy */
+         status = uefi_call_wrapper(es2fa, 5, this, device_path, file_buffer, file_size, boot_policy);
+ 
+@@ -143,6 +147,9 @@ static EFIAPI EFI_STATUS security_policy_authentication (const EFI_SECURITY_PROT
+         _cleanup_freepool_ CHAR8 *file_buffer = NULL;
+         UINTN file_size;
+ 
++        assert(this);
++        assert(device_path_const);
++
+         if (!device_path_const)
+                 return EFI_INVALID_PARAMETER;
+ 
+diff --git a/src/boot/efi/splash.c b/src/boot/efi/splash.c
+index 5e085ec45..920b44082 100644
+--- a/src/boot/efi/splash.c
++++ b/src/boot/efi/splash.c
+@@ -44,6 +44,11 @@ static EFI_STATUS bmp_parse_header(UINT8 *bmp, UINTN size, struct bmp_dib **ret_
+         struct bmp_map *map;
+         UINTN row_size;
+ 
++        assert(bmp);
++        assert(ret_dib);
++        assert(ret_map);
++        assert(pixmap);
++
+         if (size < sizeof(struct bmp_file) + sizeof(struct bmp_dib))
+                 return EFI_INVALID_PARAMETER;
+ 
+@@ -128,6 +133,8 @@ static EFI_STATUS bmp_parse_header(UINT8 *bmp, UINTN size, struct bmp_dib **ret_
+ static VOID pixel_blend(UINT32 *dst, const UINT32 source) {
+         UINT32 alpha, src, src_rb, src_g, dst_rb, dst_g, rb, g;
+ 
++        assert(dst);
++
+         alpha = (source & 0xff);
+ 
+         /* convert src from RGBA to XRGB */
+@@ -152,6 +159,11 @@ static EFI_STATUS bmp_to_blt(EFI_GRAPHICS_OUTPUT_BLT_PIXEL *buf,
+                       UINT8 *pixmap) {
+         UINT8 *in;
+ 
++        assert(buf);
++        assert(dib);
++        assert(map);
++        assert(pixmap);
++
+         /* transform and copy pixels */
+         in = pixmap;
+         for (UINTN y = 0; y < dib->y; y++) {
+@@ -247,6 +259,8 @@ EFI_STATUS graphics_splash(UINT8 *content, UINTN len, const EFI_GRAPHICS_OUTPUT_
+         UINTN y_pos = 0;
+         EFI_STATUS err;
+ 
++        assert(content);
++
+         if (!background) {
+                 if (StriCmp(L"Apple", ST->FirmwareVendor) == 0) {
+                         pixel.Red = 0xc0;
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index b048df076..932a4cfa8 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -67,6 +67,8 @@ UINT64 time_usec(VOID) {
+ }
+ 
+ EFI_STATUS parse_boolean(const CHAR8 *v, BOOLEAN *b) {
++        assert(b);
++
+         if (!v)
+                 return EFI_INVALID_PARAMETER;
+ 
+@@ -90,17 +92,27 @@ EFI_STATUS parse_boolean(const CHAR8 *v, BOOLEAN *b) {
+ }
+ 
+ EFI_STATUS efivar_set_raw(const EFI_GUID *vendor, const CHAR16 *name, const VOID *buf, UINTN size, UINT32 flags) {
++        assert(vendor);
++        assert(name);
++        assert(buf || size == 0);
++
+         flags |= EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
+         return uefi_call_wrapper(RT->SetVariable, 5, (CHAR16*) name, (EFI_GUID *)vendor, flags, size, (VOID*) buf);
+ }
+ 
+ EFI_STATUS efivar_set(const EFI_GUID *vendor, const CHAR16 *name, const CHAR16 *value, UINT32 flags) {
++        assert(vendor);
++        assert(name);
++
+         return efivar_set_raw(vendor, name, value, value ? (StrLen(value) + 1) * sizeof(CHAR16) : 0, flags);
+ }
+ 
+ EFI_STATUS efivar_set_uint_string(const EFI_GUID *vendor, const CHAR16 *name, UINTN i, UINT32 flags) {
+         CHAR16 str[32];
+ 
++        assert(vendor);
++        assert(name);
++
+         SPrint(str, ELEMENTSOF(str), L"%u", i);
+         return efivar_set(vendor, name, str, flags);
+ }
+@@ -108,6 +120,9 @@ EFI_STATUS efivar_set_uint_string(const EFI_GUID *vendor, const CHAR16 *name, UI
+ EFI_STATUS efivar_set_uint32_le(const EFI_GUID *vendor, const CHAR16 *name, UINT32 value, UINT32 flags) {
+         UINT8 buf[4];
+ 
++        assert(vendor);
++        assert(name);
++
+         buf[0] = (UINT8)(value >> 0U & 0xFF);
+         buf[1] = (UINT8)(value >> 8U & 0xFF);
+         buf[2] = (UINT8)(value >> 16U & 0xFF);
+@@ -119,6 +134,9 @@ EFI_STATUS efivar_set_uint32_le(const EFI_GUID *vendor, const CHAR16 *name, UINT
+ EFI_STATUS efivar_set_uint64_le(const EFI_GUID *vendor, const CHAR16 *name, UINT64 value, UINT32 flags) {
+         UINT8 buf[8];
+ 
++        assert(vendor);
++        assert(name);
++
+         buf[0] = (UINT8)(value >> 0U & 0xFF);
+         buf[1] = (UINT8)(value >> 8U & 0xFF);
+         buf[2] = (UINT8)(value >> 16U & 0xFF);
+@@ -137,6 +155,9 @@ EFI_STATUS efivar_get(const EFI_GUID *vendor, const CHAR16 *name, CHAR16 **value
+         CHAR16 *val;
+         UINTN size;
+ 
++        assert(vendor);
++        assert(name);
++
+         err = efivar_get_raw(vendor, name, (CHAR8**)&buf, &size);
+         if (EFI_ERROR(err))
+                 return err;
+@@ -170,8 +191,12 @@ EFI_STATUS efivar_get_uint_string(const EFI_GUID *vendor, const CHAR16 *name, UI
+         _cleanup_freepool_ CHAR16 *val = NULL;
+         EFI_STATUS err;
+ 
++        assert(vendor);
++        assert(name);
++        assert(i);
++
+         err = efivar_get(vendor, name, &val);
+-        if (!EFI_ERROR(err) && i)
++        if (!EFI_ERROR(err))
+                 *i = Atoi(val);
+ 
+         return err;
+@@ -182,6 +207,9 @@ EFI_STATUS efivar_get_uint32_le(const EFI_GUID *vendor, const CHAR16 *name, UINT
+         UINTN size;
+         EFI_STATUS err;
+ 
++        assert(vendor);
++        assert(name);
++
+         err = efivar_get_raw(vendor, name, &buf, &size);
+         if (!EFI_ERROR(err) && ret) {
+                 if (size != sizeof(UINT32))
+@@ -199,6 +227,9 @@ EFI_STATUS efivar_get_uint64_le(const EFI_GUID *vendor, const CHAR16 *name, UINT
+         UINTN size;
+         EFI_STATUS err;
+ 
++        assert(vendor);
++        assert(name);
++
+         err = efivar_get_raw(vendor, name, &buf, &size);
+         if (!EFI_ERROR(err) && ret) {
+                 if (size != sizeof(UINT64))
+@@ -217,6 +248,9 @@ EFI_STATUS efivar_get_raw(const EFI_GUID *vendor, const CHAR16 *name, CHAR8 **bu
+         UINTN l;
+         EFI_STATUS err;
+ 
++        assert(vendor);
++        assert(name);
++
+         l = sizeof(CHAR16 *) * EFI_MAXIMUM_VARIABLE_SIZE;
+         buf = AllocatePool(l);
+         if (!buf)
+@@ -240,6 +274,10 @@ EFI_STATUS efivar_get_boolean_u8(const EFI_GUID *vendor, const CHAR16 *name, BOO
+         UINTN size;
+         EFI_STATUS err;
+ 
++        assert(vendor);
++        assert(name);
++        assert(ret);
++
+         err = efivar_get_raw(vendor, name, &b, &size);
+         if (!EFI_ERROR(err))
+                 *ret = *b > 0;
+@@ -250,6 +288,9 @@ EFI_STATUS efivar_get_boolean_u8(const EFI_GUID *vendor, const CHAR16 *name, BOO
+ VOID efivar_set_time_usec(const EFI_GUID *vendor, const CHAR16 *name, UINT64 usec) {
+         CHAR16 str[32];
+ 
++        assert(vendor);
++        assert(name);
++
+         if (usec == 0)
+                 usec = time_usec();
+         if (usec == 0)
+@@ -263,6 +304,9 @@ static INTN utf8_to_16(const CHAR8 *stra, CHAR16 *c) {
+         CHAR16 unichar;
+         UINTN len;
+ 
++        assert(stra);
++        assert(c);
++
+         if (!(stra[0] & 0x80))
+                 len = 1;
+         else if ((stra[0] & 0xe0) == 0xc0)
+@@ -316,6 +360,8 @@ CHAR16 *stra_to_str(const CHAR8 *stra) {
+         UINTN i;
+         CHAR16 *str;
+ 
++        assert(stra);
++
+         len = strlena(stra);
+         str = AllocatePool((len + 1) * sizeof(CHAR16));
+ 
+@@ -344,6 +390,8 @@ CHAR16 *stra_to_path(const CHAR8 *stra) {
+         UINTN len;
+         UINTN i;
+ 
++        assert(stra);
++
+         len = strlena(stra);
+         str = AllocatePool((len + 2) * sizeof(CHAR16));
+ 
+@@ -376,6 +424,7 @@ CHAR16 *stra_to_path(const CHAR8 *stra) {
+ }
+ 
+ CHAR8 *strchra(const CHAR8 *s, CHAR8 c) {
++        assert(s);
+         do {
+                 if (*s == c)
+                         return (CHAR8*) s;
+@@ -388,6 +437,9 @@ EFI_STATUS file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, UINTN off, UINTN s
+         _cleanup_freepool_ CHAR8 *buf = NULL;
+         EFI_STATUS err;
+ 
++        assert(name);
++        assert(ret);
++
+         err = uefi_call_wrapper(dir->Open, 5, dir, &handle, (CHAR16*) name, EFI_FILE_MODE_READ, 0ULL);
+         if (EFI_ERROR(err))
+                 return err;
+@@ -428,6 +480,8 @@ EFI_STATUS file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, UINTN off, UINTN s
+ VOID log_error_stall(const CHAR16 *fmt, ...) {
+         va_list args;
+ 
++        assert(fmt);
++
+         uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTRED|EFI_BACKGROUND_BLACK);
+ 
+         Print(L"\n");
+-- 
+2.34.1
+

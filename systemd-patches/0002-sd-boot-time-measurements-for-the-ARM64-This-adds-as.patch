@@ -1,0 +1,53 @@
+From 8306509ae16435fce993ab05b45e37dbc2c027d1 Mon Sep 17 00:00:00 2001
+From: Max Resch <resch.max@gmail.com>
+Date: Wed, 4 Aug 2021 17:23:27 +0200
+Subject: [PATCH 02/73] sd-boot: time measurements for the ARM64 This adds
+ assembly to read the platform timer from the CP15 coprocessor register
+ `cntpct_el0` and the frequency from `cntfrq_el0`
+
+---
+ src/boot/efi/util.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index aee076060..c6b78154c 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -17,6 +17,12 @@ UINT64 ticks_read(VOID) {
+         __asm__ volatile ("rdtsc" : "=A" (val));
+         return val;
+ }
++#elif defined(__aarch64__)
++UINT64 ticks_read(VOID) {
++        UINT64 val;
++        __asm__ volatile ("mrs %0, cntpct_el0" : "=r" (val));
++        return val;
++}
+ #else
+ UINT64 ticks_read(VOID) {
+         UINT64 val = 1;
+@@ -24,6 +30,13 @@ UINT64 ticks_read(VOID) {
+ }
+ #endif
+ 
++#if defined(__aarch64__)
++UINT64 ticks_freq(VOID) {
++        UINT64 freq;
++        __asm__ volatile ("mrs %0, cntfrq_el0": "=r" (freq));
++        return freq;
++}
++#else
+ /* count TSC ticks during a millisecond delay */
+ UINT64 ticks_freq(VOID) {
+         UINT64 ticks_start, ticks_end;
+@@ -34,6 +47,7 @@ UINT64 ticks_freq(VOID) {
+ 
+         return (ticks_end - ticks_start) * 1000UL;
+ }
++#endif
+ 
+ UINT64 time_usec(VOID) {
+         UINT64 ticks;
+-- 
+2.34.1
+

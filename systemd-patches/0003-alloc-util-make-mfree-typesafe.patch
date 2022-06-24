@@ -1,0 +1,61 @@
+From 9622dfff298dba13ed846215f4364beae54494a6 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 10 Aug 2021 14:36:00 +0200
+Subject: [PATCH 03/73] alloc-util: make mfree() typesafe
+
+Make sure we return the same type as we accept.
+
+One incorrect use of mfree() is discovered and fixed this way.
+---
+ src/basic/alloc-util.h        | 9 +++++----
+ src/resolve/resolved-dns-rr.c | 5 +++--
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/src/basic/alloc-util.h b/src/basic/alloc-util.h
+index 3c33308f4..fc3531344 100644
+--- a/src/basic/alloc-util.h
++++ b/src/basic/alloc-util.h
+@@ -44,10 +44,11 @@ typedef void (*free_func_t)(void *p);
+ 
+ #define malloc0(n) (calloc(1, (n) ?: 1))
+ 
+-static inline void *mfree(void *memory) {
+-        free(memory);
+-        return NULL;
+-}
++#define mfree(memory)                           \
++        ({                                      \
++                free(memory);                   \
++                (typeof(memory)) NULL;          \
++        })
+ 
+ #define free_and_replace(a, b)                  \
+         ({                                      \
+diff --git a/src/resolve/resolved-dns-rr.c b/src/resolve/resolved-dns-rr.c
+index 4a0327a19..d98914e8b 100644
+--- a/src/resolve/resolved-dns-rr.c
++++ b/src/resolve/resolved-dns-rr.c
+@@ -47,8 +47,8 @@ DnsResourceKey* dns_resource_key_new_redirect(const DnsResourceKey *key, const D
+         if (cname->key->type == DNS_TYPE_CNAME)
+                 return dns_resource_key_new(key->class, key->type, cname->cname.name);
+         else {
++                _cleanup_free_ char *destination = NULL;
+                 DnsResourceKey *k;
+-                char *destination = NULL;
+ 
+                 r = dns_name_change_suffix(dns_resource_key_name(key), dns_resource_key_name(cname->key), cname->dname.name, &destination);
+                 if (r < 0)
+@@ -58,8 +58,9 @@ DnsResourceKey* dns_resource_key_new_redirect(const DnsResourceKey *key, const D
+ 
+                 k = dns_resource_key_new_consume(key->class, key->type, destination);
+                 if (!k)
+-                        return mfree(destination);
++                        return NULL;
+ 
++                TAKE_PTR(destination);
+                 return k;
+         }
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,59 @@
+From 84322d25f2015e2d318a7e522e9750f9a6b8f082 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 21 Sep 2021 19:33:01 +0200
+Subject: [PATCH 43/73] stub: show splash screen earlier
+
+let's move showing of the splash screen to the earliest place we know
+the splash bmp address. After all a splash screen is all about showing
+as early as we can. This matters as doing TPM stuff or packing up a
+large cpio might take time.
+
+While we are at it, move the conditionalization of the splash screen
+into the function instead of doing it ahead of calling it. This should
+encapsulate things more nicely.
+---
+ src/boot/efi/splash.c | 3 +++
+ src/boot/efi/stub.c   | 6 +++---
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/src/boot/efi/splash.c b/src/boot/efi/splash.c
+index 0286a5a90..bbc151767 100644
+--- a/src/boot/efi/splash.c
++++ b/src/boot/efi/splash.c
+@@ -259,6 +259,9 @@ EFI_STATUS graphics_splash(UINT8 *content, UINTN len, const EFI_GRAPHICS_OUTPUT_
+         UINTN y_pos = 0;
+         EFI_STATUS err;
+ 
++        if (len == 0)
++                return EFI_SUCCESS;
++
+         assert(content);
+ 
+         if (!background) {
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index 08cf654c8..d0b4972dc 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -172,6 +172,9 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Unable to locate embedded .linux section: %r", err);
+ 
++        /* Show splash screen as early as possible */
++        graphics_splash((UINT8*) loaded_image->ImageBase + addrs[SECTION_SPLASH], szs[SECTION_SPLASH], NULL);
++
+         if (szs[SECTION_CMDLINE] > 0) {
+                 cmdline = (CHAR8*) loaded_image->ImageBase + addrs[SECTION_CMDLINE];
+                 cmdline_len = szs[SECTION_CMDLINE];
+@@ -201,9 +204,6 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+ 
+         export_variables(loaded_image);
+ 
+-        if (szs[SECTION_SPLASH] > 0)
+-                graphics_splash((UINT8*) (UINTN) loaded_image->ImageBase + addrs[SECTION_SPLASH], szs[SECTION_SPLASH], NULL);
+-
+         (VOID) pack_cpio(loaded_image,
+                          L".cred",
+                          (const CHAR8*) ".extra/credentials",
+-- 
+2.34.1
+

@@ -1,0 +1,507 @@
+From 3e39fd89b3e9d05e317dc7c07731f4c5ea96630d Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Fri, 13 Aug 2021 18:55:32 +0200
+Subject: [PATCH 11/73] sd-boot: Fix PE section parsing
+
+We only need the PE header offset from the DOS header, not
+its size. Previously, the section table could be cut off in the middle.
+
+While we are at it, also modernize the remaining code.
+---
+ src/basic/macro.h                   |   1 -
+ src/boot/efi/boot.c                 |   5 +-
+ src/boot/efi/linux.h                |   5 +-
+ src/boot/efi/measure.c              |   4 +-
+ src/boot/efi/missing_efi.h          |   4 +
+ src/boot/efi/pe.c                   | 203 ++++++++++++++++------------
+ src/boot/efi/pe.h                   |  18 ++-
+ src/boot/efi/splash.c               |   6 +-
+ src/boot/efi/stub.c                 |   5 +-
+ src/fundamental/macro-fundamental.h |   1 +
+ 10 files changed, 150 insertions(+), 102 deletions(-)
+
+diff --git a/src/basic/macro.h b/src/basic/macro.h
+index ae5b1b788..e71fc5abe 100644
+--- a/src/basic/macro.h
++++ b/src/basic/macro.h
+@@ -20,7 +20,6 @@
+ #define _sentinel_ __attribute__((__sentinel__))
+ #define _destructor_ __attribute__((__destructor__))
+ #define _deprecated_ __attribute__((__deprecated__))
+-#define _packed_ __attribute__((__packed__))
+ #define _malloc_ __attribute__((__malloc__))
+ #define _weak_ __attribute__((__weak__))
+ #define _public_ __attribute__((__visibility__("default")))
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 638070d77..9a81af42a 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1897,14 +1897,13 @@ static VOID config_entry_add_linux(
+                 CHAR16 buf[256];
+                 UINTN bufsize = sizeof buf;
+                 EFI_FILE_INFO *f;
+-                CHAR8 *sections[] = {
++                const CHAR8 *sections[] = {
+                         (CHAR8 *)".osrel",
+                         (CHAR8 *)".cmdline",
+                         NULL
+                 };
+                 UINTN offs[ELEMENTSOF(sections)-1] = {};
+                 UINTN szs[ELEMENTSOF(sections)-1] = {};
+-                UINTN addrs[ELEMENTSOF(sections)-1] = {};
+                 CHAR8 *content = NULL;
+                 CHAR8 *line;
+                 UINTN pos = 0;
+@@ -1931,7 +1930,7 @@ static VOID config_entry_add_linux(
+                         continue;
+ 
+                 /* look for .osrel and .cmdline sections in the .efi binary */
+-                err = pe_file_locate_sections(linux_dir, f->FileName, sections, addrs, offs, szs);
++                err = pe_file_locate_sections(linux_dir, f->FileName, sections, offs, szs);
+                 if (EFI_ERROR(err))
+                         continue;
+ 
+diff --git a/src/boot/efi/linux.h b/src/boot/efi/linux.h
+index 53270e16b..773c260b7 100644
+--- a/src/boot/efi/linux.h
++++ b/src/boot/efi/linux.h
+@@ -2,6 +2,7 @@
+ #pragma once
+ 
+ #include <efi.h>
++#include "macro-fundamental.h"
+ 
+ #define SETUP_MAGIC             0x53726448      /* "HdrS" */
+ 
+@@ -44,7 +45,7 @@ struct setup_header {
+         UINT64 pref_address;
+         UINT32 init_size;
+         UINT32 handover_offset;
+-} __attribute__((packed));
++} _packed_;
+ 
+ /* adapted from linux' bootparam.h */
+ struct boot_params {
+@@ -81,7 +82,7 @@ struct boot_params {
+         UINT8  _pad8[48];
+         UINT8  eddbuf[6*82];            // was: struct edd_info eddbuf[EDDMAXNR]
+         UINT8  _pad9[276];
+-} __attribute__((packed));
++} _packed_;
+ 
+ EFI_STATUS linux_exec(EFI_HANDLE image,
+                       CHAR8 *cmdline, UINTN cmdline_size,
+diff --git a/src/boot/efi/measure.c b/src/boot/efi/measure.c
+index 429e82657..1d19366f7 100644
+--- a/src/boot/efi/measure.c
++++ b/src/boot/efi/measure.c
+@@ -133,13 +133,13 @@ typedef struct {
+         UINT16 HeaderVersion;
+         UINT32 PCRIndex;
+         UINT32 EventType;
+-} __attribute__((packed)) EFI_TCG2_EVENT_HEADER;
++} _packed_ EFI_TCG2_EVENT_HEADER;
+ 
+ typedef struct tdEFI_TCG2_EVENT {
+         UINT32 Size;
+         EFI_TCG2_EVENT_HEADER Header;
+         UINT8 Event[1];
+-} __attribute__((packed)) EFI_TCG2_EVENT;
++} _packed_ EFI_TCG2_EVENT;
+ 
+ typedef EFI_STATUS(EFIAPI * EFI_TCG2_GET_CAPABILITY) (IN EFI_TCG2_PROTOCOL * This,
+                                                       IN OUT EFI_TCG2_BOOT_SERVICE_CAPABILITY * ProtocolCapability);
+diff --git a/src/boot/efi/missing_efi.h b/src/boot/efi/missing_efi.h
+index b98393134..37c468f2a 100644
+--- a/src/boot/efi/missing_efi.h
++++ b/src/boot/efi/missing_efi.h
+@@ -120,3 +120,7 @@ typedef struct _EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL {
+ } EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL;
+ 
+ #endif
++
++#ifndef EFI_IMAGE_MACHINE_RISCV64
++        #define EFI_IMAGE_MACHINE_RISCV64 0x5064
++#endif
+diff --git a/src/boot/efi/pe.c b/src/boot/efi/pe.c
+index 5c20acc9f..04b4504c2 100644
+--- a/src/boot/efi/pe.c
++++ b/src/boot/efi/pe.c
+@@ -6,6 +6,24 @@
+ #include "pe.h"
+ #include "util.h"
+ 
++#define DOS_FILE_MAGIC "MZ"
++#define PE_FILE_MAGIC  "PE\0\0"
++#define MAX_SECTIONS 96
++
++#if defined(__i386__)
++        #define TARGET_MACHINE_TYPE EFI_IMAGE_MACHINE_IA32
++#elif defined(__x86_64__)
++        #define TARGET_MACHINE_TYPE EFI_IMAGE_MACHINE_X64
++#elif defined(__aarch64__)
++        #define TARGET_MACHINE_TYPE EFI_IMAGE_MACHINE_AARCH64
++#elif defined(__arm__)
++        #define TARGET_MACHINE_TYPE EFI_IMAGE_MACHINE_ARMTHUMB_MIXED
++#elif defined(__riscv) && __riscv_xlen == 64
++        #define TARGET_MACHINE_TYPE EFI_IMAGE_MACHINE_RISCV64
++#else
++        #error Unknown EFI arch
++#endif
++
+ struct DosFileHeader {
+         UINT8   Magic[2];
+         UINT16  LastSize;
+@@ -26,14 +44,9 @@ struct DosFileHeader {
+         UINT16  OEMInfo;
+         UINT16  reserved2[10];
+         UINT32  ExeHeader;
+-} __attribute__((packed));
++} _packed_;
+ 
+-#define PE_HEADER_MACHINE_I386          0x014c
+-#define PE_HEADER_MACHINE_X64           0x8664
+-#define PE_HEADER_MACHINE_ARM64         0xaa64
+-#define PE_HEADER_MACHINE_ARM           0x01c2
+-#define PE_HEADER_MACHINE_RISCV64       0x5064
+-struct PeFileHeader {
++struct CoffFileHeader {
+         UINT16  Machine;
+         UINT16  NumberOfSections;
+         UINT32  TimeDateStamp;
+@@ -41,12 +54,13 @@ struct PeFileHeader {
+         UINT32  NumberOfSymbols;
+         UINT16  SizeOfOptionalHeader;
+         UINT16  Characteristics;
+-} __attribute__((packed));
++} _packed_;
+ 
+-struct PeHeader {
++struct PeFileHeader {
+         UINT8   Magic[4];
+-        struct PeFileHeader FileHeader;
+-} __attribute__((packed));
++        struct CoffFileHeader FileHeader;
++        /* OptionalHeader omitted */
++} _packed_;
+ 
+ struct PeSectionHeader {
+         UINT8   Name[8];
+@@ -59,120 +73,143 @@ struct PeSectionHeader {
+         UINT16  NumberOfRelocations;
+         UINT16  NumberOfLinenumbers;
+         UINT32  Characteristics;
+-} __attribute__((packed));
++} _packed_;
+ 
+-EFI_STATUS pe_memory_locate_sections(CHAR8 *base, CHAR8 **sections, UINTN *addrs, UINTN *offsets, UINTN *sizes) {
+-        struct DosFileHeader *dos;
+-        struct PeHeader *pe;
+-        UINTN offset;
+-
+-        assert(base);
+-        assert(sections);
+-
+-        dos = (struct DosFileHeader *)base;
+-
+-        if (CompareMem(dos->Magic, "MZ", 2) != 0)
+-                return EFI_LOAD_ERROR;
++static inline BOOLEAN verify_dos(const struct DosFileHeader *dos) {
++        assert(dos);
++        return CompareMem(dos->Magic, DOS_FILE_MAGIC, STRLEN(DOS_FILE_MAGIC)) == 0;
++}
+ 
+-        pe = (struct PeHeader *)&base[dos->ExeHeader];
+-        if (CompareMem(pe->Magic, "PE\0\0", 4) != 0)
+-                return EFI_LOAD_ERROR;
++static inline BOOLEAN verify_pe(const struct PeFileHeader *pe) {
++        assert(pe);
++        return CompareMem(pe->Magic, PE_FILE_MAGIC, STRLEN(PE_FILE_MAGIC)) == 0 &&
++               pe->FileHeader.Machine == TARGET_MACHINE_TYPE &&
++               pe->FileHeader.NumberOfSections > 0 &&
++               pe->FileHeader.NumberOfSections <= MAX_SECTIONS;
++}
+ 
+-        /* PE32+ Subsystem type */
+-        if (pe->FileHeader.Machine != PE_HEADER_MACHINE_X64 &&
+-            pe->FileHeader.Machine != PE_HEADER_MACHINE_ARM64 &&
+-            pe->FileHeader.Machine != PE_HEADER_MACHINE_I386 &&
+-            pe->FileHeader.Machine != PE_HEADER_MACHINE_ARM &&
+-            pe->FileHeader.Machine != PE_HEADER_MACHINE_RISCV64)
+-                return EFI_LOAD_ERROR;
++static inline UINTN section_table_offset(const struct DosFileHeader *dos, const struct PeFileHeader *pe) {
++        assert(dos);
++        assert(pe);
++        return dos->ExeHeader + sizeof(struct PeFileHeader) + pe->FileHeader.SizeOfOptionalHeader;
++}
+ 
+-        if (pe->FileHeader.NumberOfSections > 96)
+-                return EFI_LOAD_ERROR;
++static VOID locate_sections(
++                const struct PeSectionHeader section_table[],
++                UINTN n_table,
++                const CHAR8 **sections,
++                UINTN *addrs,
++                UINTN *offsets,
++                UINTN *sizes) {
+ 
+-        offset = dos->ExeHeader + sizeof(*pe) + pe->FileHeader.SizeOfOptionalHeader;
++        assert(section_table);
++        assert(sections);
++        assert(sizes);
+ 
+-        for (UINTN i = 0; i < pe->FileHeader.NumberOfSections; i++) {
+-                struct PeSectionHeader *sect;
++        for (UINTN i = 0; i < n_table; i++) {
++                const struct PeSectionHeader *sect = section_table + i;
+ 
+-                sect = (struct PeSectionHeader *)&base[offset];
+                 for (UINTN j = 0; sections[j]; j++) {
+                         if (CompareMem(sect->Name, sections[j], strlena(sections[j])) != 0)
+                                 continue;
+ 
+                         if (addrs)
+-                                addrs[j] = (UINTN)sect->VirtualAddress;
++                                addrs[j] = sect->VirtualAddress;
+                         if (offsets)
+-                                offsets[j] = (UINTN)sect->PointerToRawData;
+-                        if (sizes)
+-                                sizes[j] = (UINTN)sect->VirtualSize;
++                                offsets[j] = sect->PointerToRawData;
++                        sizes[j] = sect->VirtualSize;
+                 }
+-                offset += sizeof(*sect);
+         }
++}
++
++EFI_STATUS pe_memory_locate_sections(
++                const CHAR8 *base,
++                const CHAR8 **sections,
++                UINTN *addrs,
++                UINTN *sizes) {
++        const struct DosFileHeader *dos;
++        const struct PeFileHeader *pe;
++        UINTN offset;
++
++        assert(base);
++        assert(sections);
++        assert(addrs);
++        assert(sizes);
++
++        dos = (const struct DosFileHeader*)base;
++        if (!verify_dos(dos))
++                return EFI_LOAD_ERROR;
++
++        pe = (const struct PeFileHeader*)&base[dos->ExeHeader];
++        if (!verify_pe(pe))
++                return EFI_LOAD_ERROR;
++
++        offset = section_table_offset(dos, pe);
++        locate_sections((struct PeSectionHeader*)&base[offset], pe->FileHeader.NumberOfSections,
++                        sections, addrs, NULL, sizes);
+ 
+         return EFI_SUCCESS;
+ }
+ 
+-EFI_STATUS pe_file_locate_sections(EFI_FILE *dir, CHAR16 *path, CHAR8 **sections, UINTN *addrs, UINTN *offsets, UINTN *sizes) {
+-        EFI_FILE_HANDLE handle;
++EFI_STATUS pe_file_locate_sections(
++                EFI_FILE *dir,
++                const CHAR16 *path,
++                const CHAR8 **sections,
++                UINTN *offsets,
++                UINTN *sizes) {
++        _cleanup_freepool_ struct PeSectionHeader *section_table = NULL;
++        _cleanup_(FileHandleClosep) EFI_FILE_HANDLE handle = NULL;
+         struct DosFileHeader dos;
+-        struct PeHeader pe;
+-        UINTN len;
+-        UINTN headerlen;
++        struct PeFileHeader pe;
++        UINTN len, section_table_len;
+         EFI_STATUS err;
+-        _cleanup_freepool_ CHAR8 *header = NULL;
+ 
+         assert(dir);
+         assert(path);
++        assert(sections);
++        assert(offsets);
++        assert(sizes);
+ 
+-        err = uefi_call_wrapper(dir->Open, 5, dir, &handle, path, EFI_FILE_MODE_READ, 0ULL);
++        err = uefi_call_wrapper(dir->Open, 5, dir, &handle, (CHAR16*)path, EFI_FILE_MODE_READ, 0ULL);
+         if (EFI_ERROR(err))
+                 return err;
+ 
+-        /* MS-DOS stub */
+         len = sizeof(dos);
+         err = uefi_call_wrapper(handle->Read, 3, handle, &len, &dos);
+         if (EFI_ERROR(err))
+-                goto out;
+-        if (len != sizeof(dos)) {
+-                err = EFI_LOAD_ERROR;
+-                goto out;
+-        }
++                return err;
++        if (len != sizeof(dos) || !verify_dos(&dos))
++                return EFI_LOAD_ERROR;
+ 
+         err = uefi_call_wrapper(handle->SetPosition, 2, handle, dos.ExeHeader);
+         if (EFI_ERROR(err))
+-                goto out;
++                return err;
+ 
+         len = sizeof(pe);
+         err = uefi_call_wrapper(handle->Read, 3, handle, &len, &pe);
+         if (EFI_ERROR(err))
+-                goto out;
+-        if (len != sizeof(pe)) {
+-                err = EFI_LOAD_ERROR;
+-                goto out;
+-        }
++                return err;
++        if (len != sizeof(pe) || !verify_pe(&pe))
++                return EFI_LOAD_ERROR;
+ 
+-        headerlen = sizeof(dos) + sizeof(pe) + pe.FileHeader.SizeOfOptionalHeader + pe.FileHeader.NumberOfSections * sizeof(struct PeSectionHeader);
+-        header = AllocatePool(headerlen);
+-        if (!header) {
+-                err = EFI_OUT_OF_RESOURCES;
+-                goto out;
+-        }
+-        len = headerlen;
+-        err = uefi_call_wrapper(handle->SetPosition, 2, handle, 0);
++        section_table_len = pe.FileHeader.NumberOfSections * sizeof(struct PeSectionHeader);
++        section_table = AllocatePool(section_table_len);
++        if (!section_table)
++                return EFI_OUT_OF_RESOURCES;
++
++        err = uefi_call_wrapper(handle->SetPosition, 2, handle, section_table_offset(&dos, &pe));
+         if (EFI_ERROR(err))
+-                goto out;
++                return err;
+ 
+-        err = uefi_call_wrapper(handle->Read, 3, handle, &len, header);
++        len = section_table_len;
++        err = uefi_call_wrapper(handle->Read, 3, handle, &len, section_table);
+         if (EFI_ERROR(err))
+-                goto out;
++                return err;
++        if (len != section_table_len)
++                return EFI_LOAD_ERROR;
+ 
+-        if (len != headerlen) {
+-                err = EFI_LOAD_ERROR;
+-                goto out;
+-        }
++        locate_sections(section_table, pe.FileHeader.NumberOfSections,
++                        sections, NULL, offsets, sizes);
+ 
+-        err = pe_memory_locate_sections(header, sections, addrs, offsets, sizes);
+-out:
+-        uefi_call_wrapper(handle->Close, 1, handle);
+-        return err;
++        return EFI_SUCCESS;
+ }
+diff --git a/src/boot/efi/pe.h b/src/boot/efi/pe.h
+index 06a0fcd70..e35521122 100644
+--- a/src/boot/efi/pe.h
++++ b/src/boot/efi/pe.h
+@@ -1,9 +1,17 @@
+ /* SPDX-License-Identifier: LGPL-2.1-or-later */
+ #pragma once
+ 
+-#include <efi.h>
++#include <efidef.h>
+ 
+-EFI_STATUS pe_memory_locate_sections(CHAR8 *base,
+-                                     CHAR8 **sections, UINTN *addrs, UINTN *offsets, UINTN *sizes);
+-EFI_STATUS pe_file_locate_sections(EFI_FILE *dir, CHAR16 *path,
+-                                   CHAR8 **sections, UINTN *addrs, UINTN *offsets, UINTN *sizes);
++EFI_STATUS pe_memory_locate_sections(
++                const CHAR8 *base,
++                const CHAR8 **sections,
++                UINTN *addrs,
++                UINTN *sizes);
++
++EFI_STATUS pe_file_locate_sections(
++                EFI_FILE *dir,
++                const CHAR16 *path,
++                const CHAR8 **sections,
++                UINTN *offsets,
++                UINTN *sizes);
+diff --git a/src/boot/efi/splash.c b/src/boot/efi/splash.c
+index 920b44082..23627a794 100644
+--- a/src/boot/efi/splash.c
++++ b/src/boot/efi/splash.c
+@@ -12,7 +12,7 @@ struct bmp_file {
+         UINT32 size;
+         UINT16 reserved[2];
+         UINT32 offset;
+-} __attribute__((packed));
++} _packed_;
+ 
+ /* we require at least BITMAPINFOHEADER, later versions are
+    accepted, but their features ignored */
+@@ -28,14 +28,14 @@ struct bmp_dib {
+         INT32 y_pixel_meter;
+         UINT32 colors_used;
+         UINT32 colors_important;
+-} __attribute__((packed));
++} _packed_;
+ 
+ struct bmp_map {
+         UINT8 blue;
+         UINT8 green;
+         UINT8 red;
+         UINT8 reserved;
+-} __attribute__((packed));
++} _packed_;
+ 
+ static EFI_STATUS bmp_parse_header(UINT8 *bmp, UINTN size, struct bmp_dib **ret_dib,
+                             struct bmp_map **ret_map, UINT8 **pixmap) {
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index 82da1d3ec..5758b5cd9 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -17,7 +17,7 @@ static const char __attribute__((used)) magic[] = "#### LoaderInfo: systemd-stub
+ 
+ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+         EFI_LOADED_IMAGE *loaded_image;
+-        CHAR8 *sections[] = {
++        const CHAR8 *sections[] = {
+                 (CHAR8 *)".cmdline",
+                 (CHAR8 *)".linux",
+                 (CHAR8 *)".initrd",
+@@ -25,7 +25,6 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                 NULL
+         };
+         UINTN addrs[ELEMENTSOF(sections)-1] = {};
+-        UINTN offs[ELEMENTSOF(sections)-1] = {};
+         UINTN szs[ELEMENTSOF(sections)-1] = {};
+         CHAR8 *cmdline = NULL;
+         UINTN cmdline_len;
+@@ -39,7 +38,7 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Error getting a LoadedImageProtocol handle: %r", err);
+ 
+-        err = pe_memory_locate_sections(loaded_image->ImageBase, sections, addrs, offs, szs);
++        err = pe_memory_locate_sections(loaded_image->ImageBase, sections, addrs, szs);
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Unable to locate embedded .linux section: %r", err);
+ 
+diff --git a/src/fundamental/macro-fundamental.h b/src/fundamental/macro-fundamental.h
+index 8fe79cc02..bef1b55cb 100644
+--- a/src/fundamental/macro-fundamental.h
++++ b/src/fundamental/macro-fundamental.h
+@@ -11,6 +11,7 @@
+ #define _const_ __attribute__((__const__))
+ #define _pure_ __attribute__((__pure__))
+ #define _section_(x) __attribute__((__section__(x)))
++#define _packed_ __attribute__((__packed__))
+ #define _used_ __attribute__((__used__))
+ #define _unused_ __attribute__((__unused__))
+ #define _cleanup_(x) __attribute__((__cleanup__(x)))
+-- 
+2.34.1
+

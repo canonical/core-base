@@ -1,0 +1,199 @@
+From 16087acc8fb436c848050af6fcf2b7408d7c6d22 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Fri, 25 Feb 2022 15:57:41 +0100
+Subject: [PATCH 53/73] boot: add helper for converting EFI_PHYSICAL_ADDRESS to
+ a pointer
+
+This isn't trivial when trying to be compatible with 32bit archs, hence
+add a set of helper macro-like functions that make the conversion safe.
+---
+ src/boot/efi/cpio.c       |  2 +-
+ src/boot/efi/devicetree.c | 18 ++++++------------
+ src/boot/efi/linux.c      |  7 ++++---
+ src/boot/efi/measure.c    |  2 +-
+ src/boot/efi/stub.c       | 10 +++++-----
+ src/boot/efi/util.h       | 20 ++++++++++++++++++++
+ 6 files changed, 37 insertions(+), 22 deletions(-)
+
+diff --git a/src/boot/efi/cpio.c b/src/boot/efi/cpio.c
+index 9c99454d9..10a044cc9 100644
+--- a/src/boot/efi/cpio.c
++++ b/src/boot/efi/cpio.c
+@@ -452,7 +452,7 @@ EFI_STATUS pack_cpio(
+ #if ENABLE_TPM
+         err = tpm_log_event(
+                         tpm_pcr,
+-                        (EFI_PHYSICAL_ADDRESS) (UINTN) buffer,
++                        POINTER_TO_PHYSICAL_ADDRESS(buffer),
+                         buffer_size,
+                         tpm_description);
+         if (EFI_ERROR(err))
+diff --git a/src/boot/efi/devicetree.c b/src/boot/efi/devicetree.c
+index 87ae97a52..fd4b9c406 100644
+--- a/src/boot/efi/devicetree.c
++++ b/src/boot/efi/devicetree.c
+@@ -28,12 +28,6 @@ static UINTN devicetree_allocated(const struct devicetree_state *state) {
+         return state->pages * EFI_PAGE_SIZE;
+ }
+ 
+-static VOID *devicetree_ptr(const struct devicetree_state *state) {
+-        assert(state);
+-        assert(state->addr <= UINTN_MAX);
+-        return (VOID *)(UINTN)state->addr;
+-}
+-
+ static EFI_STATUS devicetree_fixup(struct devicetree_state *state, UINTN len) {
+         EFI_DT_FIXUP_PROTOCOL *fixup;
+         UINTN size;
+@@ -47,24 +41,24 @@ static EFI_STATUS devicetree_fixup(struct devicetree_state *state, UINTN len) {
+                                               L"Could not locate device tree fixup protocol, skipping.");
+ 
+         size = devicetree_allocated(state);
+-        err = uefi_call_wrapper(fixup->Fixup, 4, fixup, devicetree_ptr(state), &size,
++        err = uefi_call_wrapper(fixup->Fixup, 4, fixup, PHYSICAL_ADDRESS_TO_POINTER(state->addr), &size,
+                                 EFI_DT_APPLY_FIXUPS | EFI_DT_RESERVE_MEMORY);
+         if (err == EFI_BUFFER_TOO_SMALL) {
+                 EFI_PHYSICAL_ADDRESS oldaddr = state->addr;
+                 UINTN oldpages = state->pages;
+-                VOID *oldptr = devicetree_ptr(state);
++                VOID *oldptr = PHYSICAL_ADDRESS_TO_POINTER(state->addr);
+ 
+                 err = devicetree_allocate(state, size);
+                 if (EFI_ERROR(err))
+                         return err;
+ 
+-                CopyMem(devicetree_ptr(state), oldptr, len);
++                CopyMem(PHYSICAL_ADDRESS_TO_POINTER(state->addr), oldptr, len);
+                 err = uefi_call_wrapper(BS->FreePages, 2, oldaddr, oldpages);
+                 if (EFI_ERROR(err))
+                         return err;
+ 
+                 size = devicetree_allocated(state);
+-                err = uefi_call_wrapper(fixup->Fixup, 4, fixup, devicetree_ptr(state), &size,
++                err = uefi_call_wrapper(fixup->Fixup, 4, fixup, PHYSICAL_ADDRESS_TO_POINTER(state->addr), &size,
+                                         EFI_DT_APPLY_FIXUPS | EFI_DT_RESERVE_MEMORY);
+         }
+ 
+@@ -104,7 +98,7 @@ EFI_STATUS devicetree_install(struct devicetree_state *state,
+         if (EFI_ERROR(err))
+                 return err;
+ 
+-        err = uefi_call_wrapper(handle->Read, 3, handle, &len, devicetree_ptr(state));
++        err = uefi_call_wrapper(handle->Read, 3, handle, &len, PHYSICAL_ADDRESS_TO_POINTER(state->addr));
+         if (EFI_ERROR(err))
+                 return err;
+ 
+@@ -112,7 +106,7 @@ EFI_STATUS devicetree_install(struct devicetree_state *state,
+         if (EFI_ERROR(err))
+                 return err;
+ 
+-        return uefi_call_wrapper(BS->InstallConfigurationTable, 2, &EfiDtbTableGuid, devicetree_ptr(state));
++        return uefi_call_wrapper(BS->InstallConfigurationTable, 2, &EfiDtbTableGuid, PHYSICAL_ADDRESS_TO_POINTER(state->addr));
+ }
+ 
+ void devicetree_cleanup(struct devicetree_state *state) {
+diff --git a/src/boot/efi/linux.c b/src/boot/efi/linux.c
+index 529325fef..3af69e4d5 100644
+--- a/src/boot/efi/linux.c
++++ b/src/boot/efi/linux.c
+@@ -66,9 +66,10 @@ EFI_STATUS linux_exec(EFI_HANDLE image,
+                                         EFI_SIZE_TO_PAGES(cmdline_len + 1), &addr);
+                 if (EFI_ERROR(err))
+                         return err;
+-                CopyMem((VOID *)(UINTN)addr, cmdline, cmdline_len);
+-                ((CHAR8 *)(UINTN)addr)[cmdline_len] = 0;
+-                boot_params->hdr.cmd_line_ptr = (UINT32)addr;
++
++                CopyMem(PHYSICAL_ADDRESS_TO_POINTER(addr), cmdline, cmdline_len);
++                ((CHAR8 *) PHYSICAL_ADDRESS_TO_POINTER(addr))[cmdline_len] = 0;
++                boot_params->hdr.cmd_line_ptr = (UINT32) addr;
+         }
+ 
+         boot_params->hdr.ramdisk_image = (UINT32)initrd_addr;
+diff --git a/src/boot/efi/measure.c b/src/boot/efi/measure.c
+index 0e9a523b1..be9d0ccb2 100644
+--- a/src/boot/efi/measure.c
++++ b/src/boot/efi/measure.c
+@@ -168,7 +168,7 @@ EFI_STATUS tpm_log_load_options(const CHAR16 *load_options) {
+         /* Measures a load options string into the TPM2, i.e. the kernel command line */
+ 
+         err = tpm_log_event(SD_TPM_PCR,
+-                            (EFI_PHYSICAL_ADDRESS) (UINTN) load_options,
++                            POINTER_TO_PHYSICAL_ADDRESS(load_options),
+                             StrSize(load_options), load_options);
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Unable to add load options (i.e. kernel command) line measurement: %r", err);
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index 3a42ff422..555d08fb8 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -55,13 +55,13 @@ static EFI_STATUS combine_initrd(
+         if (EFI_ERROR(err))
+                 return log_error_status_stall(err, L"Failed to allocate space for combined initrd: %r", err);
+ 
+-        p = (UINT8*) (UINTN) base;
++        p = PHYSICAL_ADDRESS_TO_POINTER(base);
+         if (initrd_base != 0) {
+                 UINTN pad;
+ 
+                 /* Order matters, the real initrd must come first, since it might include microcode updates
+                  * which the kernel only looks for in the first cpio archive */
+-                CopyMem(p, (VOID*) (UINTN) initrd_base, initrd_size);
++                CopyMem(p, PHYSICAL_ADDRESS_TO_POINTER(initrd_base), initrd_size);
+                 p += initrd_size;
+ 
+                 pad = ALIGN_TO(initrd_size, 4) - initrd_size;
+@@ -81,7 +81,7 @@ static EFI_STATUS combine_initrd(
+                 p += sysext_initrd_size;
+         }
+ 
+-        assert((UINT8*) (UINTN) base + n == p);
++        assert((UINT8*) PHYSICAL_ADDRESS_TO_POINTER(base) + n == p);
+ 
+         *ret_initrd_base = base;
+         *ret_initrd_size = n;
+@@ -222,10 +222,10 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                          &sysext_initrd,
+                          &sysext_initrd_size);
+ 
+-        linux_base = (EFI_PHYSICAL_ADDRESS) (UINTN) loaded_image->ImageBase + addrs[SECTION_LINUX];
++        linux_base = POINTER_TO_PHYSICAL_ADDRESS(loaded_image->ImageBase) + addrs[SECTION_LINUX];
+ 
+         initrd_size = szs[SECTION_INITRD];
+-        initrd_base = initrd_size != 0 ? (EFI_PHYSICAL_ADDRESS) (UINTN) loaded_image->ImageBase + addrs[SECTION_INITRD] : 0;
++        initrd_base = initrd_size != 0 ? POINTER_TO_PHYSICAL_ADDRESS(loaded_image->ImageBase) + addrs[SECTION_INITRD] : 0;
+ 
+         if (credential_initrd || sysext_initrd) {
+                 /* If we have generated initrds dynamically, let's combine them with the built-in initrd. */
+diff --git a/src/boot/efi/util.h b/src/boot/efi/util.h
+index 3a29ff2d7..ca95514d7 100644
+--- a/src/boot/efi/util.h
++++ b/src/boot/efi/util.h
+@@ -124,3 +124,23 @@ static inline void strv_freep(CHAR16 ***p) {
+ }
+ 
+ EFI_STATUS open_directory(EFI_FILE_HANDLE root_dir, const CHAR16 *path, EFI_FILE_HANDLE *ret);
++
++/* Conversion between EFI_PHYSICAL_ADDRESS and pointers is not obvious. The former is always 64bit, even on
++ * 32bit archs. And gcc complains if we cast a pointer to an integer of a different size. Hence let's do the
++ * conversion indirectly: first into UINTN (which is defined by UEFI to have the same size as a pointer), and
++ * then extended to EFI_PHYSICAL_ADDRESS. */
++static inline EFI_PHYSICAL_ADDRESS POINTER_TO_PHYSICAL_ADDRESS(const void *p) {
++        return (EFI_PHYSICAL_ADDRESS) (UINTN) p;
++}
++
++static inline void *PHYSICAL_ADDRESS_TO_POINTER(EFI_PHYSICAL_ADDRESS addr) {
++#if __SIZEOF_POINTER__ == 4
++        /* On 32bit systems the address might not be convertible (as pointers are 32bit but
++         * EFI_PHYSICAL_ADDRESS 64bit) */
++        assert(addr <= UINT32_MAX);
++#elif __SIZEOF_POINTER__ != 8
++        #error "Unexpected pointer size"
++#endif
++
++        return (void*) (UINTN) addr;
++}
+-- 
+2.34.1
+

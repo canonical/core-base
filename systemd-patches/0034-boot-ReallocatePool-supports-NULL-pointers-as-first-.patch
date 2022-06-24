@@ -1,0 +1,42 @@
+From b358f38bfecd4ce9d7f09bebcf20b3bf27e9c8c2 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 20 Sep 2021 14:06:23 +0200
+Subject: [PATCH 34/73] boot: ReallocatePool() supports NULL pointers as first
+ argument
+
+Just like userspace realloc() the EFIlib ReallocatePool() function is
+happy to use a NULL pointer as input, in which case it is equivalent to
+AllocatePool(). See:
+
+https://github.com/vathpela/gnu-efi/blob/269ef9dbc77ebec2723e0e6ae082bbca9516f5f1/lib/misc.c#L57
+---
+ src/boot/efi/boot.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 106fda925..074a85659 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -912,14 +912,11 @@ static VOID config_add_entry(Config *config, ConfigEntry *entry) {
+         assert(entry);
+ 
+         if ((config->entry_count & 15) == 0) {
+-                UINTN i;
+-
+-                i = config->entry_count + 16;
+-                if (config->entry_count == 0)
+-                        config->entries = AllocatePool(sizeof(VOID *) * i);
+-                else
+-                        config->entries = ReallocatePool(config->entries,
+-                                                         sizeof(VOID *) * config->entry_count, sizeof(VOID *) * i);
++                UINTN i = config->entry_count + 16;
++                config->entries = ReallocatePool(
++                                config->entries,
++                                sizeof(VOID *) * config->entry_count,
++                                sizeof(VOID *) * i);
+         }
+         config->entries[config->entry_count++] = entry;
+ }
+-- 
+2.34.1
+

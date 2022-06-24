@@ -1,0 +1,122 @@
+From fb7d301e6f06adacef9fbe77ac0ef1d6847b308c Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Sat, 14 Aug 2021 14:26:12 +0200
+Subject: [PATCH 20/73] sd-boot: Improve key bindings
+
+Making keys case insensitive should help if caps lock is on.
+We are not advertising them at runtime or in the manual to
+reduce the noise.
+
+This also hides the quit and version commands from the help
+string. They are mostly for devs and otherwise have little
+to no use to normal users. The latter overlaps with print
+status which is still advertised.
+---
+ man/systemd-boot.xml | 19 +++----------------
+ src/boot/efi/boot.c  |  9 ++++++++-
+ 2 files changed, 11 insertions(+), 17 deletions(-)
+
+diff --git a/man/systemd-boot.xml b/man/systemd-boot.xml
+index 5169bbbd0..d3306593e 100644
+--- a/man/systemd-boot.xml
++++ b/man/systemd-boot.xml
+@@ -108,6 +108,8 @@
+     <title>Key bindings</title>
+     <para>The following keys may be used in the boot menu:</para>
+ 
++    <!-- Developer commands Q/v/Ctrl+l deliberately not advertised. -->
++
+     <variablelist>
+       <varlistentry>
+         <term><keycap>↑</keycap> (Up)</term>
+@@ -150,31 +152,16 @@
+       </varlistentry>
+ 
+       <varlistentry>
+-        <term><keycap>v</keycap></term>
+-        <listitem><para>Show systemd-boot, UEFI, and firmware versions</para></listitem>
+-      </varlistentry>
+-
+-      <varlistentry>
+-        <term><keycap>P</keycap></term>
++        <term><keycap>p</keycap></term>
+         <listitem><para>Print status</para></listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><keycap>Q</keycap></term>
+-        <listitem><para>Quit</para></listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><keycap>h</keycap></term>
+         <term><keycap>?</keycap></term>
+         <term><keycap>F1</keycap></term>
+         <listitem><para>Show a help screen</para></listitem>
+       </varlistentry>
+-
+-      <varlistentry>
+-        <term><keycombo><keycap>Ctrl</keycap><keycap>l</keycap></keycombo></term>
+-        <listitem><para>Reprint the screen</para></listitem>
+-      </varlistentry>
+     </variablelist>
+ 
+     <para>The following keys may be pressed during bootup or in the boot menu to directly boot a specific
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 5b2fb6482..908a268a4 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -673,12 +673,14 @@ static BOOLEAN menu_run(
+                 switch (key) {
+                 case KEYPRESS(0, SCAN_UP, 0):
+                 case KEYPRESS(0, 0, 'k'):
++                case KEYPRESS(0, 0, 'K'):
+                         if (idx_highlight > 0)
+                                 idx_highlight--;
+                         break;
+ 
+                 case KEYPRESS(0, SCAN_DOWN, 0):
+                 case KEYPRESS(0, 0, 'j'):
++                case KEYPRESS(0, 0, 'J'):
+                         if (idx_highlight < config->entry_count-1)
+                                 idx_highlight++;
+                         break;
+@@ -722,8 +724,10 @@ static BOOLEAN menu_run(
+ 
+                 case KEYPRESS(0, SCAN_F1, 0):
+                 case KEYPRESS(0, 0, 'h'):
++                case KEYPRESS(0, 0, 'H'):
+                 case KEYPRESS(0, 0, '?'):
+-                        status = StrDuplicate(L"(d)efault, (t/T)timeout, (e)dit, (v)ersion (Q)uit (P)rint (h)elp");
++                        /* This must stay below 80 characters! Q/v/Ctrl+l deliberately not advertised. */
++                        status = StrDuplicate(L"(d)efault (t/T)timeout (e)dit (p)rint (h)elp");
+                         break;
+ 
+                 case KEYPRESS(0, 0, 'Q'):
+@@ -732,6 +736,7 @@ static BOOLEAN menu_run(
+                         break;
+ 
+                 case KEYPRESS(0, 0, 'd'):
++                case KEYPRESS(0, 0, 'D'):
+                         if (config->idx_default_efivar != (INTN)idx_highlight) {
+                                 /* store the selected entry in a persistent EFI variable */
+                                 efivar_set(
+@@ -793,6 +798,7 @@ static BOOLEAN menu_run(
+                         break;
+ 
+                 case KEYPRESS(0, 0, 'e'):
++                case KEYPRESS(0, 0, 'E'):
+                         /* only the options of configured entries can be edited */
+                         if (!config->editor || config->entries[idx_highlight]->type == LOADER_UNDEFINED)
+                                 break;
+@@ -808,6 +814,7 @@ static BOOLEAN menu_run(
+                                            ST->FirmwareVendor, ST->FirmwareRevision >> 16, ST->FirmwareRevision & 0xffff);
+                         break;
+ 
++                case KEYPRESS(0, 0, 'p'):
+                 case KEYPRESS(0, 0, 'P'):
+                         print_status(config, loaded_image_path);
+                         refresh = TRUE;
+-- 
+2.34.1
+

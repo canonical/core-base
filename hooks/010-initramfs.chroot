@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -eu
+
+FILES=(
+    /bin/busybox
+    /usr/lib/snapd/snap-bootstrap
+    /usr/lib/snapd/info
+    /usr/lib/systemd/system/snapd.recovery-chooser-trigger.service
+)
+
+for f in "${FILES[@]}"; do
+    dir="$(dirname "${f}")"
+    [ -d "/initrd-extra/${dir}" ] || mkdir -p "/initrd-extra/${dir}"
+    cp -l "${f}" "/initrd-extra/${f}"
+done
+
+apt purge -y snapd busybox
+apt autoremove -y
+
+for f in "${FILES[@]}"; do
+    dir="$(dirname "${f}")"
+    [ -d "${dir}" ] || mkdir -p "${dir}"
+    cp -l "/initrd-extra/${f}" "${f}"
+done
+
+rm -rf /initrd-extra

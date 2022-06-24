@@ -1,0 +1,54 @@
+From 1e32b66699122a8819d824ab70f622162f5af300 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 17 Sep 2021 10:48:46 +0200
+Subject: [PATCH 37/73] boot: add a way to indicate overflow in ALIGN_TO()
+
+---
+ src/boot/efi/util.h | 23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/src/boot/efi/util.h b/src/boot/efi/util.h
+index a5b6435f1..2ee4f2b51 100644
+--- a/src/boot/efi/util.h
++++ b/src/boot/efi/util.h
+@@ -8,8 +8,20 @@
+ 
+ #define OFFSETOF(x,y) __builtin_offsetof(x,y)
+ 
++#define UINTN_MAX (~(UINTN)0)
++#define INTN_MAX ((INTN)(UINTN_MAX>>1))
++#ifndef UINT32_MAX
++#define UINT32_MAX ((UINT32) -1)
++#endif
++#ifndef UINT64_MAX
++#define UINT64_MAX ((UINT64) -1)
++#endif
++
+ static inline UINTN ALIGN_TO(UINTN l, UINTN ali) {
+-        return ((l + ali - 1) & ~(ali - 1));
++        if (l > UINTN_MAX - (ali - 1)) /* Overflow? */
++                return UINTN_MAX;
++
++        return ((l + (ali - 1)) & ~(ali - 1));
+ }
+ 
+ EFI_STATUS parse_boolean(const CHAR8 *v, BOOLEAN *b);
+@@ -65,15 +77,6 @@ static inline void FileHandleClosep(EFI_FILE_HANDLE *handle) {
+         &(const EFI_GUID) { 0x4a67b082, 0x0a4c, 0x41cf, { 0xb6, 0xc7, 0x44, 0x0b, 0x29, 0xbb, 0x8c, 0x4f } }
+ #define EFI_GLOBAL_GUID &(const EFI_GUID) EFI_GLOBAL_VARIABLE
+ 
+-#define UINTN_MAX (~(UINTN)0)
+-#define INTN_MAX ((INTN)(UINTN_MAX>>1))
+-#ifndef UINT32_MAX
+-#define UINT32_MAX ((UINT32) -1)
+-#endif
+-#ifndef UINT64_MAX
+-#define UINT64_MAX ((UINT64) -1)
+-#endif
+-
+ VOID log_error_stall(const CHAR16 *fmt, ...);
+ EFI_STATUS log_oom(void);
+ 
+-- 
+2.34.1
+

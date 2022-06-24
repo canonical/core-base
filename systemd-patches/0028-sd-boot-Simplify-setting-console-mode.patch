@@ -1,0 +1,333 @@
+From 05275f9a6dec8b365c8cb34fde2eff17c9966bc3 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Sun, 15 Aug 2021 13:44:42 +0200
+Subject: [PATCH 28/73] sd-boot: Simplify setting console mode
+
+---
+ src/boot/efi/boot.c    |  41 +++++--------
+ src/boot/efi/console.c | 131 ++++++++++++++++++++++-------------------
+ src/boot/efi/console.h |  20 +++++--
+ 3 files changed, 102 insertions(+), 90 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 50a17e0a7..df369b426 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -69,8 +69,7 @@ typedef struct {
+         BOOLEAN auto_entries;
+         BOOLEAN auto_firmware;
+         BOOLEAN force_menu;
+-        UINTN console_mode;
+-        enum console_mode_change_type console_mode_change;
++        INT64 console_mode;
+         RandomSeedMode random_seed_mode;
+ } Config;
+ 
+@@ -370,7 +369,7 @@ static VOID print_status(Config *config, CHAR16 *loaded_image_path) {
+         UINTN timeout;
+         BOOLEAN modevar;
+         _cleanup_freepool_ CHAR16 *partstr = NULL, *defaultstr = NULL;
+-        UINTN x, y;
++        UINTN x_max, y_max;
+ 
+         assert(config);
+         assert(loaded_image_path);
+@@ -378,16 +377,15 @@ static VOID print_status(Config *config, CHAR16 *loaded_image_path) {
+         uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, COLOR_NORMAL);
+         uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+ 
++        console_query_mode(&x_max, &y_max);
++
+         Print(L"systemd-boot version:   " GIT_VERSION "\n");
+         Print(L"architecture:           " EFI_MACHINE_TYPE_NAME "\n");
+         Print(L"loaded image:           %s\n", loaded_image_path);
+         Print(L"UEFI specification:     %d.%02d\n", ST->Hdr.Revision >> 16, ST->Hdr.Revision & 0xffff);
+         Print(L"firmware vendor:        %s\n", ST->FirmwareVendor);
+         Print(L"firmware version:       %d.%02d\n", ST->FirmwareRevision >> 16, ST->FirmwareRevision & 0xffff);
+-
+-        if (uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &x, &y) == EFI_SUCCESS)
+-                Print(L"console size:           %d x %d\n", x, y);
+-
++        Print(L"console size:           %d x %d\n", x_max, y_max);
+         Print(L"SecureBoot:             %s\n", yes_no(secure_boot_enabled()));
+ 
+         if (efivar_get_boolean_u8(EFI_GLOBAL_GUID, L"SetupMode", &modevar) == EFI_SUCCESS)
+@@ -542,20 +540,11 @@ static BOOLEAN menu_run(
+         /* draw a single character to make ClearScreen work on some firmware */
+         Print(L" ");
+ 
+-        if (config->console_mode_change != CONSOLE_MODE_KEEP) {
+-                err = console_set_mode(&config->console_mode, config->console_mode_change);
+-                if (EFI_ERROR(err)) {
+-                        uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+-                        log_error_stall(L"Error switching console mode to %lu: %r", (UINT64)config->console_mode, err);
+-                }
+-        } else
+-                uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+-
+-        err = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &x_max, &y_max);
+-        if (EFI_ERROR(err)) {
+-                x_max = 80;
+-                y_max = 25;
+-        }
++        err = console_set_mode(config->console_mode);
++        uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
++        if (EFI_ERROR(err))
++                log_error_stall(L"Error switching console mode: %r", err);
++        console_query_mode(&x_max, &y_max);
+ 
+         visible_max = y_max - 2;
+ 
+@@ -1027,17 +1016,16 @@ static VOID config_defaults_load_from_file(Config *config, CHAR8 *content) {
+ 
+                 if (strcmpa((CHAR8 *)"console-mode", key) == 0) {
+                         if (strcmpa((CHAR8 *)"auto", value) == 0)
+-                                config->console_mode_change = CONSOLE_MODE_AUTO;
++                                config->console_mode = CONSOLE_MODE_AUTO;
+                         else if (strcmpa((CHAR8 *)"max", value) == 0)
+-                                config->console_mode_change = CONSOLE_MODE_MAX;
++                                config->console_mode = CONSOLE_MODE_FIRMWARE_MAX;
+                         else if (strcmpa((CHAR8 *)"keep", value)  == 0)
+-                                config->console_mode_change = CONSOLE_MODE_KEEP;
++                                config->console_mode = CONSOLE_MODE_KEEP;
+                         else {
+                                 _cleanup_freepool_ CHAR16 *s = NULL;
+ 
+                                 s = stra_to_str(value);
+-                                config->console_mode = Atoi(s);
+-                                config->console_mode_change = CONSOLE_MODE_SET;
++                                config->console_mode = MIN(Atoi(s), (UINTN)CONSOLE_MODE_RANGE_MAX);
+                         }
+ 
+                         continue;
+@@ -1421,6 +1409,7 @@ static VOID config_load_defaults(Config *config, EFI_FILE *root_dir) {
+                 .auto_firmware = TRUE,
+                 .random_seed_mode = RANDOM_SEED_WITH_SYSTEM_TOKEN,
+                 .idx_default_efivar = -1,
++                .console_mode = CONSOLE_MODE_KEEP,
+         };
+ 
+         err = file_read(root_dir, L"\\loader\\loader.conf", 0, 0, &content, NULL);
+diff --git a/src/boot/efi/console.c b/src/boot/efi/console.c
+index 12d3047ac..5f1b3500d 100644
+--- a/src/boot/efi/console.c
++++ b/src/boot/efi/console.c
+@@ -8,6 +8,9 @@
+ 
+ #define SYSTEM_FONT_WIDTH 8
+ #define SYSTEM_FONT_HEIGHT 19
++#define HORIZONTAL_MAX_OK 1920
++#define VERTICAL_MAX_OK 1080
++#define VIEWPORT_RATIO 10
+ 
+ #define EFI_SIMPLE_TEXT_INPUT_EX_GUID                           \
+         &(const EFI_GUID) EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID
+@@ -115,51 +118,36 @@ EFI_STATUS console_key_read(UINT64 *key, UINT64 timeout_usec) {
+         return EFI_SUCCESS;
+ }
+ 
+-static EFI_STATUS change_mode(UINTN mode) {
++static EFI_STATUS change_mode(INT64 mode) {
+         EFI_STATUS err;
++        INT32 old_mode;
++
++        /* SetMode expects a UINTN, so make sure these values are sane. */
++        mode = CLAMP(mode, CONSOLE_MODE_RANGE_MIN, CONSOLE_MODE_RANGE_MAX);
++        old_mode = MAX(CONSOLE_MODE_RANGE_MIN, ST->ConOut->Mode->Mode);
+ 
+         err = uefi_call_wrapper(ST->ConOut->SetMode, 2, ST->ConOut, mode);
++        if (!EFI_ERROR(err))
++                return EFI_SUCCESS;
+ 
+-        /* Special case mode 1: when using OVMF and qemu, setting it returns error
+-         * and breaks console output. */
+-        if (EFI_ERROR(err) && mode == 1)
+-                uefi_call_wrapper(ST->ConOut->SetMode, 2, ST->ConOut, (UINTN)0);
++        /* Something went wrong. Output is probably borked, so try to revert to previous mode. */
++        if (!EFI_ERROR(uefi_call_wrapper(ST->ConOut->SetMode, 2, ST->ConOut, old_mode)))
++                return err;
+ 
++        /* Maybe the device is on fire? */
++        uefi_call_wrapper(ST->ConOut->Reset, 2, ST->ConOut, TRUE);
++        uefi_call_wrapper(ST->ConOut->SetMode, 2, ST->ConOut, CONSOLE_MODE_RANGE_MIN);
+         return err;
+ }
+ 
+-static UINT64 text_area_from_font_size(void) {
+-        EFI_STATUS err;
+-        UINT64 text_area;
+-        UINTN rows, columns;
+-
+-        err = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &columns, &rows);
+-        if (EFI_ERROR(err)) {
+-                columns = 80;
+-                rows = 25;
+-        }
+-
+-        text_area = SYSTEM_FONT_WIDTH * SYSTEM_FONT_HEIGHT * (UINT64)rows * (UINT64)columns;
+-
+-        return text_area;
+-}
+-
+-static EFI_STATUS mode_auto(UINTN *mode) {
+-        const UINT32 HORIZONTAL_MAX_OK = 1920;
+-        const UINT32 VERTICAL_MAX_OK = 1080;
+-        const UINT64 VIEWPORT_RATIO = 10;
+-        UINT64 screen_area, text_area;
+-        static const EFI_GUID GraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
++static INT64 get_auto_mode(void) {
+         EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
+-        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+         EFI_STATUS err;
+-        BOOLEAN keep = FALSE;
+ 
+-        assert(mode);
+-
+-        err = LibLocateProtocol((EFI_GUID*) &GraphicsOutputProtocolGuid, (VOID **)&GraphicsOutput);
++        err = LibLocateProtocol(&GraphicsOutputProtocol, (VOID **)&GraphicsOutput);
+         if (!EFI_ERROR(err) && GraphicsOutput->Mode && GraphicsOutput->Mode->Info) {
+-                Info = GraphicsOutput->Mode->Info;
++                EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info = GraphicsOutput->Mode->Info;
++                BOOLEAN keep = FALSE;
+ 
+                 /* Start verifying if we are in a resolution larger than Full HD
+                  * (1920x1080). If we're not, assume we're in a good mode and do not
+@@ -170,19 +158,19 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+                  * area to the text viewport area. If it's less than 10 times bigger,
+                  * then assume the text is readable and keep the text mode. */
+                 else {
+-                        screen_area = (UINT64)Info->HorizontalResolution * (UINT64)Info->VerticalResolution;
+-                        text_area = text_area_from_font_size();
++                        UINT64 text_area;
++                        UINTN x_max, y_max;
++                        UINT64 screen_area = (UINT64)Info->HorizontalResolution * (UINT64)Info->VerticalResolution;
++
++                        console_query_mode(&x_max, &y_max);
++                        text_area = SYSTEM_FONT_WIDTH * SYSTEM_FONT_HEIGHT * (UINT64)x_max * (UINT64)y_max;
+ 
+                         if (text_area != 0 && screen_area/text_area < VIEWPORT_RATIO)
+                                 keep = TRUE;
+                 }
+-        }
+ 
+-        if (keep) {
+-                /* Just clear the screen instead of changing the mode and return. */
+-                *mode = ST->ConOut->Mode->Mode;
+-                uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+-                return EFI_SUCCESS;
++                if (keep)
++                        return ST->ConOut->Mode->Mode;
+         }
+ 
+         /* If we reached here, then we have a high resolution screen and the text
+@@ -191,32 +179,57 @@ static EFI_STATUS mode_auto(UINTN *mode) {
+          * standard mode, which is provided by the device manufacturer, so it should
+          * be a good mode.
+          * Note: MaxMode is the number of modes, not the last mode. */
+-        if (ST->ConOut->Mode->MaxMode > 2)
+-                *mode = 2;
++        if (ST->ConOut->Mode->MaxMode > CONSOLE_MODE_FIRMWARE_FIRST)
++                return CONSOLE_MODE_FIRMWARE_FIRST;
++
+         /* Try again with mode different than zero (assume user requests
+          * auto mode due to some problem with mode zero). */
+-        else if (ST->ConOut->Mode->MaxMode == 2)
+-                *mode = 1;
+-        /* Else force mode change to zero. */
+-        else
+-                *mode = 0;
++        if (ST->ConOut->Mode->MaxMode > CONSOLE_MODE_80_50)
++                return CONSOLE_MODE_80_50;
+ 
+-        return change_mode(*mode);
++        return CONSOLE_MODE_80_25;
+ }
+ 
+-EFI_STATUS console_set_mode(UINTN *mode, enum console_mode_change_type how) {
+-        assert(mode);
++EFI_STATUS console_set_mode(INT64 mode) {
++        switch (mode) {
++        case CONSOLE_MODE_KEEP:
++                /* If the firmware indicates the current mode is invalid, change it anyway. */
++                if (ST->ConOut->Mode->Mode < CONSOLE_MODE_RANGE_MIN)
++                        return change_mode(CONSOLE_MODE_RANGE_MIN);
++                return EFI_SUCCESS;
+ 
+-        if (how == CONSOLE_MODE_AUTO)
+-                return mode_auto(mode);
++        case CONSOLE_MODE_AUTO:
++                return change_mode(get_auto_mode());
+ 
+-        if (how == CONSOLE_MODE_MAX) {
++        case CONSOLE_MODE_FIRMWARE_MAX:
+                 /* Note: MaxMode is the number of modes, not the last mode. */
+-                if (ST->ConOut->Mode->MaxMode > 0)
+-                        *mode = ST->ConOut->Mode->MaxMode-1;
+-                else
+-                        *mode = 0;
++                return change_mode(ST->ConOut->Mode->MaxMode - 1LL);
++
++        default:
++                return change_mode(mode);
++        }
++}
++
++EFI_STATUS console_query_mode(UINTN *x_max, UINTN *y_max) {
++        EFI_STATUS err;
++
++        assert(x_max);
++        assert(y_max);
++
++        err = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, x_max, y_max);
++        if (EFI_ERROR(err)) {
++                /* Fallback values mandated by UEFI spec. */
++                switch (ST->ConOut->Mode->Mode) {
++                case CONSOLE_MODE_80_50:
++                        *x_max = 80;
++                        *y_max = 50;
++                        break;
++                case CONSOLE_MODE_80_25:
++                default:
++                        *x_max = 80;
++                        *y_max = 25;
++                }
+         }
+ 
+-        return change_mode(*mode);
++        return err;
+ }
+diff --git a/src/boot/efi/console.h b/src/boot/efi/console.h
+index 23848a9c5..ec1a96871 100644
+--- a/src/boot/efi/console.h
++++ b/src/boot/efi/console.h
+@@ -9,12 +9,22 @@
+ #define KEYCHAR(k) ((k) & 0xffff)
+ #define CHAR_CTRL(c) ((c) - 'a' + 1)
+ 
+-enum console_mode_change_type {
+-        CONSOLE_MODE_KEEP = 0,
+-        CONSOLE_MODE_SET,
++enum {
++        /* Console mode is a INT32 in EFI. We use INT64 to make room for our special values. */
++        CONSOLE_MODE_RANGE_MIN = 0,
++        CONSOLE_MODE_RANGE_MAX = INT32_MAX, /* This is just the theoretical limit. */
++        CONSOLE_MODE_INVALID = -1,          /* UEFI uses -1 if the device is not in a valid text mode. */
++
++        CONSOLE_MODE_80_25 = 0,             /* 80x25 is required by UEFI spec. */
++        CONSOLE_MODE_80_50 = 1,             /* 80x50 may be supported. */
++        CONSOLE_MODE_FIRMWARE_FIRST = 2,    /* First custom mode, if supported. */
++
++        /* These are our own mode values that map to concrete values at runtime. */
++        CONSOLE_MODE_KEEP = CONSOLE_MODE_RANGE_MAX + 1LL,
+         CONSOLE_MODE_AUTO,
+-        CONSOLE_MODE_MAX,
++        CONSOLE_MODE_FIRMWARE_MAX, /* 'max' in config. */
+ };
+ 
+ EFI_STATUS console_key_read(UINT64 *key, UINT64 timeout_usec);
+-EFI_STATUS console_set_mode(UINTN *mode, enum console_mode_change_type how);
++EFI_STATUS console_set_mode(INT64 mode);
++EFI_STATUS console_query_mode(UINTN *x_max, UINTN *y_max);
+-- 
+2.34.1
+

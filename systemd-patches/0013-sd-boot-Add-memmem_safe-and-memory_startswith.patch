@@ -1,0 +1,111 @@
+From b31388b1339c0f2c70b2ebc4518089b4addee1a4 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Fri, 13 Aug 2021 19:03:35 +0200
+Subject: [PATCH 13/73] sd-boot: Add memmem_safe and memory_startswith
+
+---
+ src/basic/string-util.h                   | 16 ----------------
+ src/boot/efi/util.c                       | 14 ++++++++++++++
+ src/boot/efi/util.h                       |  7 +++++++
+ src/fundamental/string-util-fundamental.h | 17 +++++++++++++++++
+ 4 files changed, 38 insertions(+), 16 deletions(-)
+
+diff --git a/src/basic/string-util.h b/src/basic/string-util.h
+index 9155e50ba..5c11adf39 100644
+--- a/src/basic/string-util.h
++++ b/src/basic/string-util.h
+@@ -189,22 +189,6 @@ static inline void strncpy_exact(char *buf, const char *src, size_t buf_len) {
+ }
+ REENABLE_WARNING;
+ 
+-/* Like startswith(), but operates on arbitrary memory blocks */
+-static inline void *memory_startswith(const void *p, size_t sz, const char *token) {
+-        assert(token);
+-
+-        size_t n = strlen(token);
+-        if (sz < n)
+-                return NULL;
+-
+-        assert(p);
+-
+-        if (memcmp(p, token, n) != 0)
+-                return NULL;
+-
+-        return (uint8_t*) p + n;
+-}
+-
+ /* Like startswith_no_case(), but operates on arbitrary memory blocks.
+  * It works only for ASCII strings.
+  */
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index 0c28cab24..823689e22 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -501,3 +501,17 @@ EFI_STATUS log_oom(void) {
+         log_error_stall(L"Out of memory.");
+         return EFI_OUT_OF_RESOURCES;
+ }
++
++VOID *memmem_safe(const VOID *haystack, UINTN haystack_len, const VOID *needle, UINTN needle_len) {
++        assert(haystack || haystack_len == 0);
++        assert(needle || needle_len == 0);
++
++        if (needle_len == 0)
++                return (VOID*)haystack;
++
++        for (const CHAR8 *h = haystack, *n = needle; haystack_len >= needle_len; h++, haystack_len--)
++                if (*h == *n && CompareMem(h + 1, n + 1, needle_len - 1) == 0)
++                        return (VOID*)h;
++
++        return NULL;
++}
+diff --git a/src/boot/efi/util.h b/src/boot/efi/util.h
+index d3bf848a9..f620f1421 100644
+--- a/src/boot/efi/util.h
++++ b/src/boot/efi/util.h
+@@ -84,3 +84,10 @@ EFI_STATUS log_oom(void);
+                 log_error_stall(fmt, ##__VA_ARGS__); \
+                 err; \
+         })
++
++VOID *memmem_safe(const VOID *haystack, UINTN haystack_len, const VOID *needle, UINTN needle_len);
++
++static inline VOID *mempmem_safe(const VOID *haystack, UINTN haystack_len, const VOID *needle, UINTN needle_len) {
++        CHAR8 *p = memmem_safe(haystack, haystack_len, needle, needle_len);
++        return p ? p + needle_len : NULL;
++}
+diff --git a/src/fundamental/string-util-fundamental.h b/src/fundamental/string-util-fundamental.h
+index 407cede48..7455c0549 100644
+--- a/src/fundamental/string-util-fundamental.h
++++ b/src/fundamental/string-util-fundamental.h
+@@ -16,6 +16,7 @@
+ #define strncmp(a, b, n) StrnCmp((a), (b), (n))
+ #define strcasecmp(a, b) StriCmp((a), (b))
+ #define STR_C(str)       (L ## str)
++#define memcmp(a, b, n)  CompareMem(a, b, n)
+ #else
+ #define STR_C(str)       (str)
+ #endif
+@@ -65,3 +66,19 @@ static inline const sd_char *yes_no(sd_bool b) {
+ }
+ 
+ sd_int strverscmp_improved(const sd_char *a, const sd_char *b);
++
++/* Like startswith(), but operates on arbitrary memory blocks */
++static inline void *memory_startswith(const void *p, sd_size_t sz, const sd_char *token) {
++        assert(token);
++
++        sd_size_t n = strlen(token) * sizeof(sd_char);
++        if (sz < n)
++                return NULL;
++
++        assert(p);
++
++        if (memcmp(p, token, n) != 0)
++                return NULL;
++
++        return (uint8_t*) p + n;
++}
+-- 
+2.34.1
+

@@ -1,0 +1,110 @@
+From 1a5face150845e24d81688222a03d43578d15094 Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Wed, 11 Aug 2021 14:59:46 +0200
+Subject: [PATCH 08/73] sd-boot: Use StrSize where it makes sense
+
+---
+ src/boot/efi/boot.c    | 18 ++++++++++--------
+ src/boot/efi/measure.c | 10 ++++------
+ src/boot/efi/util.c    |  2 +-
+ 3 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index 8a67b665d..96099e573 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -2268,7 +2268,7 @@ static EFI_STATUS image_start(
+                         goto out_unload;
+                 }
+                 loaded_image->LoadOptions = options;
+-                loaded_image->LoadOptionsSize = (StrLen(loaded_image->LoadOptions)+1) * sizeof(CHAR16);
++                loaded_image->LoadOptionsSize = StrSize(loaded_image->LoadOptions);
+ 
+ #if ENABLE_TPM
+                 /* Try to log any options to the TPM, especially to catch manually edited options */
+@@ -2316,28 +2316,30 @@ static VOID config_free(Config *config) {
+ }
+ 
+ static VOID config_write_entries_to_variable(Config *config) {
+-        _cleanup_freepool_ CHAR16 *buffer = NULL;
++        _cleanup_freepool_ CHAR8 *buffer = NULL;
+         UINTN sz = 0;
+-        CHAR16 *p;
++        CHAR8 *p;
+ 
+         assert(config);
+ 
+         for (UINTN i = 0; i < config->entry_count; i++)
+-                sz += StrLen(config->entries[i]->id) + 1;
++                sz += StrSize(config->entries[i]->id);
+ 
+-        p = buffer = AllocatePool(sz * sizeof(CHAR16));
++        p = buffer = AllocatePool(sz);
+ 
+         for (UINTN i = 0; i < config->entry_count; i++) {
+                 UINTN l;
+ 
+-                l = StrLen(config->entries[i]->id) + 1;
+-                CopyMem(p, config->entries[i]->id, l * sizeof(CHAR16));
++                l = StrSize(config->entries[i]->id);
++                CopyMem(p, config->entries[i]->id, l);
+ 
+                 p += l;
+         }
+ 
++        assert(p == buffer + sz);
++
+         /* Store the full list of discovered entries. */
+-        (void) efivar_set_raw(LOADER_GUID, L"LoaderEntries", buffer, (UINT8 *) p - (UINT8 *) buffer, 0);
++        (void) efivar_set_raw(LOADER_GUID, L"LoaderEntries", buffer, sz, 0);
+ }
+ 
+ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+diff --git a/src/boot/efi/measure.c b/src/boot/efi/measure.c
+index 4a8a2c7cc..429e82657 100644
+--- a/src/boot/efi/measure.c
++++ b/src/boot/efi/measure.c
+@@ -188,8 +188,7 @@ static EFI_STATUS tpm1_measure_to_pcr_and_event_log(const EFI_TCG *tcg, UINT32 p
+         assert(tcg);
+         assert(description);
+ 
+-        desc_len = (StrLen(description) + 1) * sizeof(CHAR16);
+-
++        desc_len = StrSize(description);
+         tcg_event = AllocateZeroPool(desc_len + sizeof(TCG_PCR_EVENT));
+ 
+         if (!tcg_event)
+@@ -222,14 +221,13 @@ static EFI_STATUS tpm2_measure_to_pcr_and_event_log(const EFI_TCG2 *tcg, UINT32
+         assert(tcg);
+         assert(description);
+ 
+-        desc_len = StrLen(description) * sizeof(CHAR16);
+-
+-        tcg_event = AllocateZeroPool(sizeof(*tcg_event) - sizeof(tcg_event->Event) + desc_len + 1);
++        desc_len = StrSize(description);
++        tcg_event = AllocateZeroPool(sizeof(*tcg_event) - sizeof(tcg_event->Event) + desc_len);
+ 
+         if (!tcg_event)
+                 return EFI_OUT_OF_RESOURCES;
+ 
+-        tcg_event->Size = sizeof(*tcg_event) - sizeof(tcg_event->Event) + desc_len + 1;
++        tcg_event->Size = sizeof(*tcg_event) - sizeof(tcg_event->Event) + desc_len;
+         tcg_event->Header.HeaderSize = sizeof(EFI_TCG2_EVENT_HEADER);
+         tcg_event->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
+         tcg_event->Header.PCRIndex = pcrindex;
+diff --git a/src/boot/efi/util.c b/src/boot/efi/util.c
+index 932a4cfa8..b2977546a 100644
+--- a/src/boot/efi/util.c
++++ b/src/boot/efi/util.c
+@@ -104,7 +104,7 @@ EFI_STATUS efivar_set(const EFI_GUID *vendor, const CHAR16 *name, const CHAR16 *
+         assert(vendor);
+         assert(name);
+ 
+-        return efivar_set_raw(vendor, name, value, value ? (StrLen(value) + 1) * sizeof(CHAR16) : 0, flags);
++        return efivar_set_raw(vendor, name, value, value ? StrSize(value) : 0, flags);
+ }
+ 
+ EFI_STATUS efivar_set_uint_string(const EFI_GUID *vendor, const CHAR16 *name, UINTN i, UINT32 flags) {
+-- 
+2.34.1
+

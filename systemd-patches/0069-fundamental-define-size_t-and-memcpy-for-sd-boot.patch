@@ -1,0 +1,104 @@
+From 38cf977808fad9015cc5fafa7a34a986ca277c12 Mon Sep 17 00:00:00 2001
+From: Luca Boccassi <luca.boccassi@microsoft.com>
+Date: Fri, 8 Oct 2021 13:06:51 +0100
+Subject: [PATCH 69/73] fundamental: define size_t and memcpy for sd-boot
+
+---
+ src/fundamental/macro-fundamental.h       | 2 ++
+ src/fundamental/string-util-fundamental.c | 8 ++++----
+ src/fundamental/string-util-fundamental.h | 4 ++--
+ src/fundamental/type.h                    | 3 +--
+ 4 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/src/fundamental/macro-fundamental.h b/src/fundamental/macro-fundamental.h
+index bef1b55cb..e76df3424 100644
+--- a/src/fundamental/macro-fundamental.h
++++ b/src/fundamental/macro-fundamental.h
+@@ -59,6 +59,8 @@
+                 #define assert(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); })
+                 #define assert_not_reached() efi_assert("Code should not be reached", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+         #endif
++
++        #define memcpy(a, b, c) CopyMem((a), (b), (c))
+ #endif
+ 
+ #if defined(static_assert)
+diff --git a/src/fundamental/string-util-fundamental.c b/src/fundamental/string-util-fundamental.c
+index 383e39057..101d3f719 100644
+--- a/src/fundamental/string-util-fundamental.c
++++ b/src/fundamental/string-util-fundamental.c
+@@ -8,7 +8,7 @@
+ #include "string-util-fundamental.h"
+ 
+ sd_char *startswith(const sd_char *s, const sd_char *prefix) {
+-        sd_size_t l;
++        size_t l;
+ 
+         assert(s);
+         assert(prefix);
+@@ -22,7 +22,7 @@ sd_char *startswith(const sd_char *s, const sd_char *prefix) {
+ 
+ #ifndef SD_BOOT
+ sd_char *startswith_no_case(const sd_char *s, const sd_char *prefix) {
+-        sd_size_t l;
++        size_t l;
+ 
+         assert(s);
+         assert(prefix);
+@@ -36,7 +36,7 @@ sd_char *startswith_no_case(const sd_char *s, const sd_char *prefix) {
+ #endif
+ 
+ sd_char* endswith(const sd_char *s, const sd_char *postfix) {
+-        sd_size_t sl, pl;
++        size_t sl, pl;
+ 
+         assert(s);
+         assert(postfix);
+@@ -57,7 +57,7 @@ sd_char* endswith(const sd_char *s, const sd_char *postfix) {
+ }
+ 
+ sd_char* endswith_no_case(const sd_char *s, const sd_char *postfix) {
+-        sd_size_t sl, pl;
++        size_t sl, pl;
+ 
+         assert(s);
+         assert(postfix);
+diff --git a/src/fundamental/string-util-fundamental.h b/src/fundamental/string-util-fundamental.h
+index 7455c0549..dc0c1202b 100644
+--- a/src/fundamental/string-util-fundamental.h
++++ b/src/fundamental/string-util-fundamental.h
+@@ -68,10 +68,10 @@ static inline const sd_char *yes_no(sd_bool b) {
+ sd_int strverscmp_improved(const sd_char *a, const sd_char *b);
+ 
+ /* Like startswith(), but operates on arbitrary memory blocks */
+-static inline void *memory_startswith(const void *p, sd_size_t sz, const sd_char *token) {
++static inline void *memory_startswith(const void *p, size_t sz, const sd_char *token) {
+         assert(token);
+ 
+-        sd_size_t n = strlen(token) * sizeof(sd_char);
++        size_t n = strlen(token) * sizeof(sd_char);
+         if (sz < n)
+                 return NULL;
+ 
+diff --git a/src/fundamental/type.h b/src/fundamental/type.h
+index f645d2de7..2a9a114bb 100644
+--- a/src/fundamental/type.h
++++ b/src/fundamental/type.h
+@@ -7,7 +7,7 @@
+ typedef BOOLEAN sd_bool;
+ typedef CHAR16  sd_char;
+ typedef INTN    sd_int;
+-typedef UINTN   sd_size_t;
++typedef UINTN   size_t;
+ 
+ #define true    TRUE
+ #define false   FALSE
+@@ -18,5 +18,4 @@ typedef UINTN   sd_size_t;
+ typedef bool    sd_bool;
+ typedef char    sd_char;
+ typedef int     sd_int;
+-typedef size_t  sd_size_t;
+ #endif
+-- 
+2.34.1
+

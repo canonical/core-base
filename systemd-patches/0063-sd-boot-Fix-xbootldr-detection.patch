@@ -1,0 +1,49 @@
+From dad701743d422a0abb9a01bddc498b975af53eba Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Mon, 27 Sep 2021 10:14:53 +0200
+Subject: [PATCH 63/73] sd-boot: Fix xbootldr detection
+
+The broken crc32 calculation was a copy pasta error introduced in
+87167331c902e89bea626c311f0d751ffbc95d73 and luckily has never been
+shipped yet.
+---
+ src/boot/efi/boot.c     | 2 --
+ src/boot/efi/xbootldr.c | 2 +-
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/boot/efi/boot.c b/src/boot/efi/boot.c
+index e073217f3..a9ef1f351 100644
+--- a/src/boot/efi/boot.c
++++ b/src/boot/efi/boot.c
+@@ -1321,7 +1321,6 @@ static VOID config_entry_add_from_file(
+         assert(path);
+         assert(file);
+         assert(content);
+-        assert(loaded_image_path);
+ 
+         entry = AllocatePool(sizeof(ConfigEntry));
+ 
+@@ -1509,7 +1508,6 @@ static VOID config_load_entries(
+         assert(config);
+         assert(device);
+         assert(root_dir);
+-        assert(loaded_image_path);
+ 
+         err = open_directory(root_dir, L"\\loader\\entries", &entries_dir);
+         if (EFI_ERROR(err))
+diff --git a/src/boot/efi/xbootldr.c b/src/boot/efi/xbootldr.c
+index 5ae205349..7ee4ed6f2 100644
+--- a/src/boot/efi/xbootldr.c
++++ b/src/boot/efi/xbootldr.c
+@@ -142,7 +142,7 @@ EFI_STATUS xbootldr_open(EFI_HANDLE *device, EFI_HANDLE *ret_device, EFI_FILE **
+                                 continue;
+ 
+                         /* Calculate CRC of entries array, too */
+-                        r = BS->CalculateCrc32(&entries, sz, &crc32);
++                        r = BS->CalculateCrc32(entries, sz, &crc32);
+                         if (EFI_ERROR(r) || crc32 != h->PartitionEntryArrayCRC32)
+                                 continue;
+ 
+-- 
+2.34.1
+

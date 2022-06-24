@@ -11,6 +11,34 @@ grade: stable
 assumes: [snapd2.55.5]
 
 parts:
+  systemd-deb:
+    plugin: nil
+    build-packages:
+      - devscripts
+      - quilt
+    source: https://git.launchpad.net/~ubuntu-core-dev/ubuntu/+source/systemd
+    source-type: git
+    # following branch origin/ubuntu-jammy
+    source-commit: d98926d1f60a8f2a478095874357709eb82d6a13
+    override-pull: |
+      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
+      for patch in "${CRAFT_PROJECT_DIR}"/systemd-patches/*.patch; do
+        PATCHES=("${patch}" "${PATCHES[@]}")
+      done
+      for patch in "${PATCHES[@]}"; do
+        QUILT_PATCHES=debian/patches quilt import "${patch}"
+      done
+      QUILT_PATCHES=debian/patches quilt push -a --fuzz=0
+      rm -rf .git
+      DEBEMAIL="noone@canonical.com" DEBFULLNAME="Ubuntu Core Team" dch -v "249.11-0ubuntu3.3+core0" "Ubuntu Core patches"
+    override-build: |
+      export DEB_BUILD_OPTIONS=nocheck
+      "${CRAFT_PROJECT_DIR}/build-package.sh" build
+    override-stage: |
+      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
+    prime:
+      - -local-debs
+
   probert-deb:
     plugin: nil
     build-packages:
@@ -77,6 +105,7 @@ parts:
 
   bootstrap:
     after:
+      - systemd-deb
       - probert-deb
       - consoleconf-deb
       - base
@@ -86,9 +115,86 @@ parts:
       - shellcheck
       - distro-info
     override-pull: |
-      craftctl set version="$(/bin/date +%Y%m%d)"
+      craftctl set version="$(/bin/date +%Y%m%d)~winitrd"
       craftctl default
+    override-build: |
+      craftctl default
+      rm -f "${CRAFT_PART_INSTALL}"/dev/*
     override-prime: |
       craftctl default
+      rm -f bin/busybox
+      rm -f usr/lib/snapd/snap-bootstrap
       # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
+
+  initrd-rootfs:
+    build-packages:
+      - dracut-core
+      - iucode-tool
+      - amd64-microcode
+      - intel-microcode
+    plugin: nil
+    source: ./initrd
+    after:
+      - bootstrap
+
+    override-build: |
+      root="${CRAFT_PART_INSTALL}/usr/lib/ubuntu-core-initramfs"
+      main="${root}/main"
+      rm -rf "${root}"
+      mkdir -p "${main}"
+      mkdir -p "${main}/usr/bin"
+      mkdir -p "${main}/usr/lib64"
+      cp -aT "${CRAFT_PART_SRC}/factory" "${main}"
+      cp -aT "${CRAFT_PART_SRC}/features" "${root}"
+
+      install() {
+        /usr/lib/dracut/dracut-install -r "${CRAFT_STAGE}" -D "${main}" -a "$@"
+      }
+      install_bin() {
+        /usr/lib/dracut/dracut-install -r "${CRAFT_STAGE}" -D "${main}" --ldd -a "$@"
+      }
+      for file in $(cat "${CRAFT_PART_SRC}/files.txt" | grep -v "^#"); do
+        file=$(bash -c "echo ${CRAFT_STAGE}/${file}")
+        if [ -L "${file}" ]; then
+           install "${file}"
+        elif [ -f "${file}" ]; then
+          type="$(file "${file}" --mime-type -b)"
+          case "${type}" in
+            application/x-pie-executable|application/x-sharedlib)
+              install_bin "${file}"
+              ;;
+            *)
+              install "${file}"
+              ;;
+          esac
+        else
+          echo "Missing file ${file}" 1>&2
+          false
+        fi
+      done
+
+      for alias in $("${CRAFT_STAGE}/usr/bin/busybox" --list-long); do
+        case "${alias}" in
+          */busybox|*/mount|*/umount|*/reboot|*/halt|*/init|*/modprobe|*/poweroff)
+            ;;
+          *)
+            dir="$(dirname "${main}/${alias}")"
+            if ! [ -d "${dir}" ]; then
+              mkdir -p "${dir}"
+            fi
+            ln -sr "${main}/usr/bin/busybox" "${main}/${alias}"
+            ;;
+        esac
+      done
+
+      mkdir -p "${root}/early"
+      "${CRAFT_PART_SRC}/generate-x86-microcode" "${root}/early/microcode.cpio"
+
+      mkdir -p "${root}/efi"
+      cp -a "${CRAFT_STAGE}"/usr/lib/systemd/boot/efi/linux*.efi.stub "${root}/efi"
+      # TODO generate properly
+      cp -a "${CRAFT_PART_SRC}/sbat.txt" "${root}/efi"
+
+      cp -aT "${CRAFT_PART_SRC}/snakeoil" "${root}/snakeoil"
+      cp -aT "${CRAFT_PART_SRC}/modules" "${root}/modules"

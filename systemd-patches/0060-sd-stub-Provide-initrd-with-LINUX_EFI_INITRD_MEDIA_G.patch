@@ -1,0 +1,332 @@
+From 054dd49229405cb4cea117000d7a2d26d12b592e Mon Sep 17 00:00:00 2001
+From: Max Resch <resch.max@gmail.com>
+Date: Thu, 30 Sep 2021 18:43:52 +0200
+Subject: [PATCH 60/73] sd-stub: Provide initrd with
+ LINUX_EFI_INITRD_MEDIA_GUID
+
+Register a LINUX_EFI_INITRD_MEDIA_GUID DevicePath with a LoadFile2Protocol interface and serve the initrd to a supported Linux kernel (Version 5.8+)
+Leave the x86 code for older kernels in place until supported kernels become more mainstream
+---
+ src/boot/efi/initrd.c      | 147 +++++++++++++++++++++++++++++++++++++
+ src/boot/efi/initrd.h      |  11 +++
+ src/boot/efi/linux.c       |  37 +++++++---
+ src/boot/efi/linux.h       |   9 ++-
+ src/boot/efi/meson.build   |   1 +
+ src/boot/efi/missing_efi.h |   9 +++
+ src/boot/efi/stub.c        |   4 +-
+ 7 files changed, 203 insertions(+), 15 deletions(-)
+ create mode 100644 src/boot/efi/initrd.c
+ create mode 100644 src/boot/efi/initrd.h
+
+diff --git a/src/boot/efi/initrd.c b/src/boot/efi/initrd.c
+new file mode 100644
+index 000000000..055670f23
+--- /dev/null
++++ b/src/boot/efi/initrd.c
+@@ -0,0 +1,147 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++
++#include <efi.h>
++#include <efilib.h>
++
++#include "initrd.h"
++#include "macro-fundamental.h"
++#include "missing_efi.h"
++
++/* extend LoadFileProtocol */
++struct initrd_loader {
++        EFI_LOAD_FILE_PROTOCOL load_file;
++        const VOID *address;
++        UINTN length;
++};
++
++/* static structure for LINUX_INITRD_MEDIA device path
++   see https://github.com/torvalds/linux/blob/v5.13/drivers/firmware/efi/libstub/efi-stub-helper.c
++ */
++static const struct {
++        VENDOR_DEVICE_PATH vendor;
++        EFI_DEVICE_PATH end;
++} _packed_ efi_initrd_device_path = {
++        .vendor = {
++                .Header = {
++                        .Type = MEDIA_DEVICE_PATH,
++                        .SubType = MEDIA_VENDOR_DP,
++                        .Length = { sizeof(efi_initrd_device_path.vendor), 0 }
++                },
++                .Guid = LINUX_INITRD_MEDIA_GUID
++        },
++        .end = {
++                .Type = END_DEVICE_PATH_TYPE,
++                .SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE,
++                .Length = { sizeof(efi_initrd_device_path.end), 0 }
++        }
++};
++
++EFIAPI EFI_STATUS initrd_load_file(
++                EFI_LOAD_FILE_PROTOCOL *this,
++                EFI_DEVICE_PATH *file_path,
++                BOOLEAN boot_policy,
++                UINTN *buffer_size,
++                VOID *buffer) {
++
++        struct initrd_loader *loader;
++
++        if (!this || !buffer_size || !file_path)
++                return EFI_INVALID_PARAMETER;
++        if (boot_policy)
++                return EFI_UNSUPPORTED;
++
++        loader = (struct initrd_loader *) this;
++
++        if (loader->length == 0 || !loader->address)
++                return EFI_NOT_FOUND;
++
++        if (!buffer || *buffer_size < loader->length) {
++                *buffer_size = loader->length;
++                return EFI_BUFFER_TOO_SMALL;
++        }
++
++        CopyMem(buffer, loader->address, loader->length);
++        *buffer_size = loader->length;
++        return EFI_SUCCESS;
++}
++
++EFI_STATUS initrd_register(
++                const VOID *initrd_address,
++                UINTN initrd_length,
++                EFI_HANDLE *ret_initrd_handle) {
++
++        EFI_STATUS err;
++        EFI_DEVICE_PATH *dp = (EFI_DEVICE_PATH *) &efi_initrd_device_path;
++        EFI_HANDLE handle;
++        struct initrd_loader *loader;
++
++        assert(ret_initrd_handle);
++
++        if (!initrd_address || initrd_length == 0)
++                return EFI_SUCCESS;
++
++        /* check if a LINUX_INITRD_MEDIA_GUID DevicePath is already registed.
++           LocateDevicePath checks for the "closest DevicePath" and returns its handle,
++           where as InstallMultipleProtocolInterfaces only maches identical DevicePaths.
++         */
++        err = uefi_call_wrapper(BS->LocateDevicePath, 3, &EfiLoadFile2Protocol, &dp, &handle);
++        if (err != EFI_NOT_FOUND) /* InitrdMedia is already registered */
++                return EFI_ALREADY_STARTED;
++
++        loader = AllocatePool(sizeof(struct initrd_loader));
++        if (!loader)
++                return EFI_OUT_OF_RESOURCES;
++
++        *loader = (struct initrd_loader) {
++                .load_file.LoadFile = initrd_load_file,
++                .address = initrd_address,
++                .length = initrd_length
++        };
++
++        /* create a new handle and register the LoadFile2 protocol with the InitrdMediaPath on it */
++        err = uefi_call_wrapper(
++                        BS->InstallMultipleProtocolInterfaces, 8,
++                        ret_initrd_handle,
++                        &DevicePathProtocol, &efi_initrd_device_path,
++                        &EfiLoadFile2Protocol, loader,
++                        NULL);
++        if (EFI_ERROR(err))
++                FreePool(loader);
++
++        return err;
++}
++
++EFI_STATUS initrd_unregister(EFI_HANDLE initrd_handle) {
++        EFI_STATUS err;
++        struct initrd_loader *loader;
++
++        if (!initrd_handle)
++                return EFI_SUCCESS;
++
++        /* get the LoadFile2 protocol that we allocated earlier */
++        err = uefi_call_wrapper(
++                        BS->OpenProtocol, 6,
++                        initrd_handle, &EfiLoadFile2Protocol, (VOID **) &loader,
++                        NULL, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
++        if (EFI_ERROR(err))
++                return err;
++
++        /* close the handle */
++        (void) uefi_call_wrapper(
++                        BS->CloseProtocol, 4,
++                        initrd_handle, &EfiLoadFile2Protocol, NULL, NULL);
++
++        /* uninstall all protocols thus destroying the handle */
++        err = uefi_call_wrapper(
++                        BS->UninstallMultipleProtocolInterfaces, 6,
++                        initrd_handle,
++                        &DevicePathProtocol, &efi_initrd_device_path,
++                        &EfiLoadFile2Protocol, loader,
++                        NULL);
++        if (EFI_ERROR(err))
++                return err;
++
++        initrd_handle = NULL;
++        FreePool(loader);
++        return EFI_SUCCESS;
++}
+diff --git a/src/boot/efi/initrd.h b/src/boot/efi/initrd.h
+new file mode 100644
+index 000000000..bb3a33478
+--- /dev/null
++++ b/src/boot/efi/initrd.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++#pragma once
++
++#include <efi.h>
++
++EFI_STATUS initrd_register(
++                const VOID *initrd_address,
++                UINTN initrd_length,
++                EFI_HANDLE *ret_initrd_handle);
++
++EFI_STATUS initrd_unregister(EFI_HANDLE initrd_handle);
+diff --git a/src/boot/efi/linux.c b/src/boot/efi/linux.c
+index 5232a3ba4..2c27ed503 100644
+--- a/src/boot/efi/linux.c
++++ b/src/boot/efi/linux.c
+@@ -4,6 +4,7 @@
+ #include <efilib.h>
+ 
+ #include "linux.h"
++#include "initrd.h"
+ #include "util.h"
+ 
+ #ifdef __i386__
+@@ -28,21 +29,25 @@ static VOID linux_efi_handover(EFI_HANDLE image, struct boot_params *params) {
+         handover(image, ST, params);
+ }
+ 
+-EFI_STATUS linux_exec(EFI_HANDLE image,
+-                      CHAR8 *cmdline, UINTN cmdline_len,
+-                      UINTN linux_addr,
+-                      UINTN initrd_addr, UINTN initrd_size) {
++EFI_STATUS linux_exec(
++                EFI_HANDLE image,
++                const CHAR8 *cmdline, UINTN cmdline_len,
++                const VOID *linux_buffer,
++                const VOID *initrd_buffer, UINTN initrd_length) {
+ 
+         const struct boot_params *image_params;
+         struct boot_params *boot_params;
++        EFI_HANDLE initrd_handle = NULL;
+         EFI_PHYSICAL_ADDRESS addr;
+         UINT8 setup_sectors;
+         EFI_STATUS err;
+ 
+         assert(image);
+-        assert(cmdline);
++        assert(cmdline || cmdline_len == 0);
++        assert(linux_buffer);
++        assert(initrd_buffer || initrd_length == 0);
+ 
+-        image_params = (const struct boot_params *) linux_addr;
++        image_params = (const struct boot_params *) linux_buffer;
+ 
+         if (image_params->hdr.boot_flag != 0xAA55 ||
+             image_params->hdr.header != SETUP_MAGIC ||
+@@ -65,7 +70,7 @@ EFI_STATUS linux_exec(EFI_HANDLE image,
+         boot_params->hdr = image_params->hdr;
+         boot_params->hdr.type_of_loader = 0xff;
+         setup_sectors = image_params->hdr.setup_sects > 0 ? image_params->hdr.setup_sects : 4;
+-        boot_params->hdr.code32_start = (UINT32)linux_addr + (setup_sectors + 1) * 512;
++        boot_params->hdr.code32_start = (UINT32) POINTER_TO_PHYSICAL_ADDRESS(linux_buffer) + (setup_sectors + 1) * 512;
+ 
+         if (cmdline) {
+                 addr = 0xA0000;
+@@ -84,9 +89,21 @@ EFI_STATUS linux_exec(EFI_HANDLE image,
+                 boot_params->hdr.cmd_line_ptr = (UINT32) addr;
+         }
+ 
+-        boot_params->hdr.ramdisk_image = (UINT32) initrd_addr;
+-        boot_params->hdr.ramdisk_size = (UINT32) initrd_size;
+-
++        /* Providing the initrd via LINUX_INITRD_MEDIA_GUID is only supported by Linux 5.8+ (5.7+ on ARM64).
++           Until supported kernels become more established, we continue to set ramdisk in the handover struct.
++           This value is overridden by kernels that support LINUX_INITRD_MEDIA_GUID.
++           If you need to know which protocol was used by the kernel, pass "efi=debug" to the kernel,
++           this will print a line when InitrdMediaGuid was successfully used to load the initrd.
++         */
++        boot_params->hdr.ramdisk_image = (UINT32) POINTER_TO_PHYSICAL_ADDRESS(initrd_buffer);
++        boot_params->hdr.ramdisk_size = (UINT32) initrd_length;
++
++        /* register LINUX_INITRD_MEDIA_GUID */
++        err = initrd_register(initrd_buffer, initrd_length, &initrd_handle);
++        if (EFI_ERROR(err))
++                return err;
+         linux_efi_handover(image, boot_params);
++        (void) initrd_unregister(initrd_handle);
++        initrd_handle = NULL;
+         return EFI_LOAD_ERROR;
+ }
+diff --git a/src/boot/efi/linux.h b/src/boot/efi/linux.h
+index 773c260b7..01049d336 100644
+--- a/src/boot/efi/linux.h
++++ b/src/boot/efi/linux.h
+@@ -84,7 +84,8 @@ struct boot_params {
+         UINT8  _pad9[276];
+ } _packed_;
+ 
+-EFI_STATUS linux_exec(EFI_HANDLE image,
+-                      CHAR8 *cmdline, UINTN cmdline_size,
+-                      UINTN linux_addr,
+-                      UINTN initrd_addr, UINTN initrd_size);
++EFI_STATUS linux_exec(
++                EFI_HANDLE image,
++                const CHAR8 *cmdline, UINTN cmdline_len,
++                const VOID *linux_buffer,
++                const VOID *initrd_buffer, UINTN initrd_length);
+diff --git a/src/boot/efi/meson.build b/src/boot/efi/meson.build
+index 5a9315406..567b22684 100644
+--- a/src/boot/efi/meson.build
++++ b/src/boot/efi/meson.build
+@@ -38,6 +38,7 @@ systemd_boot_sources = '''
+ 
+ stub_sources = '''
+         linux.c
++        initrd.c
+         splash.c
+         stub.c
+         cpio.c
+diff --git a/src/boot/efi/missing_efi.h b/src/boot/efi/missing_efi.h
+index badf0017a..fad75d82b 100644
+--- a/src/boot/efi/missing_efi.h
++++ b/src/boot/efi/missing_efi.h
+@@ -331,3 +331,12 @@ typedef struct tdEFI_TCG2_PROTOCOL {
+ } EFI_TCG2;
+ 
+ #endif
++
++#ifndef EFI_LOAD_FILE2_PROTOCOL_GUID
++#define EFI_LOAD_FILE2_PROTOCOL_GUID \
++        {0x4006c0c1, 0xfcb3, 0x403e, {0x99, 0x6d, 0x4a, 0x6c, 0x87, 0x24, 0xe0, 0x6d} }
++#define EfiLoadFile2Protocol ((EFI_GUID)EFI_LOAD_FILE2_PROTOCOL_GUID)
++#endif
++
++#define LINUX_INITRD_MEDIA_GUID \
++        {0x5568e427, 0x68fc, 0x4f3d, {0xac, 0x74, 0xca, 0x55, 0x52, 0x31, 0xcc, 0x68} }
+diff --git a/src/boot/efi/stub.c b/src/boot/efi/stub.c
+index 636baa442..09171558c 100644
+--- a/src/boot/efi/stub.c
++++ b/src/boot/efi/stub.c
+@@ -249,7 +249,9 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
+                 }
+         }
+ 
+-        err = linux_exec(image, cmdline, cmdline_len, linux_base, initrd_base, initrd_size);
++        err = linux_exec(image, cmdline, cmdline_len,
++                         PHYSICAL_ADDRESS_TO_POINTER(linux_base),
++                         PHYSICAL_ADDRESS_TO_POINTER(initrd_base), initrd_size);
+         graphics_mode(FALSE);
+         return log_error_status_stall(err, L"Execution of embedded linux image failed: %r", err);
+ }
+-- 
+2.34.1
+
