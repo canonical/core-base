@@ -44,7 +44,6 @@ install:
 
 	# only generate manifest and dpkg.yaml files for lp build
 	if [ -e /build/core22 ]; then \
-		echo $$f; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 	fi;
