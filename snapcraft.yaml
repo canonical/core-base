@@ -59,13 +59,11 @@ parts:
       - SIG: ${SHA256}.gpg
     override-pull: |
       craftctl default
-      wget "${SHA256}" -O sha265sum
-      wget "${SIG}" -O sha265sum.gpg
+      wget "${SHA256}" "${SIG}" "${URL}"
       gpg --no-default-keyring \
           --keyring ./cd-image-keying.gpg \
-          --verify sha265sum.gpg sha265sum
-      wget "${URL}" -O "${BASE}"
-      awk -v "file=${BASE}" '$2=="*"file' sha265sum | sha256sum -c
+          --verify SHA256SUMS.gpg SHA256SUMS
+      awk -v "file=${BASE}" '$2=="*"file' SHA256SUMS | sha256sum -c
     override-build: |
       mkdir -p "${CRAFT_PART_INSTALL}/base"
       tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"
