@@ -13,57 +13,39 @@ assumes: [snapd2.55.5]
 parts:
   probert-deb:
     plugin: nil
+    build-packages:
+      - apt-utils
+      - devscripts
     source: https://github.com/canonical/probert.git
     source-type: git
     # following branch server/jammy
     source-commit: 253acbe1480fba69d12d6e72f53412da79e27410
     override-pull: |
-      craftctl default
-      # install build dependencies
-      export DEBIAN_FRONTEND=noninteractive
-      export DEBCONF_NONINTERACTIVE_SEEN=true
-      apt-get build-dep -y ./
+      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
-      # unset the LD_FLAGS and LD_LIBRARY_PATH vars that snapcraft sets for us
-      # as those will point to the $CRAFT_STAGE which on re-builds will
-      # contain things like libc and friends that confuse the debian package
-      # build system
-      # TODO: should we unset $PATH to not include $CRAFT_STAGE too?
-      unset LD_FLAGS
-      unset LD_LIBRARY_PATH
-      # run the real build (but just build the binary package, and don't
-      # bother compressing it too much)
-      dpkg-buildpackage -b -uc -us -Zgzip -zfast
-      cp ../probert-{network,common}*.deb $CRAFT_PART_INSTALL
-    stage:
-      - -probert*.deb
+      "${CRAFT_PROJECT_DIR}/build-package.sh" build
+    override-stage: |
+      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
+    prime:
+      - -local-debs
+
   consoleconf-deb:
+    build-packages:
+      - apt-utils
+      - devscripts
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
     # following branch server/jammy
     source-commit: abc053508fa27656f1016e32585077ef567ad591
     override-pull: |
-      craftctl default
-      # install build dependencies
-      export DEBIAN_FRONTEND=noninteractive
-      export DEBCONF_NONINTERACTIVE_SEEN=true
-      apt-get build-dep -y ./
+      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
-      # unset the LD_FLAGS and LD_LIBRARY_PATH vars that snapcraft sets for us
-      # as those will point to the $CRAFT_STAGE which on re-builds will
-      # contain things like libc and friends that confuse the debian package
-      # build system
-      # TODO: should we unset $PATH to not include $CRAFT_STAGE too?
-      unset LD_FLAGS
-      unset LD_LIBRARY_PATH
-      # run the real build (but just build the binary package, and don't
-      # bother compressing it too much)
-      dpkg-buildpackage -b -uc -us -Zgzip -zfast
-      cp ../console-conf_*.deb ../subiquitycore_*.deb $CRAFT_PART_INSTALL
-    stage:
-      - -console-conf_*.deb
-      - -subiquitycore_*.deb
+      "${CRAFT_PROJECT_DIR}/build-package.sh" build
+    override-stage: |
+      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
+    prime:
+      - -local-debs
 
   base:
     plugin: nil
@@ -79,13 +61,11 @@ parts:
       - SIG: ${SHA256}.gpg
     override-pull: |
       craftctl default
-      wget "${SHA256}" -O sha265sum
-      wget "${SIG}" -O sha265sum.gpg
+      wget "${SHA256}" "${SIG}" "${URL}"
       gpg --no-default-keyring \
           --keyring ./cd-image-keying.gpg \
-          --verify sha265sum.gpg sha265sum
-      wget "${URL}" -O "${BASE}"
-      awk -v "file=${BASE}" '$2=="*"file' sha265sum | sha256sum -c
+          --verify SHA256SUMS.gpg SHA256SUMS
+      awk -v "file=${BASE}" '$2=="*"file' SHA256SUMS | sha256sum -c
     override-build: |
       mkdir -p "${CRAFT_PART_INSTALL}/base"
       tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"

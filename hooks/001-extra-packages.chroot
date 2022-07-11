@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eux
 
@@ -40,60 +40,79 @@ Ht/skh2wZSHtJgejt9kqIKMho1wtYz7ZTqMtN9GJK0VONbHP0Xu6
 
 EOF
 
+cat <<EOF >/etc/apt/sources.list.d/local-packages.list
+deb [trusted=yes] file:/install-data/local-debs ./
+EOF
+
+# This gives higher priority to local-debs repository
+cat <<EOF >/etc/apt/preferences
+Package: *
+Pin: origin ""
+Pin-Priority: 1001
+EOF
+
 # install some packages we need
 apt update
 apt dist-upgrade -y
-apt install --no-install-recommends -y \
-    systemd \
-    systemd-sysv \
-    systemd-timesyncd \
-    finalrd \
-    libnss-extrausers \
-    libpam-systemd \
-    libpam-modules \
-    distro-info-data \
-    tzdata \
-    openssh-server \
-    iproute2 \
-    iptables \
-    kmod \
-    udev \
-    sudo \
-    less \
-    dbus \
-    dbus-user-session \
-    vim-tiny \
-    bash-completion \
-    netcat-openbsd \
-    iputils-ping \
-    apparmor \
-    netplan.io \
-    ca-certificates \
-    dosfstools \
-    squashfs-tools \
-    rfkill \
-    wpasupplicant \
-    cloud-init \
-    dmsetup \
-    cryptsetup \
+
+PACKAGES=(
+    apparmor
+    bash-completion
     bzip2
+    ca-certificates
+    cloud-init
+    cryptsetup
+    dbus
+    dbus-user-session
+    distro-info-data
+    dmsetup
+    dosfstools
+    finalrd
+    iproute2
+    iptables
+    iputils-ping
+    kmod
+    less
+    libnss-extrausers
+    libpam-modules
+    libpam-systemd
+    netcat-openbsd
+    netplan.io
+    openssh-server
+    rfkill
+    squashfs-tools
+    sudo
+    systemd
+    systemd-sysv
+    systemd-timesyncd
+    tzdata
+    udev
+    vim-tiny
+    wpasupplicant
+)
+
+# Locally built packages
+PACKAGES+=(
+    console-conf
+    probert-common
+    probert-network
+    subiquitycore
+)
 
 case "$(dpkg --print-architecture)" in
     riscv64)
         ;;
     *)
-        apt install --no-install-recommends -y gdbserver systemd-bootchart
+        PACKAGES+=(gdbserver systemd-bootchart)
         ;;
 esac
-
-# Install self-built console-conf
-find /tmp -name '*.deb' -print0 | xargs -0 apt install --no-install-recommends -y
-rm /tmp/*.deb
-
-apt autoremove -y
 
 case "$(dpkg --print-architecture)" in
     amd64|i386)
-        apt install --no-install-recommends -y secureboot-db
+        PACKAGES+=(secureboot-db)
         ;;
 esac
+
+apt install --no-install-recommends -y "${PACKAGES[@]}"
+
+apt autoremove -y

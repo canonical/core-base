@@ -12,6 +12,7 @@ install:
 		echo "no DESTDIR set"; \
 		exit 1; \
 	fi
+	rm -rf $(DESTDIR)
 	cp -aT $(CRAFT_STAGE)/base $(DESTDIR)
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
@@ -30,20 +31,19 @@ install:
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
-	/bin/cp $(CRAFT_PART_INSTALL)/../../probert-deb/install/*.deb $(DESTDIR)/tmp
-	/bin/cp $(CRAFT_PART_INSTALL)/../../consoleconf-deb/install/*.deb $(DESTDIR)/tmp
+	mkdir -p $(DESTDIR)/install-data
+	/bin/cp -r $(CRAFT_STAGE)/local-debs $(DESTDIR)/install-data/local-debs
 	# customize
-	set -ex; for f in ./hooks/[0-9]*.chroot; do \
-		/bin/cp -a $$f $(DESTDIR)/tmp && \
-		if ! chroot $(DESTDIR) /tmp/$$(basename $$f); then \
-                    exit 1; \
-                fi && \
-		rm -f $(DESTDIR)/tmp/$$(basename $$f); \
-	done;
+	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
+		base="$$(basename "$${f}")";			\
+		cp -a "$${f}" $(DESTDIR)/install-data/;		\
+		chroot $(DESTDIR) "/install-data/$${base}";	\
+		rm "$(DESTDIR)/install-data/$${base}";		\
+	done
+	rm -rf $(DESTDIR)/install-data
 
 	# only generate manifest and dpkg.yaml files for lp build
 	if [ -e /build/core22 ]; then \
-		echo $$f; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 	fi;

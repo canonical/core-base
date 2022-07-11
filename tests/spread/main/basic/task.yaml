@@ -41,3 +41,18 @@ execute: |
   execute_remote systemctl -q is-active systemd-journald.service
   execute_remote systemctl -q is-active systemd-resolved.service
   execute_remote systemctl -q is-active systemd-timesyncd.service
+
+  # Verify that ubuntu-seed and ubuntu-save has been mounted
+  # ubuntu-seed should be mounted readonly
+  # ubuntu-save should be mounted readwrite
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/seed" && index($6, "ro")) { exit 0}} ENDFILE{exit -1}'
+  execute_remote mount | awk '{if ($3 == "/var/lib/snapd/save" && index($6, "rw")) { exit 0}} ENDFILE{exit -1}'
+  
+  # Verify that ubuntu-save has been mounted earlier than local-fs.target and not by snapd
+  # at a later stage. This is related to PR https://github.com/snapcore/snapd/pull/11850
+  UCSAVE_MOUNT_TIME=$(execute_remote systemctl show -p ActiveEnterTimestampMonotonic --value var-lib-snapd-save.mount)
+  LOCALFS_MOUNT_TIME=$(execute_remote systemctl show -p ActiveEnterTimestampMonotonic --value local-fs.target)
+  if [ "$UCSAVE_MOUNT_TIME" -ge "$LOCALFS_MOUNT_TIME" ]; then
+    echo "ubuntu-save was not mounted before local-fs.target"
+    exit 1
+  fi
