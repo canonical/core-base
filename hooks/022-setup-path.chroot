@@ -15,3 +15,6 @@ echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/ga
 echo "Ensure /etc/login.defs contains /snap/bin"
 sed -i 's#\(.*\)PATH=\(.*\)#\1 PATH=\2:/snap/bin#' /etc/login.defs
 grep 'PATH=.*:/snap/bin' /etc/login.defs
+
+# Include profile script fragment from snapd snap
+ln -s /snap/snapd/current/etc/profile.d/apps-bin-path.sh /etc/profile.d/apps-bin-path.sh
