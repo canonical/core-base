@@ -68,17 +68,24 @@ PACKAGES=(
     dmsetup
     dosfstools
     finalrd
+    gnutls-bin
     iproute2
     iptables
     iputils-ping
     kmod
     less
+    libengine-pkcs11-openssl
     libnss-extrausers
+    libopts25
+    libp11-3
     libpam-modules
     libpam-systemd
     netcat-openbsd
     netplan.io
+    opensc
     openssh-server
+    p11-kit
+    p11-kit-modules
     rfkill
     squashfs-tools
     sudo
