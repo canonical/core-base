@@ -57,6 +57,8 @@ rm -rf \
     /usr/lib/*/engines-1.1/pkcs11.la \
     /usr/lib/*/libsmm-local.* \
     /usr/lib/*/onepin-opensc-pkcs11.* \
+    /usr/lib/*/opensc-pkcs11.so \
+    /usr/lib/*/pkcs11/opensc-pkcs11.so \
     /usr/lib/*/pkcs11-spy.* \
     /usr/share/applications/org.opensc.notify.desktop \
     /usr/share/bash-completion/completions/cardos-tool \
