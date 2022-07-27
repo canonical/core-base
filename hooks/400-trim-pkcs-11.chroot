@@ -58,6 +58,7 @@ rm -rf \
     /usr/lib/*/libsmm-local.* \
     /usr/lib/*/onepin-opensc-pkcs11.* \
     /usr/lib/*/opensc-pkcs11.so \
+    /usr/lib/*/pkcs11/onepin-opensc-pkcs11.so \
     /usr/lib/*/pkcs11/opensc-pkcs11.so \
     /usr/lib/*/pkcs11-spy.* \
     /usr/share/applications/org.opensc.notify.desktop \
