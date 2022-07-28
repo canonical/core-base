@@ -42,6 +42,9 @@ install:
 	done
 	rm -rf $(DESTDIR)/install-data
 
+	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
+	touch $(DESTDIR)/usr/lib/clock-epoch
+
 	# only generate manifest and dpkg.yaml files for lp build
 	if [ -e /build/core22 ]; then \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
