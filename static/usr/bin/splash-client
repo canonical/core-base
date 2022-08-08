@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+
+# Seed change is "Initialize system state"
+msg=
+prev_msg=
+while true; do
+    sleep 0.5
+    msg=$(snap change --abs-time '--last=seed?' |
+              awk -F ' +' '$1 == "Doing" { print substr($0, index($0, $4)); exit }') \
+                  || true
+    if [ "$msg" != "$prev_msg" ] && [ -n "$msg" ]; then
+        plymouth display-message --text "$msg"
+        prev_msg=$msg
+    fi
+done

@@ -74,7 +74,12 @@ parts:
       craftctl default
     override-prime: |
       # Do nothing
-
+  splash-theme:
+    plugin: dump
+    source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
+    source-type: git
+    organize:
+      ubuntu-core: usr/share/plymouth/themes/ubuntu-core
   bootstrap:
     after:
       - probert-deb

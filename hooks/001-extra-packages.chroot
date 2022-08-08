@@ -68,6 +68,7 @@ PACKAGES=(
     dmsetup
     dosfstools
     finalrd
+    fonts-ubuntu
     iproute2
     iptables
     iputils-ping
@@ -79,6 +80,7 @@ PACKAGES=(
     netcat-openbsd
     netplan.io
     openssh-server
+    plymouth-label-ft
     rfkill
     squashfs-tools
     sudo
