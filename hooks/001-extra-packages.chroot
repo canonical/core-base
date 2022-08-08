@@ -69,6 +69,7 @@ PACKAGES=(
     dosfstools
     finalrd
     gnutls-bin
+    fonts-ubuntu
     iproute2
     iptables
     iputils-ping
@@ -86,6 +87,7 @@ PACKAGES=(
     openssh-server
     p11-kit
     p11-kit-modules
+    plymouth-label-ft
     rfkill
     squashfs-tools
     sudo
