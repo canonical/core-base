@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -eu
+
+rm -r /usr/share/polkit-1
