@@ -61,6 +61,7 @@ rm -rf \
     /usr/lib/*/pkcs11/onepin-opensc-pkcs11.so \
     /usr/lib/*/pkcs11/opensc-pkcs11.so \
     /usr/lib/*/pkcs11-spy.* \
+    /usr/lib/*/pkcs11/pkcs11-spy.* \
     /usr/share/applications/org.opensc.notify.desktop \
     /usr/share/bash-completion/completions/cardos-tool \
     /usr/share/bash-completion/completions/cryptoflex-tool \
@@ -81,4 +82,5 @@ rm -rf \
     /usr/share/bash-completion/completions/pkcs15-init \
     /usr/share/bash-completion/completions/pkcs15-tool \
     /usr/share/bash-completion/completions/sc-hsm-tool \
-    /usr/share/bash-completion/completions/westcos-tool
+    /usr/share/bash-completion/completions/westcos-tool \
+    /usr/share/doc/opensc/README.md
