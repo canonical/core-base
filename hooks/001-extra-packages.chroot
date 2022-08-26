@@ -19,25 +19,45 @@ trap 'umount /proc' EXIT
 # systemd postinst needs this
 mkdir -p /var/log/journal
 
+# We need to install first the certificates as apt will need them for https to lp
+apt update
+apt install --no-install-recommends -y ca-certificates
+
 # shellcheck disable=SC1091
 CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
-# enable the foundations ubuntu-image PPA
-echo "deb http://ppa.launchpadcontent.net/canonical-foundations/ubuntu-image/ubuntu $CODENAME main" > /etc/apt/sources.list.d/ubuntu-image.list
+# enable the ucdev PPA with additional packages to build bases
+echo "deb https://ppa.launchpadcontent.net/ucdev/base-ppa/ubuntu/ $CODENAME main" \
+     > /etc/apt/sources.list.d/ubuntu-image.list
 
-cat >/etc/apt/trusted.gpg.d/canonical-foundations-ubuntu-image.asc <<EOF
+cat >/etc/apt/trusted.gpg.d/ucdev-base-ppa.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-xo0EUL4ncAEEAOZssKpJDMZKbmsf9lHwlKA0vN6yQ0sOIPc500waH3xTC0sVlqQc
-3pUxCIdhU+qK1mH2D51FGHDb504k0Lpb+LE56TWa/X3xrZqUQX0UD1fykEruR4W2
-CdkXXZvmNBNatE9GurR6p407X5TED+dlUK/hIKNCb5unTEilBb4WwArxABEBAAHN
-LExhdW5jaHBhZCBQUEEgZm9yIENhbm9uaWNhbCBGb3VuZGF0aW9ucyBUZWFtwrgE
-EwECACIFAlC+J3ACGwMGCwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJENTAtmj9
-TJE5u/MD/2j2auOv62YUFwT7POylj7ihhZOarOSCEiQGita8II77j5AoK5O75uD+
-oQc5pdxVN2NGYD5R0PmDCPFN1Rb869YjtsPgLefEB+6Tc1GOR9hgnwuSU5lrwqdQ
-Ht/skh2wZSHtJgejt9kqIKMho1wtYz7ZTqMtN9GJK0VONbHP0Xu6
-=lWSn
+mQINBGLW9dwBEAC7UJatAWOrUgfJlElkTUfmjL6JCTONYGy1Qzrw65YgzjdJGvXQ
+iuOZyeX3lGjBrihbH7hQvlf2Cyo6E7DA/PLUMVAUMfc52U9RH2ovejZ25BonyL/e
+XArTBRNWcjOgZXsO2aAcQZ7Tn1hYbjYv8zGmurk1vbQYKd/LlZsdrAkq2lmVOFPq
+MTDLfa8vIhlfbr7uQlcB6uBehLYUUoTW3nV9HiA6fDTr86N2cQjhP7zxTZHxn52p
+/ba0um5Hlg814l80S3ALaPQzqnpPPix0yzT7P2JfoIXKof4Lm28I2txK3fATeFzI
+AQpqZqsCyRxyNJcN3AW9ma/dz7Orgq0y0q0xzTtvHq3+MuVAwFRhk9wyOZNPU9a6
+OnavN9WF9hZywyf5/5OHMdKUendsi/k87B/K5fFUSHpukJyrZira02jkX8jwREkh
+T2zUZrume63fRXP7zXSZ1nKPfsJY7k8NhHsxOc8aF6xvm624IpQTZc3g+xT+L5o7
+QVuHIV2CxxWdSAQ0QdNAeCT/hIsYbeu+6AKPNSqMzobSIC01zZ8oN1c8veMkFPkh
+tWuXoCRxtMF6rNh9PMXQLLUqiC6E6N5h5uSvQYIF4gGa3zw3B3HxJBD4/AoVkr//
+/BVXH0fLlDuxelm9CoJPoFGoOuRyKDbgzBbO9pHpp9BDFQqpvzKal6JTeQARAQAB
+tBdMYXVuY2hwYWQgUFBBIGZvciB1Y2RldokCTgQTAQoAOBYhBJ2nQrQmt92ewjMj
+kwOpzTcHpv33BQJi1vXcAhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEAOp
+zTcHpv33MbkP/2MIfnk3i36DmzIiVPwWhhEMrc7hE+SNGiawlO/uJngK48SXQgyN
+Z7XbN27uId/HT11mHArl4aeG/iFScJKUCvQNAQzN3qHZ+hbiWQ/E9AedBNg+W5ef
+60vfYhs5FFYRAsZmt0kab7r96LH0r5qiQbO9RdlGu2YazcTXInh9vG0/IBuYGwBO
++b+z6Y4rsOUh/20xUIvkRIXIZr7xNjGe6rBHjdQLeyyZ5y1m68OVXh1yhcetO2EV
+KjMcYBu+EdYc7BKHvlyaelKtYEMd/EHoA/7DprcKMziLo+V0FUdhPZBEtra1RUFn
+72/orlz+Doghs/wVSyXQi2txeIArF4cJJq84SyBMH/6VLm1osR4q0ek1e3HFWGR6
+tSI7ZFO2ZCPGc456osWlt0aX1hYiIFN8oRmhCsPsSADSZndt1uCfKCOZBn78p4E1
+lUSNqIRta827YdPU57AdzBja915X7U7clHn9i/3Kz/f6egRhkuy8mItbrZHO3jGp
+RxHKbIBT9oXnt+Zj2Yp3Kcu9Lf3ebsEbBdPh0gZlM1QKh0BHRoOIc7Xw37KMtS2m
+opKDBUugNPIcdTranx/trc23fYOc+ObPlHJ8q22wNoF7bH4jCIohpDzy0ar3H8vV
+jdVw2j6diVag+TBwXXX/pBCBMFvUHJph5afKSfnrIuDk6yzCV8TaGAer
+=L0hK
 -----END PGP PUBLIC KEY BLOCK-----
-
 EOF
 
 cat <<EOF >/etc/apt/sources.list.d/local-packages.list
@@ -59,7 +79,6 @@ PACKAGES=(
     apparmor
     bash-completion
     bzip2
-    ca-certificates
     cloud-init
     cryptsetup
     dbus
@@ -69,6 +88,7 @@ PACKAGES=(
     dosfstools
     finalrd
     gnutls-bin
+    fonts-ubuntu
     iproute2
     iptables
     iputils-ping
@@ -86,6 +106,7 @@ PACKAGES=(
     openssh-server
     p11-kit
     p11-kit-modules
+    plymouth-label-ft
     rfkill
     squashfs-tools
     sudo

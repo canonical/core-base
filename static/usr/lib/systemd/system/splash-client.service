@@ -1,0 +1,7 @@
+[Unit]
+Description=Update Plymouth Boot Screen
+After=plymouth-start.service snapd.service snapd.socket
+ConditionKernelCommandLine=snapd_recovery_mode=run
+
+[Service]
+ExecStart=-/usr/bin/splash-client
