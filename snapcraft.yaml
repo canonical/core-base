@@ -1,4 +1,4 @@
-name: core22-gdm
+name: core22-desktop
 # version: "22"
 adopt-info: bootstrap
 summary: Runtime environment based on Ubuntu 22.04
