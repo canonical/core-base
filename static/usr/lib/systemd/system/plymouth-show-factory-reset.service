@@ -1,0 +1,10 @@
+[Unit]
+Description=Display state on splash
+After=plymouth-start.service
+ConditionKernelCommandLine=snapd_recovery_mode=factory-reset
+ConditionPathExists=/run/plymouth/pid
+
+[Service]
+ExecStart=-/bin/plymouth display-message --text='Resetting to factory defaults...'
+Type=oneshot
+TimeoutSec=20

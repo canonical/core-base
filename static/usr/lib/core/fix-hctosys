@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# This script is a workaround for the issue that when an rtc module is inserted
+# the clock gets reset to whatever time the RTC has regardless of system time.
+# See https://github.com/snapcore/core20/pull/136 for more details
+
+
+# Debugging udev scripts is hard, if debugging is needed uncomment the following
+# lines and rebuild core with that.
+#set -x
+#if [ -e /run/mnt/ubuntu-seed ]; then
+#    LOG=/run/mnt/ubuntu-seed/fix-hctosys.log
+#else
+#    LOG=/run/fix-hctosys.log
+#fi
+#exec >> "$LOG"
+#exec 2>&1
+#printf "%s\n" "Starting $(date)"
+
+TIMESYNC_CLOCK=/var/lib/systemd/timesync/clock
+CLOCK_EPOCH=/var/lib/clock-epoch
+SELF=$(readlink -f "$0")
+
+NOW="$(date +'%s')"
+
+# Get the mtime of this script
+# Note that we cannot just "stat /proc/self/exe" here, this resolves to the
+# /usr/bin/stat binary
+MTIME_SELF="$(stat -L "$SELF" -c '%Y')"
+
+# Get the mtime of the /usr/lib/clock-epoch file
+MTIME_CLOCK_EPOCH=0
+if [ -e $CLOCK_EPOCH ]; then
+    MTIME_CLOCK_EPOCH="$(stat -L $CLOCK_EPOCH -c '%Y')"
+fi
+
+# Get the mtime from timesyncd that is written every 60s
+MTIME_TIMESYNC_CLOCK=0
+if [ -e $TIMESYNC_CLOCK ]; then
+    MTIME_TIMESYNC_CLOCK="$(stat -L $TIMESYNC_CLOCK -c '%Y')"
+fi
+
+# find the highest MTIME from the two filesystem references
+MTIME=$(echo "$MTIME_SELF $MTIME_CLOCK_EPOCH $MTIME_TIMESYNC_CLOCK" | tr ' ' '\n' | sort -rn | head -1)
+
+# set to the highest mtime found if the current time is too old
+if [ "$NOW" -lt "$MTIME" ]; then
+    echo "Time needs updating because $NOW < $MTIME"
+    date -s @"$MTIME"
+fi

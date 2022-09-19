@@ -1,0 +1,86 @@
+#!/bin/sh -ex
+
+mkdir -p /usr/share/p11-kit/modules
+echo "Creating p11-kit-client module configuration"
+echo "module: p11-kit-client.so" > \
+  /usr/share/p11-kit/modules/p11-kit-client.module
+
+# we should keep only following
+#   /usr/bin/p11-kit
+#   /usr/bin/p11tool
+#   /usr/bin/pkcs11-tool
+#   /usr/libexec
+#   /usr/lib/*/engines-*/*.so*
+#   /usr/lib/*/libopts.so*
+#   /usr/lib/*/libopensc.so*
+#   /usr/lib/*/libp11.so*
+#   /usr/lib/*/p11-kit-proxy.so*
+#   /usr/lib/*/pkcs11/*.so
+#   /usr/share/p11-kit
+
+echo "Cleaning excess pkcs#11 library"
+dpkg -r --force-depends libgnutls-dane0 libunbound8 libevent-2.1-7
+
+rm -rf \
+    /etc/opensc \
+    /usr/bin/cardos-tool \
+    /usr/bin/certtool \
+    /usr/bin/cryptoflex-tool \
+    /usr/bin/danetool \
+    /usr/bin/dnie-tool \
+    /usr/bin/egk-tool \
+    /usr/bin/eidenv \
+    /usr/bin/gids-tool \
+    /usr/bin/gnutls-cli \
+    /usr/bin/gnutls-cli-debug \
+    /usr/bin/gnutls-serv \
+    /usr/bin/goid-tool \
+    /usr/bin/iasecc-tool \
+    /usr/bin/netkey-tool \
+    /usr/bin/npa-tool \
+    /usr/bin/ocsptool \
+    /usr/bin/openpgp-tool \
+    /usr/bin/opensc-asn1 \
+    /usr/bin/opensc-explorer \
+    /usr/bin/opensc-notify \
+    /usr/bin/opensc-tool \
+    /usr/bin/piv-tool \
+    /usr/bin/pkcs11-register \
+    /usr/bin/pkcs15-crypt \
+    /usr/bin/pkcs15-init \
+    /usr/bin/pkcs15-tool \
+    /usr/bin/psktool \
+    /usr/bin/sc-hsm-tool \
+    /usr/bin/srptool \
+    /usr/bin/trust \
+    /usr/bin/westcos-tool \
+    /usr/lib/*/engines-1.1/pkcs11.la \
+    /usr/lib/*/libsmm-local.* \
+    /usr/lib/*/onepin-opensc-pkcs11.* \
+    /usr/lib/*/opensc-pkcs11.so \
+    /usr/lib/*/pkcs11/onepin-opensc-pkcs11.so \
+    /usr/lib/*/pkcs11/opensc-pkcs11.so \
+    /usr/lib/*/pkcs11-spy.* \
+    /usr/lib/*/pkcs11/pkcs11-spy.* \
+    /usr/share/applications/org.opensc.notify.desktop \
+    /usr/share/bash-completion/completions/cardos-tool \
+    /usr/share/bash-completion/completions/cryptoflex-tool \
+    /usr/share/bash-completion/completions/dnie-tool \
+    /usr/share/bash-completion/completions/egk-tool \
+    /usr/share/bash-completion/completions/eidenv \
+    /usr/share/bash-completion/completions/gids-tool \
+    /usr/share/bash-completion/completions/iasecc-tool \
+    /usr/share/bash-completion/completions/netkey-tool \
+    /usr/share/bash-completion/completions/npa-tool \
+    /usr/share/bash-completion/completions/openpgp-tool \
+    /usr/share/bash-completion/completions/opensc-asn1 \
+    /usr/share/bash-completion/completions/opensc-explorer \
+    /usr/share/bash-completion/completions/opensc-notify \
+    /usr/share/bash-completion/completions/opensc-tool \
+    /usr/share/bash-completion/completions/piv-tool \
+    /usr/share/bash-completion/completions/pkcs15-crypt \
+    /usr/share/bash-completion/completions/pkcs15-init \
+    /usr/share/bash-completion/completions/pkcs15-tool \
+    /usr/share/bash-completion/completions/sc-hsm-tool \
+    /usr/share/bash-completion/completions/westcos-tool \
+    /usr/share/doc/opensc/README.md
