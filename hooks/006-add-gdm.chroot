@@ -99,3 +99,9 @@ Type=Application
 DesktopNames=ubuntu:GNOME
 X-GDM-SessionRegisters=false
 EOF
+
+# Run GNOME Shell with XWayland disabled
+sed -i 's=/usr/bin/gnome-shell=/usr/bin/gnome-shell --no-x11=g' /usr/lib/systemd/user/org.gnome.Shell@wayland.service
+sed -i 's=/usr/bin/gnome-shell=/usr/bin/gnome-shell --no-x11=g' /usr/lib/systemd/user/org.gnome.Shell@x11.service
+sed -i 's=/usr/bin/gnome-shell=/usr/bin/gnome-shell --no-x11=g' /usr/share/applications/org.gnome.Shell.desktop
+sed -i 's/org.gnome.SettingsDaemon.XSettings;//g' /usr/share/gnome-session/sessions/ubuntu.session
