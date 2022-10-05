@@ -21,7 +21,8 @@ apt install --no-install-recommends -y \
     yaru-theme-gnome-shell \
     yaru-theme-icon \
     fonts-ubuntu \
-    ubuntu-settings
+    ubuntu-settings \
+    xdg-user-dirs
 
 # Install a basic Ubuntu session
 apt install --no-install-recommends -y \
