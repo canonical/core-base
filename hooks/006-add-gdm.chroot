@@ -36,6 +36,9 @@ apt install --no-install-recommends -y \
     xdg-desktop-portal \
     xdg-desktop-portal-gtk
 
+# Remove setuid pkexec binary
+rm /usr/bin/pkexec
+
 # Remove Ubuntu X11 session
 rm /usr/share/xsessions/ubuntu.desktop
 
