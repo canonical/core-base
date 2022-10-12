@@ -36,6 +36,11 @@ apt install --no-install-recommends -y \
     xdg-desktop-portal \
     xdg-desktop-portal-gtk
 
+# Remove setuid from some executables we're not using
+chmod u-s,g-s /usr/bin/pkexec
+chmod u-s,g-s /usr/libexec/camel-lock-helper-1.2
+chmod u-s,g-s /usr/lib/*/utempter/utempter
+
 # Remove Ubuntu X11 session
 rm /usr/share/xsessions/ubuntu.desktop
 
