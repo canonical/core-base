@@ -3,9 +3,9 @@ Default: yes
 Priority: 257
 Auth-Type: Primary
 Auth:
-    [success=end authinfo_unavail=ignore default=die] pam_extrausers.so nodelay nullok try_first_pass
+    [success=end authinfo_unavail=ignore default=bad] pam_extrausers.so nodelay nullok try_first_pass
 Auth-Initial:
-    [success=end authinfo_unavail=ignore default=die] pam_extrausers.so nodelay nullok
+    [success=end authinfo_unavail=ignore default=bad] pam_extrausers.so nodelay nullok
 Password-Type: Primary
 Password:
 	[success=end default=ignore]      pam_extrausers.so minlen=4 sha512 use_authtok try_first_pass
