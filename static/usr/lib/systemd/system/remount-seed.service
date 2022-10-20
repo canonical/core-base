@@ -1,0 +1,10 @@
+[Unit]
+Description=Remounting /run/mnt/ubuntu-seed read-only
+DefaultDependencies=no
+ConditionPathIsMountPoint=/run/mnt/ubuntu-seed
+After=umount.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/mount -o remount,ro /run/mnt/ubuntu-seed

@@ -1,0 +1,10 @@
+[Unit]
+Description=Remounting /run/mnt/data read-only
+DefaultDependencies=no
+ConditionPathIsMountPoint=/run/mnt/data
+After=umount.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/mount -o remount,ro /run/mnt/data
