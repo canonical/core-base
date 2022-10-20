@@ -1,0 +1,7 @@
+Name: Optional lockout (authsucc)
+Default: yes
+Priority: 0
+Auth-Type: Additional
+Auth:
+    [success=1 default=ignore] pam_exec.so quiet /usr/lib/core/lockout-not-enabled.sh
+    sufficient pam_faillock.so authsucc

@@ -1,0 +1,7 @@
+Name: Optional lockout
+Default: yes
+Priority: 0
+Auth-Type: Primary
+Auth:
+    [success=1 default=ignore] pam_exec.so quiet /usr/lib/core/lockout-not-enabled.sh
+    [default=ignore] pam_faillock.so authfail

@@ -1,0 +1,7 @@
+Name: Optional lockout (preauth)
+Default: yes
+Priority: 2048
+Auth-Type: Primary
+Auth:
+    [success=1 default=ignore] pam_exec.so quiet /usr/lib/core/lockout-not-enabled.sh
+    requisite pam_faillock.so preauth
