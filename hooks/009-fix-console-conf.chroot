@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -eu
+
+rm /usr/lib/systemd/system/getty@.service.d/console-conf.conf
+
+cat <<EOF >/usr/lib/systemd/system/getty@.service.d/console-conf.conf
+[Unit]
+ConditionPathExists=/var/lib/console-conf/complete
+ConditionPathExists=!/run/snapd-recovery-chooser-triggered
+EOF
+
+rm /usr/lib/systemd/system/serial-getty@.service.d/console-conf-serial.conf
+
+cat <<EOF >/usr/lib/systemd/system/serial-getty@.service.d/console-conf-serial.conf
+[Unit]
+ConditionPathExists=/var/lib/console-conf/complete
+EOF
+
+for unit in console-conf@.service serial-console-conf@.service; do
+    mkdir -p "/usr/lib/systemd/system/${unit}.d"
+    cat <<EOF >"/usr/lib/systemd/system/${unit}.d/core.conf"
+[Unit]
+# console-conf will try to stop itself. It should not.
+RefuseManualStop=true
+[Service]
+# console-conf should try to start or stop getty@%i
+ExecStartPre=
+ExecStopPost=
+EOF
+done
+
+ln -s /usr/lib/systemd/system/console-conf@.service /etc/systemd/system/getty.target.wants/console-conf@tty1.service
