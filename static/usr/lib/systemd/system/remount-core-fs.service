@@ -1,0 +1,16 @@
+[Unit]
+Description=Reset propagation of initial mount points
+DefaultDependencies=no
+Before=local-fs-pre.target
+Before=local-fs.target
+Before=shutdown.target
+Wants=local-fs-pre.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/core/remount-core-fs
+
+[Install]
+WantedBy=local-fs.target
