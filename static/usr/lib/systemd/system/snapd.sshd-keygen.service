@@ -6,3 +6,6 @@ Before=sshd.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/core-sshd-host-keygen
+
+[Install]
+WantedBy=multi-user.target

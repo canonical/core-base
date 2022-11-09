@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eux
+
+systemctl preset-all
+systemctl --global preset-all

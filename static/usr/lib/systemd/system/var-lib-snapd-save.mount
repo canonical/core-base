@@ -6,3 +6,6 @@ What=/run/mnt/ubuntu-save
 Where=/var/lib/snapd/save
 Options=bind
 Type=none
+
+[Install]
+WantedBy=local-fs.target
