@@ -1,8 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-if test -d usr/share/polkit-1; then
-    echo "/usr/share/polkit-1 should not exist" 1>&2
-    exit 1
-fi
