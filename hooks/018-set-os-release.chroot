@@ -8,4 +8,5 @@ PRETTY_NAME="Ubuntu Core 22"
 VERSION_ID="22"
 HOME_URL="https://snapcraft.io/"
 BUG_REPORT_URL="https://bugs.launchpad.net/snappy/"
+ID_LIKE="ubuntu"
 EOF
