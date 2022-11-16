@@ -1,0 +1,8 @@
+enable core.start-snapd.service
+enable keep-entangled-mounts.target
+enable plymouth-show-install.service
+enable remount-data.service
+enable remount-seed.service
+enable snapd.seeded.service
+enable snapd.sshd-keygen.service
+enable swapfile.service

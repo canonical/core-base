@@ -8,3 +8,6 @@ Before=shutdown.target
 [Service]
 Type=oneshot
 ExecStart=/bin/mount -o remount,ro /run/mnt/ubuntu-seed
+
+[Install]
+WantedBy=shutdown.target

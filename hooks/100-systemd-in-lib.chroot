@@ -3,7 +3,32 @@
 set -eux
 
 echo "ensure the systemd target.wants are in /lib instead of /etc"
-for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
-    mv etc/systemd/system/"$d"/* lib/systemd/system/"$d"
-done
 
+for path in /etc/systemd/system/*.wants /etc/systemd/system/*.requires; do
+    if ! [ -d "${path}" ]; then
+        continue
+    fi
+    want="$(basename "${path}")"
+    for link in "${path}"/*; do
+        if ! [ -L "${link}" ]; then
+            continue
+        fi
+        mkdir -p /lib/systemd/system/"${want}"
+        source="$(basename "${link}")"
+        unitpath="$(realpath "${link}")"
+        case "${unitpath}" in
+            /lib/systemd/system/*)
+                ln -rs "${unitpath}" "/lib/systemd/system/${want}/${source}"
+                ;;
+            /usr/lib/systemd/system/*)
+                ln -rs "${unitpath}" "/usr/lib/systemd/system/${want}/${source}"
+                ;;
+            *)
+                ln -s "${unitpath}" "/lib/systemd/system/${want}/${source}"
+                ;;
+        esac
+        rm "${link}"
+    done
+
+    rmdir "${path}"
+done

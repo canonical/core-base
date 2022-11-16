@@ -5,3 +5,6 @@ Wants=run-mnt-data.mount
 Wants=run-mnt-ubuntu\x2dseed.mount
 Wants=usr-lib-modules.mount
 Wants=run-mnt-kernel.mount
+
+[Install]
+WantedBy=shutdown.target
