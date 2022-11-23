@@ -28,7 +28,6 @@ www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
 backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
 list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
 irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
 nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
 _apt:x:100:65534::/nonexistent:/usr/sbin/nologin
 EOF
@@ -65,7 +64,6 @@ operator:x:37:
 list:x:38:
 irc:x:39:
 src:x:40:
-gnats:x:41:
 shadow:x:42:
 utmp:x:43:
 video:x:44:
@@ -105,7 +103,6 @@ www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
 backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
 list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
 irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
 nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
 messagebus:x:100:103::/var/run/dbus:/bin/false
 snappypkg:x:101:104:Reserved:/nonexistent:/bin/false
@@ -139,7 +136,6 @@ www-data:*:16329:0:99999:7:::
 backup:*:16329:0:99999:7:::
 list:*:16329:0:99999:7:::
 irc:*:16329:0:99999:7:::
-gnats:*:16329:0:99999:7:::
 nobody:*:16329:0:99999:7:::
 messagebus:*:16413:0:99999:7:::
 snappypkg:*:16413:0:99999:7:::
@@ -186,7 +182,6 @@ operator:x:37:
 list:x:38:
 irc:x:39:
 src:x:40:
-gnats:x:41:
 shadow:x:42:
 utmp:x:43:
 video:x:44:
@@ -248,7 +243,6 @@ operator:*::
 list:*::
 irc:*::
 src:*::
-gnats:*::
 shadow:*::
 utmp:*::
 video:*::

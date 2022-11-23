@@ -23,13 +23,15 @@ mkdir -p /var/log/journal
 apt update
 apt install --no-install-recommends -y ca-certificates
 
-# shellcheck disable=SC1091
-CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
-# enable the ucdev PPA with additional packages to build bases
-echo "deb https://ppa.launchpadcontent.net/ucdev/base-ppa/ubuntu/ $CODENAME main" \
-     > /etc/apt/sources.list.d/ubuntu-image.list
+# TODO: There is no PPA for kinetic yet.
+if false; then
+    # shellcheck disable=SC1091
+    CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
+    # enable the ucdev PPA with additional packages to build bases
+    echo "deb https://ppa.launchpadcontent.net/ucdev/base-ppa/ubuntu/ $CODENAME main" \
+         > /etc/apt/sources.list.d/ubuntu-image.list
 
-cat >/etc/apt/trusted.gpg.d/ucdev-base-ppa.asc <<'EOF'
+    cat >/etc/apt/trusted.gpg.d/ucdev-base-ppa.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQINBGLW9dwBEAC7UJatAWOrUgfJlElkTUfmjL6JCTONYGy1Qzrw65YgzjdJGvXQ
@@ -59,6 +61,7 @@ jdVw2j6diVag+TBwXXX/pBCBMFvUHJph5afKSfnrIuDk6yzCV8TaGAer
 =L0hK
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
+fi
 
 cat <<EOF >/etc/apt/sources.list.d/local-packages.list
 deb [trusted=yes] file:/install-data/local-debs ./

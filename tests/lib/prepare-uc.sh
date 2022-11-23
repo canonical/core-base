@@ -7,10 +7,10 @@ set -x
 . "$TESTSLIB/prepare-utils.sh"
 
 # install dependencies
-install_core22_deps
+install_base_deps
 
 # download snaps required for us to build the image
-download_core22_snaps "$SNAP_BRANCH"
+download_core24_snaps "$SNAP_BRANCH"
 
 # create test user for spread to use
 groupadd --gid 12345 test
@@ -115,17 +115,17 @@ rm upstream-snapd.snap
 snap pack --filename=upstream-snapd.snap "$snapddir"
 rm -r $snapddir
 
-# build the core22 snap if it has not been provided to us by CI
+# build the core24 snap if it has not been provided to us by CI
 uc_snap="$(get_core_snap_name)"
 if [ ! -f "$PROJECT_PATH/core${UC_VERSION}.artifact" ]; then
-    build_core22_snap "$PROJECT_PATH"
+    build_base_snap "$PROJECT_PATH"
 else
-    # use provided core22 snap
+    # use provided core24 snap
     cp "$PROJECT_PATH/core${UC_VERSION}.artifact" "$uc_snap"
 fi
 
 # finally build the uc image
-build_core22_image
+build_base_image
 
 # setup some data we will inject into ubuntu-seed partition of the image above
 # that snapd.spread-tests-run-mode-tweaks.service will ingest

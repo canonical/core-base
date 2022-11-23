@@ -1,7 +1,7 @@
-project: core22
+project: core24
 
 environment:
-  SETUPDIR: /home/core22
+  SETUPDIR: /home/core24
   PROJECT_PATH: $SETUPDIR
   PATH: $PATH:$PROJECT_PATH/tests/bin
   TESTSLIB: $PROJECT_PATH/tests/lib
@@ -19,7 +19,7 @@ backends:
     plan: n2-standard-2
     halt-timeout: 2h
     systems:
-      - ubuntu-22.04-64:
+      - ubuntu-22.10-64:
           image: ubuntu-2204-64-virt-enabled
           storage: 20G
 
@@ -30,18 +30,18 @@ backends:
     #            uc22 with less RAM
     memory: 4G
     systems:
-      - ubuntu-22.04-64:
+      - ubuntu-22.10-64:
           username: ubuntu
           password: ubuntu
 
   lxd-nested:
     type: lxd
-    container-profiles: core22
+    container-profiles: core24
     systems:
-      - ubuntu-22.04:
+      - ubuntu-22.10:
           image: ucspread22
 
-path: /home/core22
+path: /home/core24
 
 exclude:
   - .git

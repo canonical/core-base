@@ -3,7 +3,7 @@
 set -e
 
 # With newer systemd, systemd-timesyncd switched from a regular user usage to
-# dynamic users.  In cases of upgrades from an older core22 system or in some
+# dynamic users.  In cases of upgrades from an older core system or in some
 # other weird situations the old timesync directory needs removal as otherwise
 # systemd will fail creating dynamic user symlink and fail to start timesyncd.
 # XXX: This might not be needed in the end, but certainly useful now

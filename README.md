@@ -1,6 +1,6 @@
-# Core22 snap for snapd & Ubuntu Core
+# Core24 snap for snapd & Ubuntu Core
 
-This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 22.04
+This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 22.10 (will be base on 24.04)
 
 # Building locally
 
@@ -58,7 +58,7 @@ mv autopkgtest-focal-amd64.img ubuntu-20.04-64.img
 ```
 4. Now you are ready to run spread tests with the qemu backend
 ```
-cd ~/core22 # or wherever you checked out this repository
+cd ~/core24 # or wherever you checked out this repository
 spread qemu-nested
 ```
 
@@ -74,18 +74,18 @@ and yq (needed for yaml manipulation), download the newest image and import it i
 ```
 sudo snap install lxd
 sudo snap install yq
-curl -o lxd-core22-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core22-img.tar.gz
-lxc image import lxd-core22-img.tar.gz --alias ucspread22
+curl -o lxd-core24-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core24-img.tar.gz
+lxc image import lxd-core24-img.tar.gz --alias ucspread22
 lxc image show ucspread22 > temp.profile
 yq e '.properties.aliases = "ucspread22,amd64"' -i ./temp.profile
 yq e '.properties.remote = "images"' -i ./temp.profile
 cat ./temp.profile | lxc image edit ucspread22
-rm ./temp.profile ./lxd-core22-img.tar.gz
+rm ./temp.profile ./lxd-core24-img.tar.gz
 ```
-2. Import the LXD core22 test profile. Make sure your working directory is the root of this repository.
+2. Import the LXD core24 test profile. Make sure your working directory is the root of this repository.
 ```
-lxc profile create core22
-cat tests/spread/core22.lxdprofile | lxc profile edit core22
+lxc profile create core24
+cat tests/spread/core24.lxdprofile | lxc profile edit core24
 ```
 3. Set environment variable to enable KVM acceleration for the nested qemu instance
 ```

@@ -23,5 +23,5 @@ install:
 
 script:
   - sg lxd 'snapcraft'
-  - sudo unsquashfs -d prime core22*.snap
+  - sudo unsquashfs -d prime core24*.snap
   - make test

@@ -1,5 +1,7 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
+SNAP_NAME=core24
+BUILDDIR=/build/$(SNAP_NAME)
 
 .PHONY: all
 all: check
@@ -46,9 +48,9 @@ install:
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
 	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e /build/core22 ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	if [ -e $(BUILDDIR) ]; then \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 	fi;
 
 .PHONY: check

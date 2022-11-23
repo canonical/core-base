@@ -1,7 +1,7 @@
 #! /bin/sh -ex
 
 if [ "$(dpkg --print-architecture)" = "riscv64" ]; then
-    echo "core22 riscv64 does not support this functionality"
+    echo "core riscv64 does not support this functionality"
     exit 0
 fi
 

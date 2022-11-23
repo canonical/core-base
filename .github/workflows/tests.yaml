@@ -29,7 +29,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core22.artifact"
+          path: "${{ github.workspace }}/core24.artifact"
 
       - name: Discard spread workers
         if: always()
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core22.artifact"
+          path: "${{ github.workspace }}/core24.artifact"
       
       - name: Run tests
         run: |
@@ -92,29 +92,30 @@ jobs:
       - name: Build image
         working-directory: '${{ github.workspace }}'
         run: |
+          PROJECT_PATH=core-base
           . "core-base/tests/lib/prepare-utils.sh"
 
           echo "************* INSTALLING DEPS *************"
-          install_core22_deps
+          install_base_deps
 
           echo "************* DOWNLOADING SNAPS *************"
-          download_core22_snaps 'edge'
+          download_core24_snaps 'edge'
 
           echo "************* WRITING CLOUD-INIT CONFIG *************"
-          prepare_core22_cloudinit
+          prepare_base_cloudinit
 
-          echo "************* BUILDING CORE22 IMAGE *************"
+          echo "************* BUILDING CORE24 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
-          mv core22.artifact "$uc_snap"
-          build_core22_image
+          mv core24.artifact "$uc_snap"
+          build_base_image
 
-          echo "************* STARTING CORE22 VM *************"
+          echo "************* STARTING CORE24 VM *************"
           start_snapd_core_vm '${{ github.workspace }}'
 
           cd snapd
-          
+
           # add any test suites that should be tested here
-          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
+          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-24-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()
