@@ -116,10 +116,10 @@ start_snapd_core_vm() {
 
 get_core_snap_name() {
     printf -v date '%(%Y%m%d)T' -1
-    echo "core22_${date}_amd64.snap"
+    echo "core24_${date}_amd64.snap"
 }
 
-install_core22_deps() {
+install_base_deps() {
     sudo apt update -qq
 
     # these should already be installed in GCE and LXD images with the google/lxd-nested 
@@ -137,7 +137,7 @@ install_core22_deps() {
     sudo snap install ubuntu-image --classic
 }
 
-download_core22_snaps() {
+download_core24_snaps() {
     local snap_branch="$1"
 
     # get the model
@@ -171,7 +171,7 @@ users:
 EOF
 }
 
-prepare_core22_cloudinit() {
+prepare_base_cloudinit() {
     # unpack gadget
     gadgetdir=/tmp/gadget-workdir
     unsquashfs -d $gadgetdir upstream-pc-gadget.snap
@@ -185,14 +185,14 @@ prepare_core22_cloudinit() {
     rm -r $gadgetdir
 }
 
-build_core22_snap() {
+build_base_snap() {
     local project_dir="$1"
     local current_dir="$(pwd)"
     
     # run snapcraft
     (
         cd "$project_dir"
-        sudo snapcraft --destructive-mode --verbose
+        sudo snapcraft --destructive-mode --verbosity verbose
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then
@@ -201,7 +201,7 @@ build_core22_snap() {
     )
 }
 
-build_core22_image() {
+build_base_image() {
     local core_snap_name="$(get_core_snap_name)"
     ubuntu-image snap \
         -i 8G \

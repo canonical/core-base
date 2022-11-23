@@ -3,7 +3,7 @@ manual: true
 
 execute: |
     INSTANCE_NAME=spread-test
-    IMAGE_NAME=lxd-spread-core22-img
+    IMAGE_NAME=lxd-spread-core24-img
 
     # be in project folder
     cd $PROJECT_PATH
@@ -16,9 +16,8 @@ execute: |
     # authenticate with gcloud
     gcloud auth activate-service-account --key-file="./sa.json"
 
-    # launch the new lxc instance from an ubuntu 22.04 base
-    # TODO when 22.04 is released should we use that instead of ubuntu/jammy?
-    lxc launch images:ubuntu/jammy $INSTANCE_NAME
+    # launch the new lxc instance from an ubuntu 22.10 base
+    lxc launch images:ubuntu/kinetic $INSTANCE_NAME
 
     # wait a few seconds before proceeding, otherwise we are going to have issues
     # with the container (systemd) not being ready yet, and then the rest of

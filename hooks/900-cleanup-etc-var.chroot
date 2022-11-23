@@ -70,10 +70,10 @@ rmdir /var/log/private
 # clean leftovers from the build
 rm /var/log/*
 
-# no "local" on core22
+# no "local" on core
 # shellcheck disable=SC2114
 rm -rf -- /var/local /usr/local
-# we need this for the core22 base snap when using with classic snaps
+# we need this for the core base snap when using with classic snaps
 # for the "interfaces-desktop-host-fonts"
 mkdir -p /usr/local/share/fonts
 
