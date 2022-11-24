@@ -148,6 +148,13 @@ download_core24_snaps() {
     # download neccessary images
     snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
     snap download pc --channel=22/${snap_branch} --basename=upstream-pc-gadget
+    # TODO: remove this when pc gadget is available for core24
+    unsquashfs -d upstream-pc-gadget upstream-pc-gadget.snap
+    rm upstream-pc-gadget.snap
+    sed -i 's/core22/core24/g' upstream-pc-gadget/meta/snap.yaml
+    snap pack upstream-pc-gadget --filename=upstream-pc-gadget.snap
+    rm -rf upstream-pc-gadget
+    # END OF TODO
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
 
