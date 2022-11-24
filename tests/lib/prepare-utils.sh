@@ -141,7 +141,9 @@ download_core24_snaps() {
     local snap_branch="$1"
 
     # get the model
-    curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-22-amd64-dangerous.model
+    # TODO: Add the model on the repository
+    #curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-amd64-dangerous.model
+    cp "${PROJECT_PATH}/ubuntu-core-24-amd64-dangerous.model" ubuntu-core-amd64-dangerous.model
 
     # download neccessary images
     snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
