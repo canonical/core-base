@@ -116,6 +116,7 @@ PACKAGES=(
     systemd
     systemd-sysv
     systemd-timesyncd
+    systemd-resolved
     tzdata
     udev
     vim-tiny
