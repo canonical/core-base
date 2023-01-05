@@ -1,0 +1,6 @@
+# We need to mark this slice as not conflicting with shutdown.target.
+# Otherwise it would drag mounts to be unmounted.
+[Unit]
+Description=Fsck Units Slice
+DefaultDependencies=no
+
