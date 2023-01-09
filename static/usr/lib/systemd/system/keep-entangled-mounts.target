@@ -1,7 +1,0 @@
-[Unit]
-Description=Keep entangled mounts
-DefaultDependencies=no
-Wants=run-mnt-data.mount
-Wants=run-mnt-ubuntu\x2dseed.mount
-Wants=usr-lib-modules.mount
-Wants=run-mnt-kernel.mount

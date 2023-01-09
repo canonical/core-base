@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eux
+
+echo "Remove conflict from systemd-fsck to shutdown"
+sed -i "/^Conflicts=shutdown.target$/d" lib/systemd/system/systemd-fsck@.service
+
