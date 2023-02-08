@@ -122,6 +122,7 @@ PACKAGES=(
     udev
     vim-tiny
     wpasupplicant
+    locales
 )
 
 # Locally built packages
