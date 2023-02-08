@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eux
+
+[ -L usr/lib/locale/en_US.UTF-8 ]
+[ -d usr/lib/locale/C.utf8 ]
