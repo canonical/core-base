@@ -1,0 +1,17 @@
+# 0x10de is NVIDIA vendor id
+#
+# Tag the device as master-of-seat so that logind is happy
+# (see LP: #1365336)
+SUBSYSTEM=="pci", ATTRS{vendor}=="0x10de", TAG+="seat", TAG+="master-of-seat"
+
+# Enable runtime PM for NVIDIA VGA/3D controller devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", TEST=="power/control", ATTR{power/control}="auto"
+
+# Enable runtime PM for NVIDIA Audio devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", TEST=="power/control", ATTR{power/control}="auto"
+
+# Enable runtime PM for NVIDIA USB xHCI Host Controller devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", TEST=="power/control", ATTR{power/control}="auto"
+
+# Enable runtime PM fo NVIDIA USB Type-C UCSI devices
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", TEST=="power/control", ATTR{power/control}="auto"
