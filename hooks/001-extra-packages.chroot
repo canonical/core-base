@@ -71,6 +71,26 @@ Pin: origin ""
 Pin-Priority: 1001
 EOF
 
+# enable security ICE ppa
+echo "deb http://ppa.launchpadcontent.net/ubuntu-security/fde-ice/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fde-ice.list
+
+cat >/etc/apt/trusted.gpg.d/canonical-security-fde-ice.asc <<'EOF'
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xo0ESXbhhAEEAMgPw5cjuQparAFSRh4v/yrXGefOE4KzlV+OudbHPn/nxfhgXn1d
+RaF47lO+HLeBGd6X5UJzai//WoJcOPUBqLoiHIHgNr2pIi5iN29uZYnpEaN+LZyx
+pgM0db/jRzLFtBHM61ocKHflk/F9WeWMkSModxivBFK4NDpucEQzMzR1ABEBAAHN
+LkxhdW5jaHBhZCBQcml2YXRlIFBQQSBmb3IgVWJ1bnR1IFNlY3VyaXR5IFRlYW3C
+tgQTAQIAIAUCSXbhhAIbAwYLCQgHAwIEFQIIAwQWAgMBAh4BAheAAAoJEGjrQbzZ
+Mk9xo2kEAJCFZlNeFPiWUXpaOOVLsi5ZWST5RLIHiXJQgNHd+pqcxy9MpSUYZC/+
+J4rBYeOdB1v4qgJqVrks8b0Nixcvu0p7+ieZYP10fNt2uuNlj56eSV2v3z64VmZz
+ebrtrD1Hrw3BetRY4aQ0ysRSugvbTwqS0d17zepomYJS49Jy2w2D
+=ALlI
+-----END PGP PUBLIC KEY BLOCK-----
+
+EOF
+
+
 # install some packages we need
 apt update
 apt dist-upgrade -y
