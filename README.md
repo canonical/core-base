@@ -4,18 +4,20 @@ This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 22.10 (will 
 
 # Building locally
 
+> :warning: Snapcraft does not yet have `core24` as build base so the commands in this section will not work
+
 To build this snap locally you need snapcraft. The project must be built as real root.
 
 For i386 and amd64
 ```
-$ sudo snapcraft
+$ snapcraft
 ```
 
 For any other architecture we recommend remote-build as multipass has limited
 support for cross-building, and lack of stable releases for some architectures. 
 To use remote-build you need to have a launchpad account, and follow the instructions [here](https://snapcraft.io/docs/remote-build)
 ```
-$ sudo snapcraft remote-build --build-on={arm64,armhf,ppc64el,s390x}
+$ snapcraft remote-build --build-on={arm64,armhf,ppc64el,s390x}
 ```
 
 # Testing with spread
@@ -40,21 +42,21 @@ go build
 go install
 ```
 
-## QEmu backend
+## QEMU backend
 
 1. Install the dependencies required for the qemu emulation
 ```
-sudo apt update && sudo apt install -y qemu-kvm autopkgtest
+sudo apt update && sudo apt install -y qemu-system qemu-utils autopkgtest python3-distro-info genisoimage
 ```
 2. Create a suitable ubuntu test image (focal) in the following directory where spread locates images. Note that the location is different when using spread installed through snap.
 ```
 mkdir -p ~/.spread/qemu # This location is different if you installed spread from snap
 cd ~/.spread/qemu
-autopkgtest-buildvm-ubuntu-cloud -r focal
+autopkgtest-buildvm-ubuntu-cloud -r kinetic
 ```
 3. Rename the newly built image as the name will not match what spread is expecting
 ```
-mv autopkgtest-focal-amd64.img ubuntu-20.04-64.img
+mv autopkgtest-kinetic-amd64.img ubuntu-22.10-64.img
 ```
 4. Now you are ready to run spread tests with the qemu backend
 ```
@@ -63,6 +65,9 @@ spread qemu-nested
 ```
 
 ## LXD backend
+
+> :warning: This image is not yet published for core24.
+
 The LXD backend is the preffered way of testing locally as it uses virtualization and thus runs a lot quicker than
 the qemu backend. This is because the container can use all the resources of the host, and we can support
 qemu-kvm acceleration in the container for the nested instance.
@@ -74,12 +79,12 @@ and yq (needed for yaml manipulation), download the newest image and import it i
 ```
 sudo snap install lxd
 sudo snap install yq
-curl -o lxd-core24-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core24-img.tar.gz
-lxc image import lxd-core24-img.tar.gz --alias ucspread22
-lxc image show ucspread22 > temp.profile
-yq e '.properties.aliases = "ucspread22,amd64"' -i ./temp.profile
+curl -o lxd-core24-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core24lxd-spread-core24-img.tar.gz
+lxc image import lxd-core24-img.tar.gz --alias ucspread24
+lxc image show ucspread24 > temp.profile
+yq e '.properties.aliases = "ucspread24,amd64"' -i ./temp.profile
 yq e '.properties.remote = "images"' -i ./temp.profile
-cat ./temp.profile | lxc image edit ucspread22
+cat ./temp.profile | lxc image edit ucspread24
 rm ./temp.profile ./lxd-core24-img.tar.gz
 ```
 2. Import the LXD core24 test profile. Make sure your working directory is the root of this repository.
