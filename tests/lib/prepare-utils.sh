@@ -155,7 +155,7 @@ download_core24_snaps() {
     snap pack upstream-pc-gadget --filename=upstream-pc-gadget.snap
     rm -rf upstream-pc-gadget
     # END OF TODO
-    snap download snapd --channel=${snap_branch} --basename=upstream-snapd
+    snap download snapd --channel=latest/beta --basename=upstream-snapd
 }
 
 # create two new users that used during testing when executing
