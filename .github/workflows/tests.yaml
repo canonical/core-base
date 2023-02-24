@@ -82,6 +82,7 @@ jobs:
         with:
           repository: 'snapcore/snapd'
           path: snapd
+          ref: 5012a8214d03f1cf3fc9690cd1866c26d204e4cb
       - uses: actions/download-artifact@v2
         with:
           name: core-snap
