@@ -7,7 +7,7 @@ description: |
 confinement: strict
 type: base
 # This one is to trick snapcraft to not use legacy code
-build-base: core22
+build-base: core24
 grade: devel
 assumes: [snapd2.55.5]
 
