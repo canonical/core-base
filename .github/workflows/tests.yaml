@@ -80,8 +80,9 @@ jobs:
           path: core-base
       - uses: actions/checkout@v2
         with:
-          repository: 'snapcore/snapd'
+          repository: 'valentindavid/snapd'
           path: snapd
+          ref: valentindavid/work-around-cleaned-scopes
       - uses: actions/download-artifact@v2
         with:
           name: core-snap
