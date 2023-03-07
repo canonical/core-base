@@ -82,7 +82,7 @@ jobs:
         with:
           repository: 'valentindavid/snapd'
           path: snapd
-          ref: valentindavid/work-around-cleaned-scopes
+          ref: valentindavid/work-around-cleaned-scopes-2
       - uses: actions/download-artifact@v2
         with:
           name: core-snap
