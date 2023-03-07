@@ -65,3 +65,5 @@
 /etc/machine-id                         auto                    persistent  transition  none
 # make update-motd writable for branding purposes
 /etc/update-motd.d                      auto                    persistent  transition  none
+# allow to update password policy
+/etc/security/pwquality.conf            auto                    persistent  transition  none
