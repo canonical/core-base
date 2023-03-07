@@ -103,6 +103,7 @@ PACKAGES=(
     libp11-3
     libpam-modules
     libpam-systemd
+    libpam-pwquality
     netcat-openbsd
     netplan.io
     opensc
