@@ -1,6 +1,6 @@
 # Core24 snap for snapd & Ubuntu Core
 
-This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 22.10 (will be base on 24.04)
+This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 23.04 (will be base on 24.04)
 
 # Building locally
 
@@ -75,11 +75,11 @@ and yq (needed for yaml manipulation), download the newest image and import it i
 sudo snap install lxd
 sudo snap install yq
 curl -o lxd-core24-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core24-img.tar.gz
-lxc image import lxd-core24-img.tar.gz --alias ucspread22
-lxc image show ucspread22 > temp.profile
-yq e '.properties.aliases = "ucspread22,amd64"' -i ./temp.profile
+lxc image import lxd-core24-img.tar.gz --alias ucspread24
+lxc image show ucspread24 > temp.profile
+yq e '.properties.aliases = "ucspread24,amd64"' -i ./temp.profile
 yq e '.properties.remote = "images"' -i ./temp.profile
-cat ./temp.profile | lxc image edit ucspread22
+cat ./temp.profile | lxc image edit ucspread24
 rm ./temp.profile ./lxd-core24-img.tar.gz
 ```
 2. Import the LXD core24 test profile. Make sure your working directory is the root of this repository.

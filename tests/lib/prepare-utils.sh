@@ -130,10 +130,12 @@ install_base_deps() {
     # There is a bug in snapd that prevents udev rules from reloading in privileged containers
     # with the following error message: 'cannot reload udev rules: exit status 1' when installing
     # snaps. However it seems that retrying the installation fixes it
-    if ! sudo snap install snapcraft --classic; then
+    if ! sudo snap install snapcraft --channel="${SNAPCRAFT_CHANNEL:-latest/stable}" --classic; then
         echo "FIXME: snapcraft install failed, retrying"
-        sudo snap install snapcraft --classic
+        sudo snap install snapcraft --channel="${SNAPCRAFT_CHANNEL:-latest/stable}" --classic
     fi
+    sudo snap install lxd
+    sudo lxd init --auto
     sudo snap install ubuntu-image --classic
 }
 
@@ -201,7 +203,7 @@ build_base_snap() {
     # run snapcraft
     (
         cd "$project_dir"
-        sudo snapcraft --destructive-mode --verbosity verbose
+        snapcraft --verbosity verbose
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then
