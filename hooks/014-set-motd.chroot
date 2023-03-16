@@ -5,7 +5,7 @@ cat >/etc/motd<<EOF
  * Community:       https://forum.snapcraft.io
  * Snaps:           https://snapcraft.io
 
-This Ubuntu Core 22 machine is a tiny, transactional edition of Ubuntu,
+This Ubuntu Core 24 machine is a tiny, transactional edition of Ubuntu,
 designed for appliances, firmware and fixed-function VMs.
 
 If all the software you care about is available as snaps, you are in

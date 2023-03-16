@@ -1,13 +1,13 @@
 name: core24
 # version: "24"
 adopt-info: bootstrap
-summary: Runtime environment based on Ubuntu 22.11
+summary: Runtime environment based on Ubuntu 23.04
 description: |
-  The base snap based on the Ubuntu 22.11 release.
+  The base snap based on the Ubuntu 23.04 release.
 confinement: strict
 type: base
 # This one is to trick snapcraft to not use legacy code
-build-base: core22
+build-base: devel
 grade: devel
 assumes: [snapd2.55.5]
 
@@ -54,9 +54,11 @@ parts:
     build-packages:
       - wget
     build-environment:
-      - RELEASE: "22.10"
-      - BASE: ubuntu-base-${RELEASE}-base-${CRAFT_TARGET_ARCH}.tar.gz
-      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
+      #- RELEASE: "23.04"
+      #- BASE: ubuntu-base-${RELEASE}-base-${CRAFT_TARGET_ARCH}.tar.gz
+      #- DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
+      - BASE: lunar-base-amd64.tar.gz
+      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/daily/current
       - URL: ${DIR_URL}/${BASE}
       - SHA256: ${DIR_URL}/SHA256SUMS
       - SIG: ${SHA256}.gpg

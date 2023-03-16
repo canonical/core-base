@@ -6,10 +6,12 @@ environment:
   PATH: $PATH:$PROJECT_PATH/tests/bin
   TESTSLIB: $PROJECT_PATH/tests/lib
   SNAP_BRANCH: "edge" # stable/edge/beta
-  UC_VERSION: 22
+  UC_VERSION: 24
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"
   LANGUAGE: "en"
+  # TODO: Switch to latest/stable when "build-base: devel" is there
+  SNAPCRAFT_CHANNEL: latest/edge
 
 backends:
   google-nested:
@@ -19,7 +21,7 @@ backends:
     plan: n2-standard-2
     halt-timeout: 2h
     systems:
-      - ubuntu-22.10-64:
+      - ubuntu-22.04-64:
           image: ubuntu-2204-64-virt-enabled
           storage: 20G
 
@@ -30,7 +32,7 @@ backends:
     #            uc22 with less RAM
     memory: 4G
     systems:
-      - ubuntu-22.10-64:
+      - ubuntu-23.04-64:
           username: ubuntu
           password: ubuntu
 
@@ -38,8 +40,8 @@ backends:
     type: lxd
     container-profiles: core24
     systems:
-      - ubuntu-22.10:
-          image: ucspread22
+      - ubuntu-23.04:
+          image: ucspread24
 
 path: /home/core24
 

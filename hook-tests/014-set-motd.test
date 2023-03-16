@@ -2,7 +2,7 @@
 
 set -e
 
-grep -q "This Ubuntu Core 22 machine is a tiny" etc/motd
+grep -q "This Ubuntu Core 24 machine is a tiny" etc/motd
 
 test ! -e etc/default/motd-news
 test ! -e etc/update-motd.d/10-help-text

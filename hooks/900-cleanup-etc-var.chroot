@@ -52,9 +52,6 @@ rm -rf /etc/rc[0-6S].d
 # remove alternatives for manual pages (easier)
 rm -f /etc/alternatives/*.gz
 
-# tool configuration (unused)
-rm -f /etc/mke2fs.conf
-
 # python deb install leftovers
 rm -rf /usr/local/lib/python*
 
