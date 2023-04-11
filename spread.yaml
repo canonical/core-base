@@ -10,8 +10,7 @@ environment:
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"
   LANGUAGE: "en"
-  # TODO: Switch to latest/stable when "build-base: devel" is there
-  SNAPCRAFT_CHANNEL: latest/edge
+  SNAPCRAFT_CHANNEL: latest/stable
 
 backends:
   google-nested:
