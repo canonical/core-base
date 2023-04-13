@@ -155,12 +155,6 @@ case "$(dpkg --print-architecture)" in
         ;;
 esac
 
-case "$(dpkg --print-architecture)" in
-    amd64|i386)
-        PACKAGES+=(secureboot-db)
-        ;;
-esac
-
 apt install --no-install-recommends -y "${PACKAGES[@]}"
 
 apt autoremove -y
