@@ -141,6 +141,7 @@ PACKAGES=(
     vim-tiny
     wpasupplicant
     locales
+    cracklib-runtime
 )
 
 # Locally built packages
