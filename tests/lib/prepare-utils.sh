@@ -12,7 +12,7 @@ execute_remote(){
 
 wait_for_ssh(){
     local service_name="$1"
-    retry=50
+    retry=100
     wait=1
     while ! execute_remote true; do
         if ! systemctl is-active "$service_name"; then
