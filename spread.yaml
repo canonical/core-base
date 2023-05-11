@@ -32,7 +32,7 @@ backends:
     #            uc22 with less RAM
     memory: 4G
     systems:
-      - ubuntu-23.04-64:
+      - ubuntu-23.10-64:
           username: ubuntu
           password: ubuntu
 
@@ -40,7 +40,7 @@ backends:
     type: lxd
     container-profiles: core24
     systems:
-      - ubuntu-23.04:
+      - ubuntu-23.10:
           image: ucspread24
 
 path: /home/core24
