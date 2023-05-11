@@ -23,7 +23,7 @@ mkdir -p /var/log/journal
 apt update
 apt install --no-install-recommends -y ca-certificates
 
-# TODO: There is no PPA for lunar yet.
+# TODO: There is no PPA for mantic yet.
 if false; then
     # shellcheck disable=SC1091
     CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
