@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# This generator instantiates rtc-sys-time-init@dev-rtc*.service by hooking it
+# into sysinit.target when requested by kernel command line parameter
+# ubuntu_core.rtc_sys_time_init=dev-rtc*. Instances are based on the template
+# rtc-sys-time-init@.service that is not generated.
+
+DEBUG_ENABLE="false"
+
+log() {
+    echo "$@" >> "/dev/kmsg"
+}
+
+debug() {
+    if [ "$DEBUG_ENABLE" = "true" ]; then
+        log "$@"
+    fi
+}
+
+normal_dir="$1"
+
+# Look for kernel command line parameter ubuntu_core.rtc_sys_time_init
+if ! dev_node=$(/usr/libexec/core/get-arg "ubuntu_core.rtc_sys_time_init"); then
+    debug "Kernel command line does not contain parameter ubuntu_core.rtc_sys_time_init"
+    exit 0
+fi
+
+# Expect /dev/rtc and /dev/rtc0 to /dev/rtc9
+if ! expr "$dev_node" : '^/dev/rtc[0-9]\{0,1\}$' >/dev/null; then
+    log "Warning: kernel command line parameter ubuntu_core.rtc_sys_time_init=$dev_node seems invalid"
+    # Do not exit, require highly visible service failure
+fi
+
+dev_unit=$(systemd-escape --path "$dev_node")
+instance="rtc-sys-time-init@$dev_unit.service"
+target_dir="$normal_dir/sysinit.target.wants"
+target_link=$target_dir/$instance
+template="/usr/lib/systemd/system/rtc-sys-time-init@.service"
+
+if [ -L "$target_link" ]; then
+    debug "Already enabled"
+    exit 0
+fi
+
+if [ -d "$target_dir" ] || mkdir -p "$target_dir"; then
+    if ln -snf "$template" "$target_link"; then
+        debug "Enabled $instance: $target_link -> $template"
+    else
+        log "Error: cannot create symlink $target_link -> $template"
+        exit 1
+    fi
+else
+    log "Error: cannot create target directory $target_dir"
+fi

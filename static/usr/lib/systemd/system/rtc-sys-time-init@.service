@@ -1,0 +1,28 @@
+# rtc-sys-time-init@.service is enabled either by generator rtc-sys-time-init-generator or
+# by udev rule in 90-rtc-sys-time-init.rules, depending on kernel command line parameter
+# ubuntu_core.rtc_sys_time_init=dev/rtc*. When the parameter is provided the generator
+# instantiates rtc-sys-time-init@dev-rtc*.service by hooking it into sysinit.target with
+# symlink in /run/systemd/generator*/sysinit.target.wants. Otherwise the udev rule will
+# instantiate rtc-sys-time-init@dev-rtc*.service if the RTC driver/module set the system
+# time as indicated by device attribute hctosys==1.
+#
+# This service addresses two different scenarios in order:
+#     1) Ensure system time is not behind the most recent epoch/clock file timestamps.
+#        This addresses: https://github.com/snapcore/core20/pull/136
+#     2) Ensure the system time is set to valid RTC time when this is requested with
+#        kernel command line parameter ubuntu_core.rtc_sys_time_init=/dev/rtc*
+#
+# This service relies on udev rule from 90-rtc-sys-time-init.rules to create device units
+# dev-rtc*.device for all available RTC devices.
+[Unit]
+Description=Correct system time and sync to RTC time
+DefaultDependencies=no
+After=%i.device
+Requires=%i.device
+Before=systemd-timesyncd.service
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/core/rtc-sys-time-init /%I
