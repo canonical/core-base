@@ -1,3 +1,0 @@
-# when rtc* is added run a workaround script, see
-# https://github.com/snapcore/core20/pull/136
-ACTION=="add", SUBSYSTEM=="rtc", KERNEL=="rtc*", TAG+="systemd", ENV{SYSTEMD_WANTS}="fix-hctosys.service"

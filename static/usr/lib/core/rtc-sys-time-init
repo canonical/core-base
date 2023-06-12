@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# Adjust system time for the following reasons:
+#     1) Sync system time to RTC time
+#         - On older kernel versions, RTC modules with HCTOSYS enabled cannot sync system time with
+#           RTC time (attribute hctosys==0)
+#     2) Correct driver/module system time sync to invalid time (earlier than most recent time stamp)
+#         - Built-in/loadable RTC driver with HCTOSYS enabled may set invalid time due to .e.g
+#           uninitialized RTC or bad battery
+#
+# If the RTC time is not valid, or cannot be set, forward the system time to most recent timestamp
+
+set -eu
+
+journal() {
+    pri=$1
+    shift
+    lvl=
+    case "$pri" in
+        "error")
+            lvl="<3>"
+            ;;
+        "warning")
+            lvl="<4>"
+            ;;
+        "debug")
+            lvl="<7>"
+            ;;
+        *)
+            lvl="<6>"
+            ;;
+    esac
+
+    # Apply priority level to all lines
+    printf "%s\n" "$@" | while IFS= read -r line; do
+        printf "%s\n" "$lvl$line"
+    done
+}
+
+# Expects single argument RTC device node /dev/rtc* (instance name dev-rtc* with escaping undone)
+dev_node=$1
+
+# Get systemd timestamp file created during core build
+clock_epoch_stamp=0
+if [ -e "/usr/lib/clock-epoch" ]; then
+    clock_epoch_stamp=$(stat -L "/usr/lib/clock-epoch" -c '%Y')
+else
+    journal warning "Warning: cannot stat /usr/lib/clock-epoch"
+fi
+clock_epoch_date=$(date -d @"$clock_epoch_stamp")
+journal debug "core/systemd build timetamp: $clock_epoch_date"
+
+# Get systemd-timesyncd timestamp file initialized to systemd build time and updated periodically
+# (default 60s) and at shutdown
+timesync_clock_stamp=0
+if [ -e "/var/lib/systemd/timesync/clock" ]; then
+    timesync_clock_stamp="$(stat -L "/var/lib/systemd/timesync/clock" -c '%Y')"
+else
+    journal warning "Warning: cannot stat /var/lib/systemd/timesync/clock (expected on first boot only)"
+fi
+timesync_clock_date=$(date -d @"$timesync_clock_stamp")
+journal debug "timesyncd timestamp: $timesync_clock_date"
+
+most_recent_stamp=$((clock_epoch_stamp > timesync_clock_stamp ? clock_epoch_stamp : timesync_clock_stamp))
+
+sys_time_set_res=1
+if udevadm info --attribute-walk --name="$dev_node" | grep -q 'ATTR{hctosys}=="1"'; then
+    sys_time_set_res=0
+    echo "Kernel synced system time to RTC $dev_node time"
+else
+    echo "Reading RTC $dev_node time..."
+    if ! rtc_stamp=$(hwclock -r -u -f "$dev_node" 2>/dev/null); then
+        journal error "Error: cannot read RTC $dev_node"
+    else
+        rtc_stamp=$(date -d "$rtc_stamp" +%s)
+        rtc_date=$(date -d @"$rtc_stamp")
+        echo "Successfully read RTC time: $rtc_date"
+
+        if [ "$rtc_stamp" -gt "$most_recent_stamp" ]; then
+            echo "RTC time is valid, syncing system time..."
+            if hwclock -s --noadjfile -u -f "$dev_node" 2>/dev/null; then
+                echo "Successfully synced system time"
+                exit 0
+            else
+                journal error "Error: cannot sync system time"
+            fi
+        else
+            journal error "Error: RTC time invalid, skipping system time sync"
+        fi
+    fi
+fi
+
+# At this point either (1) the RTC module synced the system time or (2) this script failed
+# to sync system time. In both cases we need to ensure that system time is not behind the
+# most recent timestamp.
+now_stamp=$(date +'%s')
+if [ "$now_stamp" -lt "$most_recent_stamp" ]; then
+    echo "Moving system time forward to most recent timestamp..."
+    if date -s @"$most_recent_stamp" >/dev/null 2>&1; then
+        echo "Successfully moved system time forward"
+    else
+        journal error "Error: cannot forward system time"
+        exit 1
+    fi
+else
+    echo "System time is ahead of most recent timestamp, skipping fixup"
+fi
+
+exit $sys_time_set_res
