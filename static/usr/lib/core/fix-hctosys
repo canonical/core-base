@@ -18,7 +18,7 @@
 #printf "%s\n" "Starting $(date)"
 
 TIMESYNC_CLOCK=/var/lib/systemd/timesync/clock
-CLOCK_EPOCH=/var/lib/clock-epoch
+CLOCK_EPOCH=/usr/lib/clock-epoch
 SELF=$(readlink -f "$0")
 
 NOW="$(date +'%s')"
