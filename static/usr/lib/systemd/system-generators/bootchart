@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -eu
+
+[ -d /run/bootchart-debug ] ||  mkdir -p /run/bootchart-debug
+
+case "${SYSTEMD_ARCHITECTURE-}" in
+    riscv64)
+        exit 0
+  ;;
+esac
+
+if ! /usr/libexec/core/get-arg core.bootchart >/dev/null; then
+    exit 0
+fi
+
+# /var/lib/snapd is bind mounted by a unit from fstab-generator
+# It is not mounted yet.
+modeenv=/run/mnt/data/system-data/var/lib/snapd/modeenv
+mode="$(/usr/libexec/core/get-mode mode "${modeenv}")" || mode="unknown"
+
+normal_dir=$1
+early_dir=$2
+late_dir=$3
+
+enable() {
+    unit="${1}"
+    target="${2}"
+    type="${3}"
+    target_dir="${normal_dir}/${target}.${type}"
+    [ -d "${target_dir}" ] || mkdir -p "${target_dir}"
+    ln -sf "${unit}" "${target_dir}/"
+}
+
+enable /lib/systemd/system/systemd-bootchart.service sysinit.target wants
+
+if [ "${mode}" = run ]; then
+    enable /lib/systemd/system/systemd-bootchart-quit.service multi-user.target wants
+fi
+
+[ -d /run/log/base ] || mkdir -p /run/log/base
