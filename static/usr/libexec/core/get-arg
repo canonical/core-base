@@ -31,7 +31,7 @@ fi
 set --
 
 # We cannot use ANSI-C quoting (e.g. $'\n') in busybox-initramfs
-whitespaces="$(printf '\t\n\v\f\r \xA0')"
+whitespaces="$(printf '\t\n\v\f\r \240')"
 in_quote=no
 param=
 current="${cmdline}"
