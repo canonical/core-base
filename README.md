@@ -112,11 +112,11 @@ doing a manual "make test" in the source tree.
 
 # Bootchart
 
-It is possible to enable bootcharts by adding `core.bootchart` to the
-kernel command line. The sample collector will run until the system is
-seeded (it will stop when the `snapd.seeded.service` stops). The
-bootchart will be saved in the `ubuntu-data` partition, under
-`/var/log/debug/boot<N>/`, `<N>` being the boot number since
+It is possible to enable bootcharts by adding `ubuntu_core.bootchart`
+to the kernel command line. The sample collector will run until the
+system is seeded (it will stop when the `snapd.seeded.service`
+stops). The bootchart will be saved in the `ubuntu-data` partition,
+under `/var/log/debug/boot<N>/`, `<N>` being the boot number since
 bootcharts were enabled. If a chart has been collected by the
 initramfs, it will be also saved in that folder.
 
