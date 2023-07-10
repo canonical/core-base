@@ -10,7 +10,8 @@ case "${SYSTEMD_ARCHITECTURE-}" in
   ;;
 esac
 
-if ! /usr/libexec/core/get-arg core.bootchart >/dev/null; then
+if ! /usr/libexec/core/get-arg core.bootchart >/dev/null &&
+   ! /usr/libexec/core/get-arg ubuntu_core.bootchart >/dev/null; then
     exit 0
 fi
 
