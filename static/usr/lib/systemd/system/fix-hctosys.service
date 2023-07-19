@@ -1,6 +1,0 @@
-[Unit]
-Description=Work around automatic hctosys
-
-[Service]
-Type=oneshot
-ExecStart=/usr/lib/core/fix-hctosys
