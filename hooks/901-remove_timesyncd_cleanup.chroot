@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e
+
+# Remove fixup-timesyncd.conf from the base image to ensure systemd-timesyncd.service
+# functions correctly.
+# 
+# fixup-timesyncd.conf extended systemd-tmpfiles-setup.service to remove the directory
+# /var/lib/systemd/timesync to ensure systemd can create a dynamic user symlink to that
+# directory. However, this is not required anymore and interferes with
+# systemd-timesyncd.service because it removes /var/lib/systemd/timesync/clock on every
+# reboot and no symlink is created to provide and alternative source of the file.
+echo "Remove fixup-timesyncd.conf if it exists"
+
+fixup_path="/lib/systemd/system/systemd-tmpfiles-setup.service.d"
+fixup_file="$fixup_path/fixup-timesyncd.conf"
+if [ -f $fixup_file ]; then
+    rm $fixup_file
+    if [ -z "$(ls -A "$fixup_path")" ]; then
+        rm -rf $fixup_path
+    fi
+fi
