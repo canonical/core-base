@@ -25,4 +25,5 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/lib/core/rtc-sys-time-init /%I
