@@ -1,12 +1,18 @@
+ACTION!="add", GOTO="rtc-sys-end"
+SUBSYSTEM!="rtc", GOTO="rtc-sys-end"
+KERNEL!="rtc*", GOTO="rtc-sys-end"
+
 # When device rtc* is added
 #     1) and the RTC module have successfully set system time from RTC (indicated with hctosys attribute)
 #     2) and the kernel command line does not contain parameter ubuntu_core.rtc_sys_time_init that will cause
 #        systemd generator rtc-sys-time-init-generator to instantiate rtc-sys-time-init@.service
 # instantiate rtc-sys-time-init@.service for the device node
-IMPORT{cmdline}="ubuntu_core.rtc_sys_time_init"
-ACTION=="add", SUBSYSTEM=="rtc", KERNEL=="rtc*", ATTR{hctosys}=="1", ENV{ubuntu_core.rtc_sys_time_init}!="?*", TAG+="systemd", PROGRAM="/usr/bin/systemd-escape --path %N", ENV{SYSTEMD_WANTS}+="rtc-sys-time-init@%c.service"
+IMPORT{cmdline}=="ubuntu_core.rtc_sys_time_init"
+ATTR{hctosys}=="1", ENV{ubuntu_core.rtc_sys_time_init}!="?*", PROGRAM=="/usr/bin/systemd-escape --path %N", ENV{SYSTEMD_WANTS}+="rtc-sys-time-init@%c.service"
 
 # When device rtc* is added create device unit dev-rtc*.device which is used by rtc-sys-time-init@.service
 # enabled by generator rtc-sys-time-init-generator when kernel command line contains parameter
 # ubuntu_core.rtc_sys_time_init=/dev/rtc*
-ACTION=="add", SUBSYSTEM=="rtc", KERNEL=="rtc*", TAG+="systemd"
+TAG+="systemd"
+
+LABEL="rtc-sys-end"
