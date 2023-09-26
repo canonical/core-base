@@ -40,6 +40,11 @@ journal() {
 # Expects single argument RTC device node /dev/rtc* (instance name dev-rtc* with escaping undone)
 dev_node=$1
 
+# ... or a path in /sys
+if ! [ -c "${dev_node}" ]; then
+    dev_node="$(udevadm info --query=property --path "${dev_node}" | sed "/^DEVNAME=/{;s///;q};d")"
+fi
+
 # Get systemd timestamp file created during core build
 clock_epoch_stamp=0
 if [ -e "/usr/lib/clock-epoch" ]; then
