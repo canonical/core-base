@@ -8,7 +8,7 @@ KERNEL!="rtc*", GOTO="rtc-sys-end"
 #        systemd generator rtc-sys-time-init-generator to instantiate rtc-sys-time-init@.service
 # instantiate rtc-sys-time-init@.service for the device node
 IMPORT{cmdline}=="ubuntu_core.rtc_sys_time_init"
-ATTR{hctosys}=="1", ENV{ubuntu_core.rtc_sys_time_init}!="?*", PROGRAM=="/usr/bin/systemd-escape --path %N", ENV{SYSTEMD_WANTS}+="rtc-sys-time-init@%c.service"
+ATTR{hctosys}=="1", ENV{ubuntu_core.rtc_sys_time_init}!="?*", ENV{SYSTEMD_WANTS}+="rtc-sys-time-init@.service"
 
 # When device rtc* is added create device unit dev-rtc*.device which is used by rtc-sys-time-init@.service
 # enabled by generator rtc-sys-time-init-generator when kernel command line contains parameter
