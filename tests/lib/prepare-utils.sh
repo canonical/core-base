@@ -136,7 +136,7 @@ install_base_deps() {
     fi
     sudo snap install lxd
     sudo lxd init --auto
-    sudo snap install ubuntu-image --classic
+    sudo snap install ubuntu-image --classic --channel=latest/edge
 }
 
 download_core24_snaps() {
@@ -148,15 +148,9 @@ download_core24_snaps() {
     cp "${PROJECT_PATH}/ubuntu-core-24-amd64-dangerous.model" ubuntu-core-amd64-dangerous.model
 
     # download neccessary images
+    # TODO: publish 24 kernel
     snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
-    snap download pc --channel=22/${snap_branch} --basename=upstream-pc-gadget
-    # TODO: remove this when pc gadget is available for core24
-    unsquashfs -d upstream-pc-gadget upstream-pc-gadget.snap
-    rm upstream-pc-gadget.snap
-    sed -i 's/core22/core24/g' upstream-pc-gadget/meta/snap.yaml
-    snap pack upstream-pc-gadget --filename=upstream-pc-gadget.snap
-    rm -rf upstream-pc-gadget
-    # END OF TODO
+    snap download pc --channel=24/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
 
