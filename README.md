@@ -63,7 +63,7 @@ spread qemu-nested
 ```
 
 ## LXD backend
-The LXD backend is the preffered way of testing locally as it uses virtualization and thus runs a lot quicker than
+The LXD backend is the preferred way of testing locally as it uses virtualization and thus runs a lot quicker than
 the qemu backend. This is because the container can use all the resources of the host, and we can support
 qemu-kvm acceleration in the container for the nested instance.
 
@@ -99,13 +99,13 @@ spread lxd-nested
 # Writing code
 
 The usual way to add functionality is to write a shell script hook
-with the `.chroot` extenstion under the `hooks/` directory. These hooks
+with the `.chroot` extension under the `hooks/` directory. These hooks
 are run inside the base image filesystem.
 
 Each hook should have a matching `.test` file in the `hook-tests`
 directory. Those tests files are run relative to the base image
-filesystem and should validates that the coresponding `.chroot` file
-worked as expected.
+filesystem and should validate that the coresponding `.chroot` file
+works as expected.
 
 The `.test` scripts will be run after building with snapcraft or when
 doing a manual "make test" in the source tree.
