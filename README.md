@@ -1,6 +1,6 @@
 # Core24 snap for snapd & Ubuntu Core
 
-This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 23.10 (will be base on 24.04)
+This is a base snap for snapd & Ubuntu Core that is based on Ubuntu 24.04.
 
 # Building locally
 

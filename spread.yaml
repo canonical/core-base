@@ -20,8 +20,9 @@ backends:
     plan: n2-standard-2
     halt-timeout: 2h
     systems:
-      - ubuntu-22.04-64:
-          image: ubuntu-2204-64-virt-enabled
+      - ubuntu-24.04-64:
+          # FIXME: switch to 24.04
+          image: ubuntu-23.10-64
           storage: 20G
 
   qemu-nested:
@@ -31,7 +32,7 @@ backends:
     #            uc22 with less RAM
     memory: 4G
     systems:
-      - ubuntu-23.10-64:
+      - ubuntu-24.04-64:
           username: ubuntu
           password: ubuntu
 
@@ -39,7 +40,7 @@ backends:
     type: lxd
     container-profiles: core24
     systems:
-      - ubuntu-23.10:
+      - ubuntu-24.04:
           image: ucspread24
 
 path: /home/core24
