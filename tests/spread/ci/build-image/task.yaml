@@ -16,20 +16,13 @@ execute: |
     # authenticate with gcloud
     gcloud auth activate-service-account --key-file="./sa.json"
 
-    # launch the new lxc instance from next series
-    # FIXME: switch to noble when available
-    lxc launch images:ubuntu/mantic $INSTANCE_NAME
+    # launch the new lxc instance
+    lxc launch images:ubuntu/noble $INSTANCE_NAME
 
     # wait a few seconds before proceeding, otherwise we are going to have issues
     # with the container (systemd) not being ready yet, and then the rest of
     # the commands will fail
     retry -d 1 -t 20 lxc exec $INSTANCE_NAME -- bash -c 'systemctl is-system-running --wait' || true
-
-    # FIXME: remove these 4 lines when switched to noble image
-    lxc exec $INSTANCE_NAME -- bash -c "sed -i 's/mantic/noble/g' /etc/apt/source.list"
-    lxc exec $INSTANCE_NAME -- bash -c "apt update -yqq"
-    lxc exec $INSTANCE_NAME -- bash -c "apt dist-upgrade -yqq"
-    lxc exec $INSTANCE_NAME -- bash -c "apt autoremove -yqq"
 
     # we build libtpms and swptm from source and preinstall that in the image for TPM emulation support
     lxc exec $INSTANCE_NAME -- bash -c "apt update -yqq"
