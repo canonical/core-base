@@ -147,8 +147,17 @@ download_core24_snaps() {
     #curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-amd64-dangerous.model
     cp "${PROJECT_PATH}/ubuntu-core-24-amd64-dangerous.model" ubuntu-core-amd64-dangerous.model
 
+    case "${snap_branch}" in
+        edge)
+            # FIXME: enroll the edge pc-kernel certificate
+            kernel_branch=beta
+            ;;
+        *)
+            kernel_branch="${snap_branch}"
+            ;;
+    esac
     # download neccessary images
-    snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
+    snap download pc-kernel --channel=22/${kernel_branch} --basename=upstream-pc-kernel
     snap download pc --channel=22/${snap_branch} --basename=upstream-pc-gadget
     # TODO: remove this when pc gadget is available for core24
     unsquashfs -d upstream-pc-gadget upstream-pc-gadget.snap
