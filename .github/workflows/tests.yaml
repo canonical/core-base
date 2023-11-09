@@ -23,11 +23,16 @@ jobs:
           mkdir "${{ github.workspace }}"
       - uses: actions/checkout@v2
 
-      - name: Build snap
+      - name: x86 build
         run: |
           spread -artifacts=./artifacts google-nested:tests/spread/build/
           find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
       
+      - name: arm64 build
+        run: |
+          spread-arm -artifacts=./artifacts google-nested-arm:tests/spread/build/
+          find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
+
       - uses: actions/upload-artifact@v2
         with:
           name: core-snap
@@ -56,9 +61,13 @@ jobs:
           name: core-snap
           path: "${{ github.workspace }}/core24.artifact"
       
-      - name: Run tests
+      - name: Run x86 tests
         run: |
           spread google-nested:tests/spread/main/
+
+      - name: Run arm64 tests
+        run: |
+          spread-arm google-nested-arm:tests/spread/main/
 
       - name: Discard spread workers
         if: always()
