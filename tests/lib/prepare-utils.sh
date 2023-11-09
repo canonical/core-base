@@ -1,10 +1,12 @@
 #!/bin/bash
 
 set -e
-set -x 
+set -x
 
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
+# For os.query and others
+PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
 
 execute_remote(){
     sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no test@localhost "$*"
@@ -114,9 +116,20 @@ start_snapd_core_vm() {
     nested_wait_for_snap_command
 }
 
+get_arch() {
+    if os.query is-pc-amd64; then
+        printf amd64
+    elif os.query is-arm64; then
+        printf arm64
+    else
+        printf "ERROR: unsupported archtecture\n"
+        exit 1
+    fi
+}
+
 get_core_snap_name() {
     printf -v date '%(%Y%m%d)T' -1
-    echo "core24_${date}_amd64.snap"
+    echo "core24_${date}_$(get_arch).snap"
 }
 
 install_base_deps() {
@@ -144,8 +157,8 @@ download_core24_snaps() {
 
     # get the model
     # TODO: Add the model on the repository
-    #curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-amd64-dangerous.model
-    cp "${PROJECT_PATH}/ubuntu-core-24-amd64-dangerous.model" ubuntu-core-amd64-dangerous.model
+    #curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-$(get_arch)-dangerous.model
+    cp "${PROJECT_PATH}/ubuntu-core-24-$(get_arch)-dangerous.model" ubuntu-core-dangerous.model
 
     # download neccessary images
     # TODO: publish 24 kernel
@@ -214,5 +227,5 @@ build_base_image() {
         --snap upstream-snapd.snap \
         --snap upstream-pc-kernel.snap \
         --snap upstream-pc-gadget.snap \
-        ubuntu-core-amd64-dangerous.model
+        ubuntu-core-dangerous.model
 }
