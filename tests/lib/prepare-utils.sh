@@ -149,7 +149,7 @@ download_core24_snaps() {
 
     # download neccessary images
     # TODO: publish 24 kernel
-    snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
+    snap download pc-kernel --channel=24/${snap_branch} --basename=upstream-pc-kernel
     snap download pc --channel=24/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
