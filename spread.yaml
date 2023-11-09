@@ -17,13 +17,24 @@ backends:
     type: google
     key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
     location: snapd-spread/us-east1-b
-    plan: n2-standard-2
+    plan: n2-standard-4
     halt-timeout: 2h
     systems:
       - ubuntu-24.04-64:
           # FIXME: switch to 24.04
           image: ubuntu-23.10-64
           storage: 20G
+
+  google-nested-arm:
+    type: google
+    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
+    location: snapd-spread/us-central1-a
+    plan: t2a-standard-4
+    halt-timeout: 2h
+    systems:
+      - ubuntu-22.04-arm-64:
+          image: ubuntu-2204-arm-64-virt-enabled
+          storage: 25G
 
   qemu-nested:
     type: qemu
@@ -85,7 +96,7 @@ prepare: |
   unset REBOOT
 
 warn-timeout: 40m
-kill-timeout: 50m
+kill-timeout: 60m
 
 suites:
   tests/spread/build/:
