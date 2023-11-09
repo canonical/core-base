@@ -1,0 +1,43 @@
+type: model
+authority-id: tcMZ22pMaY5EVwoLozfjM4fR31bko4yj
+revision: 2
+series: 16
+brand-id: tcMZ22pMaY5EVwoLozfjM4fR31bko4yj
+model: ubuntu-core-24-arm64-dangerous
+architecture: arm64
+base: core24
+grade: dangerous
+snaps:
+  -
+    default-channel: 24/edge
+    id: UqFziVZDHLSyO3TqSWgNBoAdHbLI4dAH
+    name: pc
+    type: gadget
+  -
+    default-channel: 23.10/edge
+    id: pYVQrBcKmBa0mZ4CCN7ExT6jH8rY1hza
+    name: pc-kernel
+    type: kernel
+  -
+    default-channel: latest/edge
+    id: dwTAh7MZZ01zyriOZErqd1JynQLiOGvM
+    name: core24
+    type: base
+  -
+    default-channel: latest/edge
+    id: PMrrV4ml8uWuEUDBT8dSGnKUYbevVhc4
+    name: snapd
+    type: snapd
+timestamp: 2023-11-09T02:03:23+00:00
+sign-key-sha3-384: JGh2mJNy5UeNKQ05MNvphnlDcgteasy0WiJFgk-aJ9XvPyqcKwIm8zomJtWwb-mT
+
+AcLBcwQAAQoAHRYhBAho4l7L210CwlP5EEjPuvv/MykzBQJlTevRAAoJEEjPuvv/MykzP10QAMHI
++N1Mv65yaw90L9qxX/ndHq7YEY7NT8l3zxALFcAOsmgsZHt8Ecl6xGFs0zgxqYbAl3WBpjAaCC+T
+LR97SKBdgbKYtzF9r5Sb/sHaYxg6sHw5hAisVRNpRnDhWDpzgvl01V4YXaag1/c9FPD1tDayHoqs
+RpUK/+fEKI+s15EWd2+sJPnjVvBjrkK1IIGQoSaXoyfsJvu1LDUlGw8SnXDdbN0Pkqgh+oqDN2+q
+T4Hzph2ir09kYQMIpiAplLDuOwCgGxvvAvkLlnRQ1Qms7wlMcy9xHFfiiJDFk9ZFJslZOf5eDKI8
+07WrdZ98N9Z0MkzARZWYOCsH5W0EyeyysOMLL1aRS+2LaCOYSrbXqGzzN4I5DApacV5xPBw+ALzv
++Hs1ucyBtSBvsOtgruKmLuJuGu8zfpfXIRo06M4Fm2acHR/mJXoB1zOzyFHa8zwKmWfL1OyS6Z66
+rF8KmhLGNeLmVdJ3jIb3DViIhdaKiS39LLKI5hHN4HqsNh9fjYEzkW4zmzssBgHhXL7t390tnGn2
+Bx0IzK1r7/tYnrZhzgEGkcZd/mBJVPCW5ytZAtuyE/rNIor5E94mhMyYwHiOHYxfEENAlYCHdyXp
+JVXZODZ0W4SDyrXZZCDBO2e6146EyKbw09mPHup/dtIfMIp6bRYxfIMHqCZrSYx5c1OOZ+W9
