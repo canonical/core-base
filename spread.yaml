@@ -3,7 +3,7 @@ project: core24
 environment:
   SETUPDIR: /home/core24
   PROJECT_PATH: $SETUPDIR
-  PATH: $PATH:$PROJECT_PATH/tests/bin
+  PATH: $PATH:$PROJECT_PATH/tests/bin:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
   TESTSLIB: $PROJECT_PATH/tests/lib
   SNAP_BRANCH: "edge" # stable/edge/beta
   UC_VERSION: 24

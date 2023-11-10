@@ -4,8 +4,6 @@ WORK_DIR="${WORK_DIR:-/tmp/work-dir}"
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
 IMAGE_FILE="${WORK_DIR}/ubuntu-core-24.img"
-# For os.query and others
-PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
 
 execute_remote(){
     sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@localhost "$*"

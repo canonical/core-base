@@ -5,8 +5,6 @@ set -x
 
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
-# For os.query and others
-PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
 
 execute_remote(){
     sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no test@localhost "$*"
