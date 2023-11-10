@@ -103,7 +103,9 @@ jobs:
       - name: Build image
         working-directory: '${{ github.workspace }}'
         run: |
-          PROJECT_PATH=core-base
+          PROJECT_PATH=$PWD/core-base
+          # For os.query and others
+          PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
           . "core-base/tests/lib/prepare-utils.sh"
 
           echo "************* INSTALLING DEPS *************"
