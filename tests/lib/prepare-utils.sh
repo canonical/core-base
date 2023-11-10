@@ -195,6 +195,9 @@ prepare_base_cloudinit() {
     # add the cloud.conf to the gadget
     create_cloud_init_cdimage_config "${gadgetdir}/cloud.conf"
 
+    # add extra debug params to kernel command line
+    printf "systemd.journald.forward_to_console=1 console=ttyS0\n" > $gadgetdir/cmdline.extra
+
     # repack kernel snap
     rm upstream-pc-gadget.snap
     snap pack --filename=upstream-pc-gadget.snap "$gadgetdir"
