@@ -21,6 +21,7 @@ backends:
     halt-timeout: 2h
     systems:
       - ubuntu-24.04-64:
+          workers: 4
           # FIXME: switch to 24.04
           image: ubuntu-23.10-64
           storage: 20G
@@ -33,6 +34,7 @@ backends:
     halt-timeout: 2h
     systems:
       - ubuntu-22.04-arm-64:
+          workers: 4
           image: ubuntu-2204-arm-64-virt-enabled
           storage: 25G
 
