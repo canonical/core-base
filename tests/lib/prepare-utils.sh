@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-set -x 
+set -x
 
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
@@ -114,9 +114,20 @@ start_snapd_core_vm() {
     nested_wait_for_snap_command
 }
 
+get_arch() {
+    if os.query is-pc-amd64; then
+        printf amd64
+    elif os.query is-arm64; then
+        printf arm64
+    else
+        printf "ERROR: unsupported archtecture\n"
+        exit 1
+    fi
+}
+
 get_core_snap_name() {
     printf -v date '%(%Y%m%d)T' -1
-    echo "core22_${date}_amd64.snap"
+    echo "core22_${date}_$(get_arch).snap"
 }
 
 install_core22_deps() {
@@ -141,7 +152,7 @@ download_core22_snaps() {
     local snap_branch="$1"
 
     # get the model
-    curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-22-amd64-dangerous.model
+    curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-22-$(get_arch)-dangerous.model
 
     # download neccessary images
     snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
@@ -209,5 +220,5 @@ build_core22_image() {
         --snap upstream-snapd.snap \
         --snap upstream-pc-kernel.snap \
         --snap upstream-pc-gadget.snap \
-        ubuntu-core-amd64-dangerous.model
+        ubuntu-core-dangerous.model
 }

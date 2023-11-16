@@ -4,7 +4,7 @@ prepare: |
   # for various utilities
   . "$TESTSLIB/nested.sh"
 
-  # Start the nested UC20 VM
+  # Start the nested UC VM
   start_nested_core_vm_unit
 
   # At this point we are able to SSH to the nested VM, so things probably worked
