@@ -19,6 +19,27 @@ trap 'umount /proc' EXIT
 # systemd postinst needs this
 mkdir -p /var/log/journal
 
+# Add universe to the base - needed for gnutls-bin, libengine-pkcs11-openssl,
+# libnss-extrausers, libopts25, opensc, plymouth-label-ft, gdbserver,
+# systemd-bootchart.
+# TODO this was not needed before noble, research why.
+case "$(dpkg --print-architecture)" in
+    amd64)
+        printf "
+deb http://archive.ubuntu.com/ubuntu noble universe
+deb http://archive.ubuntu.com/ubuntu noble-updates universe
+deb http://security.ubuntu.com/ubuntu noble-security universe
+" >> /etc/apt/sources.list
+        ;;
+    *)
+        printf "
+deb http://ports.ubuntu.com/ubuntu-ports noble universe
+deb http://ports.ubuntu.com/ubuntu-ports noble-updates universe
+deb http://ports.ubuntu.com/ubuntu-ports noble-security universe
+" >> /etc/apt/sources.list
+        ;;
+esac
+
 # We need to install first the certificates as apt will need them for https to lp
 apt update
 apt install --no-install-recommends -y ca-certificates
