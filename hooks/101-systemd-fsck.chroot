@@ -3,5 +3,5 @@
 set -eux
 
 echo "Remove conflict from systemd-fsck to shutdown"
-sed -i "/^Conflicts=shutdown.target$/d" lib/systemd/system/systemd-fsck@.service
+sed -i "/^Conflicts=shutdown.target$/d" usr/lib/systemd/system/systemd-fsck@.service
 

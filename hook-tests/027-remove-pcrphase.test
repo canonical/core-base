@@ -2,11 +2,11 @@
 
 set -eu
 
-! [ -f lib/systemd/systemd-pcrphase ]
+! [ -f usr/lib/systemd/systemd-pcrphase ]
 for f in \
-  lib/systemd/systemd-pcrphase \
-  lib/systemd/system/*/systemd-pcrphase*.service \
-  lib/systemd/system/systemd-pcrphase*.service
+  usr/lib/systemd/systemd-pcrphase \
+  usr/lib/systemd/system/*/systemd-pcrphase*.service \
+  usr/lib/systemd/system/systemd-pcrphase*.service
 do
   ! [ -f "${f}" ]
   ! [ -L "${f}" ]

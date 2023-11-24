@@ -6,7 +6,7 @@ grep -q "This Ubuntu Core 24 machine is a tiny" etc/motd
 
 test ! -e etc/default/motd-news
 test ! -e etc/update-motd.d/10-help-text
-test ! -e lib/systemd/system/motd-news.service
-test ! -e lib/systemd/system/motd-news.timer
+test ! -e usr/lib/systemd/system/motd-news.service
+test ! -e usr/lib/systemd/system/motd-news.timer
 
 ! grep -q unminimize etc/update-motd.d/*
