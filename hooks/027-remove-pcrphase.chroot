@@ -7,6 +7,6 @@ set -eux
 # is meant to measure signed kernel sections (see systemd-measure)
 # We are not yet using that PCR.
 
-rm -f /lib/systemd/systemd-pcrphase
-rm -f /lib/systemd/system/*/systemd-pcrphase*.service
-rm -f /lib/systemd/system/systemd-pcrphase*.service
+rm -f /usr/lib/systemd/systemd-pcrphase
+rm -f /usr/lib/systemd/system/*/systemd-pcrphase*.service
+rm -f /usr/lib/systemd/system/systemd-pcrphase*.service
