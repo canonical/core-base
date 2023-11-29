@@ -154,9 +154,7 @@ download_core24_snaps() {
     local snap_branch="$1"
 
     # get the model
-    # TODO: Add the model on the repository
-    #curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-$(get_arch)-dangerous.model
-    cp "${PROJECT_PATH}/ubuntu-core-24-$(get_arch)-dangerous.model" ubuntu-core-dangerous.model
+    curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-$(get_arch)-dangerous.model
 
     # download neccessary images
     # TODO: publish 24 kernel
