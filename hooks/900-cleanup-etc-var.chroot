@@ -22,12 +22,6 @@ rm /etc/pam.conf
 # cloud-init adds stuff here
 rm -rvf /etc/profile.d/Z99-cloud*
 
-# remove cloud-init file which allows all datasources, eventually we should add
-# a cloud-init configuration which specifies all allowed/known to work/good 
-# datasources, but since snapd will do this automatically after seeding, it's 
-# not critical
-rm /etc/cloud/cloud.cfg.d/90_dpkg.cfg
-
 rm /etc/rmt
 
 # sysctl.conf is not writable and everything in there is commented out
@@ -43,7 +37,7 @@ rm -rf /etc/python3
 # python3.6 imports apport
 rm -rf /etc/python3.6
 
-# only provides a symbolic name for "link-local"
+# cleanup networks
 rm /etc/networks
 
 # no need for old style init, we cannot delete /etc/init.d: apparmor needs it
@@ -54,9 +48,6 @@ rm -f /etc/alternatives/*.gz
 
 # python deb install leftovers
 rm -rf /usr/local/lib/python*
-
-# we have no cron daily jobs
-rmdir /etc/cron.daily
 
 # no permanet journal
 rm -rf /var/log/journal

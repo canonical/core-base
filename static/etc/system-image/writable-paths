@@ -10,7 +10,7 @@
 /home                                   user-data               persistent  transition  none
 /snap                                   auto                    persistent  none        none
 # snappy security policy, etc
-/var/lib/snapd                         auto                     persistent  transition  none
+/var/lib/snapd                          auto                    persistent  transition  none
 # snap catalogue (sections, pkgnames)
 /var/cache/snapd                        auto                    persistent  transition  none
 # snap data

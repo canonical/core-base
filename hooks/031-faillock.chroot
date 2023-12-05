@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-pam-auth-update --enable optional-faillock optional-faillock-preauth optional-faillock-authsucc

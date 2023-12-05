@@ -12,6 +12,144 @@ grade: devel
 assumes: [snapd2.55.5]
 
 parts:
+  chisel-libs:
+    plugin: nil
+    build-packages:
+      - golang
+    source: https://github.com/Meulengracht/chisel-releases.git
+    source-type: git
+    source-branch: ubuntu-24.04
+    override-build: |
+      go install github.com/canonical/chisel/cmd/chisel@latest
+      SLICES=(
+        adduser_base
+        apparmor_base
+        bash-completion_base
+        base-files_base
+        base-files_core24
+        base-passwd_data
+        bash_base
+        bsdutils_base
+        bzip2_bins
+        ca-certificates_data
+        coreutils_base
+        cloud-init_base
+        cryptsetup_base
+        cracklib-runtime_base
+        dash_base
+        dbus_base
+        dbus-user-session_base
+        diffutils_bins
+        dmsetup_base
+        dosfstools_bins
+        dpkg_bins
+        e2fsprogs_base
+        file_bins
+        finalrd_base
+        findutils_bins
+        fonts-ubuntu_data
+        gdbserver_base
+        gnutls-bin_bins
+        gpgv_bins
+        grep_bins
+        gzip_bins
+        hostname_bins
+        init-system-helpers_bins
+        iproute2_base
+        iptables_base
+        iputils-ping_bins
+        kmod_base
+        less_bins
+        less_data
+        libc-bin_base
+        libc6_config
+        libc6_gconv
+        libstdc++6_libs
+        libgnutls30_config
+        libwrap0_host-files
+        libgssapi-krb5-2_config
+        libengine-pkcs11-openssl_libs
+        libnss-extrausers_libs
+        libnss-mdns_libs
+        libopts25_libs
+        libp11-3_libs
+        libpam-runtime_base
+        libpam-pwquality_libs
+        libpam-systemd_libs
+        locales_bins
+        locales_data
+        login_base
+        logsave_bins
+        netcat-openbsd_bins
+        netplan.io_bins
+        ncurses-base_data
+        ncurses-bin_bins
+        mawk_awk
+        mount_base
+        openssh-server_base
+        opensc_base
+        openssl_base
+        p11-kit_base
+        passwd_base
+        perl-base_base
+        polkitd_base
+        plymouth_base
+        plymouth-label-ft_libs
+        procps_base
+        python3-minimal_python3
+        rfkill_bins
+        sbsigntool_bins
+        sed_bins
+        sensible-utils_base
+        sudo_base
+        systemd_base
+        systemd-bootchart_base
+        systemd-sysv_bins
+        systemd-timesyncd_base
+        systemd-resolved_base
+        sysvinit-utils_base
+        tar_base
+        tzdata_zoneinfo
+        ubuntu-keyring_data
+        udev_base
+        usrmerge_base
+        util-linux_base
+        vim-tiny_base
+        wpasupplicant_base
+      )
+      
+      case "$(dpkg --print-architecture)" in
+          amd64|i386)
+              SLICES+=(secureboot-db_data)
+              ;;
+      esac
+
+      # Initialize the base folder structure where symlinks are expected
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/bin"
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/sbin"
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib"
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib32"
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib64"
+      cd "${CRAFT_PART_INSTALL}"
+      ln -s usr/bin bin
+      ln -s usr/sbin sbin
+      ln -s usr/lib lib
+      ln -s usr/lib32 lib32
+      ln -s usr/lib64 lib64
+      cd "${CRAFT_PROJECT_DIR}"
+
+      chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" "${SLICES[@]}"
+
+      # Install foreign libraries
+      case "$(dpkg --print-architecture)" in
+          amd64)
+              chisel cut --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              ;;
+          arm64)
+              chisel cut --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              ;;
+      esac
+
   probert-deb:
     plugin: nil
     build-packages:
@@ -48,47 +186,18 @@ parts:
     prime:
       - -local-debs
 
-  base:
-    plugin: nil
-    source: keyrings
-    build-packages:
-      - wget
-    build-environment:
-      # When 24.04 is finally released:
-      #- RELEASE: "24.04"
-      #- BASE: ubuntu-base-${RELEASE}-base-${CRAFT_TARGET_ARCH}.tar.gz
-      #- DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
-      - BASE: noble-base-${CRAFT_TARGET_ARCH}.tar.gz
-      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/daily/current
-      - URL: ${DIR_URL}/${BASE}
-      - SHA256: ${DIR_URL}/SHA256SUMS
-      - SIG: ${SHA256}.gpg
-    override-pull: |
-      craftctl default
-      wget "${SHA256}" "${SIG}" "${URL}"
-      gpg --no-default-keyring \
-          --keyring ./cd-image-keying.gpg \
-          --verify SHA256SUMS.gpg SHA256SUMS
-      awk -v "file=${BASE}" '$2=="*"file' SHA256SUMS | sha256sum -c
-    override-build: |
-      mkdir -p "${CRAFT_PART_INSTALL}/base"
-      tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"
-    override-stage: |
-      rm -rf "${CRAFT_STAGE}/base"
-      craftctl default
-    override-prime: |
-      # Do nothing
   splash-theme:
     plugin: dump
     source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
     source-type: git
     organize:
       ubuntu-core: usr/share/plymouth/themes/ubuntu-core
+  
   bootstrap:
     after:
+      - chisel-libs
       - probert-deb
       - consoleconf-deb
-      - base
     plugin: make
     source: .
     build-packages:
@@ -99,5 +208,9 @@ parts:
       craftctl default
     override-prime: |
       craftctl default
+
+      # run all the hooks
+      cd ${CRAFT_PART_SRC} && make hooks DESTDIR=${CRAFT_PRIME}
+
       # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}

@@ -37,9 +37,10 @@ mv /usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf /usr/share/fonts/Plymouth.ttf
 rm -rf /usr/share/fonts/truetype/ubuntu/
 
 # We pull by "Wants" instead, so these units are not run unless plymouth-start is
-rm /lib/systemd/system/multi-user.target.wants/plymouth-quit-wait.service
-rm /lib/systemd/system/multi-user.target.wants/plymouth-quit.service
-rm /lib/systemd/system/sysinit.target.wants/plymouth-read-write.service
+rm /usr/lib/systemd/system/multi-user.target.wants/plymouth-quit-wait.service
+rm /usr/lib/systemd/system/multi-user.target.wants/plymouth-quit.service
+rm /usr/lib/systemd/system/sysinit.target.wants/plymouth-read-write.service
+
 # Remove some additional unneeded plymouth stuff that comes from the deb
 rm /usr/libexec/plymouth/plymouth-*-initrd \
    /usr/share/initramfs-tools/hooks/plymouth \

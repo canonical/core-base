@@ -1,0 +1,9 @@
+#!/bin/sh -ex
+
+echo "Removing extra mdns NSS modules"
+# Everything but libnss_mdns4_minimal
+rm -f /lib/*/libnss_mdns.so.2
+rm -f /lib/*/libnss_mdns_minimal.so.2
+rm -f /lib/*/libnss_mdns4.so.2
+rm -f /lib/*/libnss_mdns6.so.2
+rm -f /lib/*/libnss_mdns6_minimal.so.2

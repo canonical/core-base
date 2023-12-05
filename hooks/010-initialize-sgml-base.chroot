@@ -1,0 +1,53 @@
+#!/bin/bash -eux
+
+## ------------------------------------------------------------------
+## clean up /usr/lib/sgml
+if [ -d /usr/lib/sgml ]
+then
+    ## --------------------------------------------------------------
+    ## remove symlink to /etc/sgml/catalog
+    rm -f /usr/lib/sgml/catalog
+
+    ## --------------------------------------------------------------
+    ## move transitional SGML catalog to /etc/sgml
+    TRANSCAT=transitional.cat
+    if [ -f "/usr/lib/sgml/${TRANSCAT}" ]
+    then
+        mv -f "/usr/lib/sgml/${TRANSCAT}" "/etc/sgml/${TRANSCAT}"
+        if [ -f "/usr/lib/sgml/${TRANSCAT}.old" ]
+        then
+            mv -f "/usr/lib/sgml/${TRANSCAT}.old" "/etc/sgml/${TRANSCAT}.old"
+        fi
+    fi
+
+    ## --------------------------------------------------------------
+    ## remove /usr/lib/sgml
+    cd /usr/lib
+    rmdir --ignore-fail-on-non-empty sgml
+    cd - >/dev/null
+fi
+
+## ------------------------------------------------------------------
+## evolve legacy /etc/sgml.catalog
+OCATALOG=/etc/sgml.catalog
+if [ -f "${OCATALOG}" ]
+then
+    TRANSCAT=/etc/sgml/transitional.cat
+    if [ -f "${TRANSCAT}" ]
+    then
+        cp "${TRANSCAT}" "${TRANSCAT}.old"
+    else
+        cp /usr/share/sgml-base/transitional.cat "${TRANSCAT}"
+    fi
+    sed -e '1,10d' <"${OCATALOG}" >>"${TRANSCAT}"
+    rm -f "${OCATALOG}"
+    if [ -f "${OCATALOG}.old" ]
+    then
+        sed -e '1,10d' <"${OCATALOG}.old" >>"${TRANSCAT}.old"
+        rm -f "${OCATALOG}.old"
+    fi
+fi
+
+## ------------------------------------------------------------------
+update-catalog --quiet --update-super
+ln -sf /var/lib/sgml-base/supercatalog /etc/sgml/catalog

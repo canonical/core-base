@@ -1,0 +1,28 @@
+#!/bin/sh -e
+
+# libpam-modules initialization
+
+if ! [ -f /etc/security/opasswd ]; then
+    umask 066
+    touch /etc/security/opasswd
+    umask 022
+fi
+
+if ! [ -f /etc/environment ]
+then
+    touch /etc/environment
+fi
+
+# Add PATH to /etc/environment if it's not present there or in
+# /etc/security/pam_env.conf
+if ! grep -qs ^PATH /etc/security/pam_env.conf; then
+    if ! grep -qs ^PATH= /etc/environment; then
+        echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"' >> /etc/environment
+    elif ! grep -qs "^PATH=.*/snap/bin" /etc/environment; then
+        sed -i '/^PATH="/ s,"$,:/snap/bin",g' /etc/environment
+    fi
+fi
+
+# The reason we don't run any init for libpam-runtime is because pam-auth-update
+# is reliant on a dpkg environment to generate the config files, and we don't have
+# that as we chisel packages. Instead we bring static config files.

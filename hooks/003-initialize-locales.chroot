@@ -1,0 +1,88 @@
+#!/bin/bash -eux
+
+
+LOCALE_GEN_PATH=/etc/locale.gen
+
+# Generate locales early
+if ! [ -e "$LOCALE_GEN_PATH" ]; then
+    # Paths for files
+    SUPPORTED_LOCALES_PATH=/usr/share/i18n/SUPPORTED
+
+    # Sanitize variables
+    DEFAULT_ENVIRONMENT="en_US.UTF-8"
+    SELECTED_LOCALES="en_US.UTF-8 UTF-8"
+    LC_ALL=C
+    LANG=C
+
+    # shellcheck disable=SC2001
+    SELECTED_LOCALES="$(echo "$SELECTED_LOCALES" | sed -e 's/, /\n/g')"
+
+    # Select all locales
+    ln -s "$SUPPORTED_LOCALES_PATH" "$LOCALE_GEN_PATH"
+
+    # Comment previous defined locales
+    sed -i -e 's/^ *[a-zA-Z]/# &/' "$LOCALE_GEN_PATH"
+
+    # Get a list of supported locales
+    SUPPORTED_LOCALES="$(sed -e '/^[a-zA-Z]/!d' -e 's/ *$//g' "$SUPPORTED_LOCALES_PATH" | sort -u)"
+
+    # Make sure all locales exist in locales.gen
+    echo "$SUPPORTED_LOCALES" | while read -r locale ; do
+        if ! grep -q "^[# ]*$locale *\$" "$LOCALE_GEN_PATH"; then 
+            echo "# $locale" >> "$LOCALE_GEN_PATH"
+        fi
+    done
+
+    # Uncomment selected locales
+    echo "$SELECTED_LOCALES" | while read -r locale ; do
+        sed -i -e "0,/^[# ]*$locale *$/ s/^[# ]*$locale *$/$locale/" "$LOCALE_GEN_PATH"
+    done
+
+    locale-gen
+
+    if ! [ -e /etc/default/locale ]; then
+        # Remove previous definitions
+        update-locale --no-checks LANG
+
+        # Set default LANG environment variable
+        if [ -n "$DEFAULT_ENVIRONMENT" ] && [ "$DEFAULT_ENVIRONMENT" != "None" ]; then
+            update-locale "LANG=$DEFAULT_ENVIRONMENT"
+        fi
+    fi
+
+    mkdir -p "/usr/lib/locale"
+
+    declare -A found_encodings
+
+    while read -r locale encoding; do
+        encoding_canonical="$(echo "${encoding}" | sed 's/[A-Z]/\l&/g;s/[^a-z0-9]//g')"
+        case "${locale}" in
+            C|C.*)
+            ;;
+            *)
+                ln -s "C.${encoding_canonical}" "/usr/lib/locale/${locale}"
+            ;;
+        esac
+        found_encodings["${encoding}"]="${encoding_canonical}"
+    done <"$SUPPORTED_LOCALES_PATH"
+
+    for encoding in "${!found_encodings[@]}"; do
+        encoding_canonical="${found_encodings[${encoding}]}"
+        localedef --no-archive -f "${encoding}" -i C "C.${encoding_canonical}"
+    done
+
+    # cleanup locale files that came from chisel and
+    # the local packages
+    rm -rf /etc/default/locale
+    rm /etc/locale.alias
+    rm /etc/locale.conf
+    rm /etc/locale.gen
+    
+    rm /lib/locale/locale-archive
+    rm /usr/sbin/locale-gen
+    rm /usr/sbin/update-locale
+    rm /usr/sbin/validlocale
+
+    rm -rf /usr/share/locales
+    find /usr/share/locale/ -type f -name 'subiquity.mo' -delete
+fi

@@ -1,0 +1,31 @@
+#! /bin/sh
+
+set -e
+
+# Copy nsswitch.conf into the right place (libc-bin)
+cp /usr/share/libc-bin/nsswitch.conf /etc/nsswitch.conf
+
+# insert mdns4_minimal into hosts (libnss-mdns)
+perl -i -pe '
+    sub insert {
+        # this also splits on tab
+        my @bits=split(" ", shift);
+        # do not break configuration if the "hosts" line already references
+        # mdns
+        if (grep { $_ eq "mdns4_minimal" || $_ eq "mdns4"
+            || $_ eq "mdns" || $_ eq "mdns_minimal" 
+            || $_ eq "mdns6" || $_ eq "mdns6_minimal"} @bits) {
+            return join " ", @bits;
+        }
+        # change "dns" or "resolve", whichever comes first, into
+        # "mdns4_minimal [NOTFOUND=return] dns|resolve"
+        foreach my $bit (@bits) {
+            if ($bit eq "dns" || $bit eq "resolve") {
+                $bit = "mdns4_minimal [NOTFOUND=return] $bit";
+                last;
+            }
+        }
+        return join " ", @bits;
+    }
+    s/^(hosts:\s+)(.*)/$1.insert($2)/e;
+' /etc/nsswitch.conf

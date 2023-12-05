@@ -1,0 +1,28 @@
+#! /bin/sh
+
+set -e
+
+LC_ALL=C
+LANG=C
+unset TZ
+umask 022
+
+# Initialize timezone to Etc/UTC
+AREA=Etc
+ZONE=UTC
+
+# Update the time zone
+echo $AREA/$ZONE > /etc/timezone
+ln -nsf /usr/share/zoneinfo/$AREA/$ZONE /etc/localtime.dpkg-new && \
+    mv -f /etc/localtime.dpkg-new /etc/localtime
+which restorecon >/dev/null 2>&1 && restorecon /etc/localtime
+
+echo 
+echo "Current default time zone: '$AREA/$ZONE'"
+
+# Show the new setting to the user
+TZBase=$(LC_ALL=C TZ=UTC0 date)
+UTdate=$(LC_ALL=C TZ=UTC0 date -d "$TZBase")
+TZdate=$(unset TZ ; LANG=C date -d "$TZBase")
+echo "Local time is now:      $TZdate."
+echo "Universal Time is now:  $UTdate."

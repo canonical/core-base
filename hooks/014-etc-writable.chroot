@@ -18,4 +18,3 @@ for f in system user; do
     echo "I: creating /etc/systemd/$f.conf.d"
     mkdir -p /etc/systemd/$f.conf.d
 done
-

@@ -1,0 +1,17 @@
+#!/bin/bash -eux
+
+# TODO: replace with chisel?
+for i in /install-data/local-debs/*.deb; do
+    [ -f "$i" ] || break
+    # extract the local deb
+    dpkg-deb -xv "$i" /
+done
+
+# remove files that we don't want from the packages
+rm usr/share/doc/console-conf/*.gz
+rm usr/share/doc/probert-common/*.gz
+rm usr/share/doc/probert-network/*.gz
+rm usr/share/doc/probert-storage/*.gz
+rm usr/share/doc/probert/*.gz
+rm usr/share/doc/subiquitycore/*.gz
+rm -rf usr/share/doc/subiquitycore/examples

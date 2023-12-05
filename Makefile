@@ -9,23 +9,14 @@ all: check
 
 .PHONY: install
 install:
-	# install base
 	set -ex; if [ -z "$(DESTDIR)" ]; then \
 		echo "no DESTDIR set"; \
 		exit 1; \
 	fi
-	rm -rf $(DESTDIR)
-	cp -aT $(CRAFT_STAGE)/base $(DESTDIR)
-	# ensure resolving works inside the chroot
-	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
-	# copy-in launchpad's build archive
-	if grep -q ftpmaster.internal /etc/apt/sources.list; then \
-		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list; \
-		cp /etc/apt/trusted.gpg $(DESTDIR)/etc/apt/ || true; \
-		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
-	fi
+
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
+	mkdir -p $(DESTDIR)/dev
 	[ -e $(DESTDIR)/dev/null ] || mknod -m 666 $(DESTDIR)/dev/null c 1 3
 	[ -e $(DESTDIR)/dev/zero ] || mknod -m 666 $(DESTDIR)/dev/zero c 1 5
 	[ -e $(DESTDIR)/dev/random ] || mknod -m 666 $(DESTDIR)/dev/random c 1 8
@@ -33,9 +24,16 @@ install:
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
+
+.PHONY: hooks
+hooks:
+	set -ex; if [ -z "$(DESTDIR)" ]; then \
+		echo "no DESTDIR set"; \
+		exit 1; \
+	fi
+
 	mkdir -p $(DESTDIR)/install-data
 	/bin/cp -r $(CRAFT_STAGE)/local-debs $(DESTDIR)/install-data/local-debs
-	# customize
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
 		base="$$(basename "$${f}")";			\
 		cp -a "$${f}" $(DESTDIR)/install-data/;		\
@@ -47,11 +45,11 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
-	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e $(BUILDDIR) ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
-	fi;
+	# TODO: Chisel can't generate a list of packages yet.
+	# if [ -e $(BUILDDIR) ]; then \
+	# 	/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+	# 	/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	# fi;
 
 .PHONY: check
 check:

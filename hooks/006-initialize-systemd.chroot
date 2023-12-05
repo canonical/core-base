@@ -1,0 +1,49 @@
+#!/bin/sh -ex
+
+# ensure we have /proc or systemd will fail
+mkdir -p /proc
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# enable some services by default
+systemctl enable getty@tty1.service || true
+systemctl enable remote-fs.target || true
+systemctl enable systemd-resolved.service || true
+systemctl enable systemd-pstore.service || true
+
+# Use stub resolve.conf by default
+mkdir -p /run/systemd/resolve
+if [ -e /etc/resolv.conf ]; then
+        cp /etc/resolv.conf /run/systemd/resolve/stub-resolv.conf
+fi
+
+# If /etc/resolv.conf is a bind-mount, moving or replacing
+# /etc/resolv.conf may fail
+ln -snf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true
+
+# Enable persistent journal, in auto-mode, by default
+mkdir -p /var/log/journal
+# create tmpfiles only when running systemd, otherwise %b substitution fails
+if [ -d /run/systemd/system ]; then
+    systemd-tmpfiles --create --prefix /var/log/journal
+fi
+
+# Initial update of the Message Catalogs database
+journalctl --update-catalog || true
+
+# Setup tmpfiles
+systemd-tmpfiles --create
+
+# Clean up removed ondemand service
+rm -f /etc/systemd/system/multi-user.target.wants/ondemand.service
+
+# Move some .wants around
+echo "ensure the systemd target.wants are in /lib instead of /etc"
+for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
+    if [ -d etc/systemd/system/"$d"/ ]; then
+        mv etc/systemd/system/"$d"/* lib/systemd/system/"$d"
+    fi
+done
+
+# Reset all unit files
+systemctl preset-all
