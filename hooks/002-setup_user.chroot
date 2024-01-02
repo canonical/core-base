@@ -10,6 +10,14 @@ for name in group gshadow passwd shadow subuid subgid; do
     touch /var/lib/extrausers/$name
 done
 
+cat > /var/lib/extrausers/group <<EOF
+users:x:100:
+EOF
+
+cat > /var/lib/extrausers/gshadow <<EOF
+users:*::
+EOF
+
 for name in gshadow shadow; do
     chmod 640 /var/lib/extrausers/$name
     chown root:shadow /var/lib/extrausers/$name
