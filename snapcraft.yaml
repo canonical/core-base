@@ -37,13 +37,11 @@ parts:
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
-    # following branch server/jammy
-    source-commit: d2fe66f1b624274f2b1ff53bcbbc093cc9ebfca2
+    # following main until there is a noble branch
+    source-commit: 89c1ea2afef14c4e1ba47aa2008812d09f5de8c7
     override-pull: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
-      # noble installs units into usr/lib
-      sed 's|lib/systemd|usr/lib/systemd|g' -i debian/rules
       "${CRAFT_PROJECT_DIR}/build-package.sh" build
     override-stage: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" stage
