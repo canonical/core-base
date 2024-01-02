@@ -129,6 +129,7 @@ PACKAGES=(
     p11-kit
     p11-kit-modules
     plymouth-label-ft
+    polkitd
     rfkill
     squashfs-tools
     sudo
