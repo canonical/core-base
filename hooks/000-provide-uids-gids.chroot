@@ -115,6 +115,7 @@ _apt:x:117:65534:Reserved:/nonexistent:/bin/false
 syslog:x:108:114:Reserved:/home/syslog:/bin/false
 dnsmasq:x:109:65534:Reserved:/var/lib/misc:/bin/false
 tss:x:110:116:Reserved:/var/lib/tpm:/bin/false
+polkitd:x:111:120:polkit:/nonexistent:/usr/sbin/nologin
 EOF
 cp /etc/passwd /etc/passwd.orig # We make a copy for a later sanity-compare
 
@@ -148,6 +149,7 @@ _apt:*:16780:0:99999:7:::
 syslog:*:16521:0:99999:7:::
 dnsmasq:*:16644:0:99999:7:::
 tss:*:16701:0:99999:7:::
+polkitd:!*:19690::::::
 EOF
 cp /etc/shadow /etc/shadow.orig # We make a copy for a later sanity-compare
 
@@ -209,6 +211,7 @@ input:x:107:
 render:x:117:
 sgx:x:119:
 _ssh:x:118:
+polkitd:x:120:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
@@ -270,5 +273,6 @@ input:!::
 render:!::
 sgx:!::
 _ssh:!::
+polkitd:!*::
 EOF
 cp /etc/gshadow /etc/gshadow.orig # We make a copy for a later sanity-compare
