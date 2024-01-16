@@ -1,2 +1,2 @@
-ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="loop*", KERNEL!="ram*" \
+ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="loop*", KERNEL!="ram*", ENV{ID_FS_USAGE}=="filesystem" \
     ENV{SYSTEMD_WANTS}+="snapd.autoimport-device@%k.service"
