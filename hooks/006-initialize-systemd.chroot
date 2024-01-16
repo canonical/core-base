@@ -47,3 +47,6 @@ done
 
 # Reset all unit files
 systemctl preset-all
+
+# Generate the hwdb
+systemd-hwdb --usr update || true
