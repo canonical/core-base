@@ -1,7 +1,9 @@
-#!/bin/sh -ex
+#!/bin/sh
 #
 # Remove parts of the xml-core package - runnable bits are used by polkit
 # package postinst/prerm scripts and it is not needed after that.
+
+set -ex
 
 echo "I: Removing xml-core runnable bits"
 

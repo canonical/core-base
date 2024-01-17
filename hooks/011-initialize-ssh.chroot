@@ -1,4 +1,6 @@
-#!/bin/bash -eux
+#!/bin/bash
+
+set -eux
 
 permit_root_login=true
 password_authentication=true

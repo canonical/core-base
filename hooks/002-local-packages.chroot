@@ -1,4 +1,6 @@
-#!/bin/bash -eux
+#!/bin/bash
+
+set -eux
 
 # TODO: replace with chisel?
 for i in /install-data/local-debs/*.deb; do

@@ -1,5 +1,6 @@
-#!/bin/bash -eux
+#!/bin/bash
 
+set -eux
 
 LOCALE_GEN_PATH=/etc/locale.gen
 

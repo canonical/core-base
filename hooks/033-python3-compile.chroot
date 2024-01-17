@@ -1,4 +1,6 @@
-#!/bin/bash -eu
+#!/bin/bash
+
+set -eu
 
 echo "compiling python modules"
 for f in /lib/python3.11/ /usr/lib/python3/dist-packages /usr/share/subiquity/; do

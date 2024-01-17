@@ -1,4 +1,6 @@
-#!/bin/bash -ex
+#!/bin/bash
+
+set -ex
 
 cat >/etc/motd<<EOF
  * Ubuntu Core:     https://www.ubuntu.com/core

@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 mkdir -p /usr/share/p11-kit/modules
 echo "Creating p11-kit-client module configuration"

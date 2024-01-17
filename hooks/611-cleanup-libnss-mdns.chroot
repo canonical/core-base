@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 echo "Removing extra mdns NSS modules"
 # Everything but libnss_mdns4_minimal

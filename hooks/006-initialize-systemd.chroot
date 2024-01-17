@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 # ensure we have /proc or systemd will fail
 mkdir -p /proc
@@ -44,6 +46,28 @@ for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
         mv etc/systemd/system/"$d"/* lib/systemd/system/"$d"
     fi
 done
+
+add_maybe_symlink() {
+  if [ -e "lib/systemd/system/$1" ]; then
+    ln -s "lib/systemd/system/$1" "lib/systemd/system/$2/$1"
+  fi
+}
+
+remove_maybe_symlink() {
+    if [ -e "lib/systemd/system/$2/$1" ]; then
+        rm "lib/systemd/system/$2/$1"
+    fi
+}
+
+# Add some additional .wants that are otherwise generated
+add_maybe_symlink e2scrub_reap.service multi-user.target.wants
+add_maybe_symlink secureboot-db.service multi-user.target.wants
+add_maybe_symlink wpa_supplicant.service multi-user.target.wants
+add_maybe_symlink apparmor.service sysinit.target.wants
+add_maybe_symlink finalrd.service sysinit.target.wants
+add_maybe_symlink systemd-timesyncd.service sysinit.target.wants
+add_maybe_symlink e2scrub_all.timer timers.target.wants
+add_maybe_symlink fstrim.timer timers.target.wants
 
 # Reset all unit files
 systemctl preset-all

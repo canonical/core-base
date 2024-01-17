@@ -1,4 +1,6 @@
-#! /bin/sh -ex
+#! /bin/sh
+
+set -ex
 
 # Note that we have overrides for plymouth services in:
 # static/usr/lib/systemd/system/plymouth-start.service.d/core-override.conf

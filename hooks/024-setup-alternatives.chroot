@@ -1,4 +1,6 @@
-#!/bin/sh -eux
+#!/bin/sh
+
+set -eux
 
 # emulate alternatives installed by post install scripts
 # for packages we have
