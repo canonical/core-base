@@ -108,6 +108,7 @@ parts:
         systemd-timesyncd_base
         systemd-resolved_base
         sysvinit-utils_base
+        squashfs-tools_bins
         tar_base
         tzdata_zoneinfo
         ubuntu-keyring_data
@@ -124,19 +125,24 @@ parts:
               ;;
       esac
 
+      setup_chroot_folder() {
+        cd "${CRAFT_PART_INSTALL}"
+        mkdir "$1"
+        chown "root:$3" "$1"
+        chmod "$2" "$1"
+        if [ "$#" -eq 4 ]; then
+          ln -s "$1" "$4"
+        fi
+        cd -
+      }
+
       # Initialize the base folder structure where symlinks are expected
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/bin"
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/sbin"
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib"
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib32"
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib64"
-      cd "${CRAFT_PART_INSTALL}"
-      ln -s usr/bin bin
-      ln -s usr/sbin sbin
-      ln -s usr/lib lib
-      ln -s usr/lib32 lib32
-      ln -s usr/lib64 lib64
-      cd "${CRAFT_PROJECT_DIR}"
+      setup_chroot_folder usr       755 root
+      setup_chroot_folder usr/bin   755 root bin
+      setup_chroot_folder usr/sbin  755 root sbin
+      setup_chroot_folder usr/lib   755 root lib
+      setup_chroot_folder usr/lib32 755 root lib32
+      setup_chroot_folder usr/lib64 755 root lib64
 
       chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" "${SLICES[@]}"
 

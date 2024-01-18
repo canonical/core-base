@@ -67,6 +67,9 @@ if [ ! -L /var/spool/mail ]; then
     ln -s ../mail /var/spool/mail
 fi
 
+# needed by pc gadget hook
+install_directory usr/src 755 root
+
 install_directory run/lock 1777 root
 migrate_directory /var/run /run
 migrate_directory /var/lock /run/lock
