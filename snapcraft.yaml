@@ -97,6 +97,10 @@ parts:
         plymouth-label-ft_libs
         procps_base
         python3-minimal_python3
+        python3-requests-unixsocket_data
+        python3-pyroute2_data
+        python3-pyudev_data
+        python3-urwid_data
         rfkill_bins
         sbsigntool_bins
         sed_bins

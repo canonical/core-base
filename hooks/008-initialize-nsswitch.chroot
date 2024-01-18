@@ -6,6 +6,7 @@ set -e
 cp /usr/share/libc-bin/nsswitch.conf /etc/nsswitch.conf
 
 # insert mdns4_minimal into hosts (libnss-mdns)
+# TODO: replace this with a non-perl replacement (i.e just a bash script here)
 perl -i -pe '
     sub insert {
         # this also splits on tab
