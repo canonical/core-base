@@ -10,3 +10,5 @@ set -eux
 rm -f /usr/lib/systemd/systemd-pcrphase
 rm -f /usr/lib/systemd/system/*/systemd-pcrphase*.service
 rm -f /usr/lib/systemd/system/systemd-pcrphase*.service
+rm -f /usr/lib/systemd/system/*/systemd-pcrmachine.service
+rm -f /usr/lib/systemd/system/systemd-pcrmachine.service
