@@ -42,7 +42,7 @@ parts:
         diffutils_bins
         dmsetup_base
         dosfstools_bins
-        dpkg_bins
+        dpkg_utils
         e2fsprogs_base
         file_bins
         finalrd_base
@@ -148,17 +148,21 @@ parts:
       setup_chroot_folder usr/lib32 755 root lib32
       setup_chroot_folder usr/lib64 755 root lib64
 
-      chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" "${SLICES[@]}"
+      CHISEL_CACHE_DIR="$(mktemp -d)"
+
+      XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" "${SLICES[@]}"
 
       # Install foreign libraries
       case "$(dpkg --print-architecture)" in
           amd64)
-              chisel cut --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
           arm64)
-              chisel cut --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_PART_INSTALL}" libnss-mdns_libs libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
+
+      "${CRAFT_PROJECT_DIR}/generate-manifest.sh" "$CHISEL_CACHE_DIR/chisel/sha256" "${CRAFT_PART_INSTALL}"
 
   probert-deb:
     plugin: nil

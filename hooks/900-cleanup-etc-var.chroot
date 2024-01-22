@@ -6,9 +6,8 @@ set -e
 # clouding the view towards the work of eventually shipping with empty /etc
 echo "Cleaning up unneeded files in /etc"
 
-# package manager related stuff
+# remove files installed by packages into apt
 rm -rvf /etc/apt
-rm -rvf /etc/dpkg
 
 # misc
 rm -rvf /etc/kernel
@@ -64,8 +63,5 @@ rm -rf -- /var/local /usr/local
 # we need this for the core base snap when using with classic snaps
 # for the "interfaces-desktop-host-fonts"
 mkdir -p /usr/local/share/fonts
-
-# no debconf
-rm -rf /var/cache/debconf
 
 # FIXME: make /etc/lsb-release point to ../usr/lib/lsb-release

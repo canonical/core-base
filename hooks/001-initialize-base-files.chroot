@@ -43,12 +43,6 @@ update_to_current_default() {
   fi
 }
 
-if [ ! -e /etc/dpkg/origins/default ]; then
-  if [ -e /etc/dpkg/origins/ubuntu ]; then
-    ln -sf ubuntu /etc/dpkg/origins/default
-  fi
-fi
-
 install_from_default dot.profile   /root/.profile
 install_from_default dot.bashrc    /root/.bashrc
 install_from_default profile       /etc/profile
