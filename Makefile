@@ -45,6 +45,12 @@ hooks:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	# only generate manifest and dpkg.yaml files for lp build
+	if [ -e $(BUILDDIR) ]; then \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	fi;
+
 .PHONY: check
 check:
 	# exclude "useless cat" from checks, while useless they also make
