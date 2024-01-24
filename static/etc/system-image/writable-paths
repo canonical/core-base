@@ -69,4 +69,4 @@
 /etc/security/pwquality.conf            auto                    persistent  transition  none
 # polkit
 /etc/polkit-1/rules.d                   auto                    persistent  none        none
-/usr/share/polkit-1/actions             auto                    persistent  transition  none
+/usr/share/polkit-1/actions             auto                    synced      transition  none
