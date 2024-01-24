@@ -1,2 +1,17 @@
-ACTION=="add|change", SUBSYSTEM=="block", KERNEL!="loop*", KERNEL!="ram*", ENV{ID_FS_USAGE}=="filesystem" \
-    ENV{SYSTEMD_WANTS}+="snapd.autoimport-device@%k.service"
+SUBSYSTEM!="block", GOTO="snapd_autoimport_end"
+ACTION!="add|change|bind", GOTO="snapd_autoimport_end"
+KERNEL=="loop*", GOTO="snapd_autoimport_end"
+KERNEL=="ram*", GOTO="snapd_autoimport_end"
+
+# Only care about disk and partition of removable disks
+ATTR{removable}=="1", ENV{SNAPD_DISK_REMOVABLE}="1"
+ENV{DEVTYPE}=="partition", IMPORT{parent}="SNAPD_DISK_REMOVABLE"
+ENV{SNAPD_DISK_REMOVABLE}!="1", GOTO="snapd_autoimport_end"
+
+# Now we have marked disks as removable, only care about filesystems.
+# Note that ID_FS_USAGE will also tell us if the removable media is available.
+ENV{ID_FS_USAGE}!="filesystem", GOTO="snapd_autoimport_end"
+
+ENV{SYSTEMD_WANTS}+="snapd.autoimport-device@%k.service"
+
+LABEL="snapd_autoimport_end"
