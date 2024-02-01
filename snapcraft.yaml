@@ -101,3 +101,23 @@ parts:
       craftctl default
       # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
+    stage:
+      # curated list of things we can drop to save space
+
+      # docs
+      - -usr/share/doc/*
+      - -usr/share/doc-base
+      # lintian overrides
+      - -usr/share/lintian
+      # valgrind suppress profiles for python
+      - -usr/lib/valgrind
+      # remove individual hwdb files, runtime only uses the binary database
+      - -usr/lib/udev/hwdb
+      # gdb auto-load plugins, but there is no gdb in the base, just gdbserver
+      - -usr/share/gdb
+      # support for gdb plugin for untangling libstdc++ containers
+      - -usr/share/gcc/python
+
+      # TODO perl
+      # TODO adduser
+      # TODO X11 xkb
