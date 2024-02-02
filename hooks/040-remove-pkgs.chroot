@@ -4,3 +4,8 @@ set -e
 
 echo "Remove uneeded packages"
 dpkg -r --force-depends dh-python
+
+
+# Remove file which got pulled in by cracklib-runtime. We are discarding
+# cracklib-runtime binary programs in later hooks (601-clean-cracklib.chroot).
+dpkg -r --force-depends file libmagic1 libmagic-mgc
