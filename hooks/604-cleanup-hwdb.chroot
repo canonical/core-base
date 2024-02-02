@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Remove hwdb input files, we are not rebuilding the hwdb binary at runtime.
+
+set -ex
+
+echo "I: Removing hwdb input files"
+
+find usr/lib/udev/hwdb.d/ -name "*.hwdb" -print -delete
+rmdir usr/lib/udev/hwdb.d
