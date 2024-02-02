@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Remove xkb data files which were pulled in as transitive dependency for
+# plymouth
+
+set -xe
+
+echo "I: Removing xkb data"
+
+rm -rv /usr/share/X11/xkb
+rmdir /usr/share/X11
