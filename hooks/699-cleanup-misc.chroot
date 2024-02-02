@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Prune unnecessay bits that aren't worthy of getting their own dedicated file
+
+set -ex
+
+echo "I: Removing misc files"
+
+# lintian
+rm -rv usr/share/lintian
+# python suppression profile, but we don't ship valgrind in the base
+rm -rv usr/lib/valgrind
+# zsh completion files, but we don't ship zsh
+rm -rv usr/share/zsh
+# cmake scripts for bash completion installation
+rm -rv usr/share/cmake
+# bug reporting helpers (depend on yesno, which isn't included)
+rm -rv usr/share/bug
+# apport isn't included, so hooks are not used
+rm -rv usr/share/apport
