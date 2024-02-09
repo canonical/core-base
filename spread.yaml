@@ -10,7 +10,9 @@ environment:
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"
   LANGUAGE: "en"
-  SNAPCRAFT_CHANNEL: latest/stable
+  # XXX temporarily switch to edge to get the fix for
+  # https://bugs.launchpad.net/snapcraft/+bug/2051567
+  SNAPCRAFT_CHANNEL: latest/edge
 
 backends:
   google-nested:
