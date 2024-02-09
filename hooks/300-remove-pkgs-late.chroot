@@ -18,6 +18,3 @@ echo "Remove packages we no longer need after postinst/hooks"
 # --- openssh-client depends on adduser.
 # --- dbus-system-bus-common depends on adduser.
 dpkg --purge --force-depends --force-remove-essential perl-base adduser
-
-# cleanup perl modules left behind by other packages
-find / -type f -name '*.pm' -delete
