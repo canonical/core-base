@@ -56,9 +56,9 @@ parts:
     build-environment:
       # When 24.04 is finally released:
       #- RELEASE: "24.04"
-      #- BASE: ubuntu-base-${RELEASE}-base-${CRAFT_TARGET_ARCH}.tar.gz
+      #- BASE: ubuntu-base-${RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
       #- DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
-      - BASE: noble-base-${CRAFT_TARGET_ARCH}.tar.gz
+      - BASE: noble-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
       - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/daily/current
       - URL: ${DIR_URL}/${BASE}
       - SHA256: ${DIR_URL}/SHA256SUMS
