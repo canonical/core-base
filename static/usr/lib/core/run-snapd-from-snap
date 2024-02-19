@@ -9,6 +9,13 @@ set -eux
 run_on_unseeded() {
     SNAPD_BASE_DIR="/run/mnt/snapd"
 
+    # We need to initialize /snap/snapd/current symlink so that the
+    # dynanic linker
+    # /snap/snapd/current/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+    # is available to run snapd.
+    [ -d /snap/snapd ] || mkdir -p /snap/snapd
+    ln -sf "${SNAPD_BASE_DIR}" /snap/snapd/current
+
     # snapd will write all its needed snapd.{service,socket}
     # units and restart once it seeded the snapd snap. We create
     # a systemd socket unit so that systemd own the socket, otherwise
