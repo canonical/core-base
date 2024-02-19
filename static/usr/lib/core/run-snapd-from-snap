@@ -9,6 +9,9 @@ set -eux
 run_on_unseeded() {
     SNAPD_BASE_DIR="/run/mnt/snapd"
 
+    [ -d /snap/snapd ] || mkdir -p /snap/snapd
+    ln -sf "${SNAPD_BASE_DIR}" /snap/snapd/current
+
     # snapd will write all its needed snapd.{service,socket}
     # units and restart once it seeded the snapd snap. We create
     # a systemd socket unit so that systemd own the socket, otherwise
