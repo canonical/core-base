@@ -17,9 +17,10 @@ Conflicts=getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop getty@%I
+ExecStartPre=/bin/systemctl stop getty@%i
 ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/console-conf-wrapper %I $TERM
-ExecStopPost=/bin/systemctl start getty@%I
+# start getty only if we're done
+ExecStopPost=/bin/sh -c 'if [ "$EXIT_STATUS" = "0" ]; then /bin/systemctl start getty@%i; fi'
 Type=idle
 Restart=always
 RestartSec=0
