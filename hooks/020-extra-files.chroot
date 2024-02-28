@@ -36,6 +36,9 @@ echo "extra cloud init files"
 mkdir -p /etc/cloud
 mkdir -p /var/lib/cloud
 
+echo "console-conf directories"
+mkdir -p /var/lib/console-conf
+
 echo "ensure snapctl is available"
 ln -s ../lib/snapd/snapctl /usr/bin/snapctl
 
