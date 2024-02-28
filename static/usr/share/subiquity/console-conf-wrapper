@@ -70,12 +70,12 @@ if [ "$(snap managed)" = "true" ]; then
             read "${readargs[@]}" REPLY
             if [ $? -le 128 ]; then
                 # If we didn't time out, re-display everything.
-                exit 0
+                exit 42
             fi
             if ip addr show | grep -qE "scope global"; then
                 # If we timed out, but it appears that we may now have
                 # an IP address, re-display everything.
-                exit 0
+                exit 42
             fi
         done
     else
