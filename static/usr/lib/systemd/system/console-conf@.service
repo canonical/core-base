@@ -13,6 +13,7 @@ ConditionPathExists=/dev/tty0
 ConditionPathExists=|!/var/lib/console-conf/complete
 ConditionPathExists=|/run/snapd-recovery-chooser-triggered
 StartLimitInterval=0
+Conflicts=getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity

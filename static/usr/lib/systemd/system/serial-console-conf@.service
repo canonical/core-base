@@ -11,6 +11,7 @@ After=core18.start-snapd.service core.start-snapd.service
 After=snapd.recovery-chooser-trigger.service
 ConditionPathExists=!/var/lib/console-conf/complete
 StartLimitInterval=0
+Conflicts=serial-getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
