@@ -81,9 +81,11 @@ EOF
 
 fi
 
-cat <<EOF >/etc/apt/sources.list.d/local-packages.list
+if [ -d /install-data/local-debs ]; then
+    cat <<EOF >/etc/apt/sources.list.d/local-packages.list
 deb [trusted=yes] file:/install-data/local-debs ./
 EOF
+fi
 
 # This gives higher priority to local-debs repository
 cat <<EOF >/etc/apt/preferences
@@ -143,14 +145,6 @@ PACKAGES=(
     wpasupplicant
     locales
     cracklib-runtime
-)
-
-# Locally built packages
-PACKAGES+=(
-    console-conf
-    probert-common
-    probert-network
-    subiquitycore
 )
 
 case "$(dpkg --print-architecture)" in
