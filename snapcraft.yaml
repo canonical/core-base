@@ -38,7 +38,7 @@ parts:
     source: https://github.com/canonical/subiquity.git
     source-type: git
     # following main until there is a noble branch
-    source-commit: 89c1ea2afef14c4e1ba47aa2008812d09f5de8c7
+    source-commit: 0aaade5c53baf53e25dd4dfe8d003dd42cc395e8
     override-pull: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
