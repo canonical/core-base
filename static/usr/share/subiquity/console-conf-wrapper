@@ -108,7 +108,9 @@ mkdir -p /run/console-conf
 /usr/share/subiquity/console-conf-write-login-details --host-fingerprints > /run/console-conf/host-fingerprints.txt
 snap run console-conf "$@"
 rval=$?
-if [ ! ${rval} -eq 0 ]; then
-  echo "console-conf exited with: ${rval}"
-  exit ${rval}
+if [ ${rval} -eq 0 ]; then
+  # explicitly redisplay login information from the wrapper
+  exit 42
+else
+  exit "$rval"
 fi
