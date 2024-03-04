@@ -84,6 +84,11 @@ if [ "$(snap managed)" = "true" ]; then
     exit 0
 fi
 
+if [ -e /var/lib/console-conf/complete ]; then
+    # we're done already
+    exit 0
+fi
+
 # if there is NOT console-conf snap, exit gracefully
 if [ ! -e "/snap/console-conf" ]; then
   touch /var/lib/console-conf/complete
