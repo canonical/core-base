@@ -1,19 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
 pretty_name="$( awk -F "=" '$1 = /PRETTY_NAME/ {print $2;}' /usr/lib/os-release | sed 's/"//g')"
 tty_name=$(tty | cut -c 6-)
 
 get_first_ip() {
+  local ip_address
   for iface in $(ip -br address | awk '{print $1}')
   do
-    if test -n ${iface} && ip addr show dev ${iface} >/dev/null 2>&1; then
-      if test -e /sys/class/net/${iface}/device; then
-        local ip_address="$(ip -4 -br addr show dev ${iface} | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+    if test -n "${iface}" && ip addr show dev "${iface}" >/dev/null 2>&1; then
+        ip_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
         if [ -n "${ip_address}" ]; then
           echo "${ip_address}"
           return 0
         fi
-      fi
     fi
   done
   echo "<no ip address>"
@@ -21,24 +20,23 @@ get_first_ip() {
 }
 
 print_ssh_commands() {
+  local user_name
   # take any user with non zero
-  for h in /root $(ls /home/ | awk '{print "/home/"$1}')
+  for h in /root $(getent passwd | grep -v -e '/nologin' -e '/false' | cut -d: -f6 | grep /home)
   do
     # ignore users without .ssh/authorized_keys
-    if test ! -e ${h}/.ssh/authorized_keys || test "0" = "$( stat ${h}/.ssh/authorized_keys | awk '$1 == "Size:" {print $2}')"; then
+    if [ ! -s "${h}/.ssh/authorized_keys" ]; then
       continue
     fi
-    local user_name="$(basename ${h})"
+    user_name="$(basename "${h}")"
     for iface in $(ip -br address | awk '$2 == "UP" {print $1}')
     do
-      if test -n ${iface} && ip addr show dev ${iface} >/dev/null 2>&1; then
-        if test -e /sys/class/net/${iface}/device; then
-          ip4_address="$(ip -4 -br addr show dev ${iface} | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
-          ip6_address="$(ip -6 -br addr show dev ${iface} | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
-          if [ -n "${ip4_address}" ]; then
-            echo "\tssh ${user_name}@${ip4_address}"
-            echo "\tssh ${user_name}@${ip6_address}"
-          fi
+      if test -n "${iface}" && ip addr show dev "${iface}" >/dev/null 2>&1; then
+        ip4_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+        ip6_address="$(ip -6 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+        if [ -n "${ip4_address}" ]; then
+          printf "\tssh %s@%s\n" "${user_name}" "${ip4_address}"
+          printf "\tssh %s@%s\n" "${user_name}" "${ip6_address}"
         fi
       fi
     done
@@ -47,10 +45,12 @@ print_ssh_commands() {
 }
 
 print_sshd_finger_prints() {
-  for key in $(ls /etc/ssh/*.pub)
-  do
-    ssh-keygen -lf ${key} | awk '{print "\t"substr($4,2,length($4)-2)"\t"$2}'
-  done
+  (
+    shopt -s nullglob
+    for key in /etc/ssh/*.pub; do
+        ssh-keygen -lf "${key}" | awk '{print "\t"substr($4,2,length($4)-2)"\t"$2}'
+    done
+  )
   return 0
 }
 
@@ -72,7 +72,8 @@ write_login_details() {
 write_login() {
   # handle unmanaged devices
   local ret=0
-  if [ -z "$(ls /home | awk '{print "/home/"$1}')" ]; then
+  # shellcheck disable=SC2143
+  if [ -z "$(getent passwd | grep -v -e /nologin -e /false)" ]; then
     ip=$(get_first_ip)
     if [ -n "${ip}" ]; then
       echo "device managed without user @ ${ip}"
