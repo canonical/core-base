@@ -13,13 +13,12 @@ ConditionPathExists=|!/var/lib/console-conf/complete
 ConditionPathExists=|/run/snapd-recovery-chooser-triggered
 StartLimitInterval=0
 Conflicts=getty@%i.service
+OnSuccess=getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/bin/systemctl stop getty@%i
 ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/console-conf-wrapper %I $TERM
-# start getty only if we're done
-ExecStopPost=/bin/sh -c 'if [ "$EXIT_STATUS" = "0" ]; then /bin/systemctl start getty@%i; fi'
 Type=idle
 Restart=always
 RestartSec=0
