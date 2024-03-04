@@ -7,7 +7,7 @@ get_first_ip() {
   local ip_address
   for iface in $(ip -br address | awk '{print $1}')
   do
-    if test -n "${iface}" && ip addr show dev "${iface}" >/dev/null 2>&1; then
+    if [ -n "${iface}" ] && [ "${iface}" != "lo" ] && ip addr show dev "${iface}" >/dev/null 2>&1; then
         ip_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
         if [ -n "${ip_address}" ]; then
           echo "${ip_address}"
@@ -31,7 +31,7 @@ print_ssh_commands() {
     user_name="$(basename "${h}")"
     for iface in $(ip -br address | awk '$2 == "UP" {print $1}')
     do
-      if test -n "${iface}" && ip addr show dev "${iface}" >/dev/null 2>&1; then
+      if [ -n "${iface}" ] && [ "${iface}" != "lo" ] && ip addr show dev "${iface}" >/dev/null 2>&1; then
         ip4_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
         ip6_address="$(ip -6 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
         if [ -n "${ip4_address}" ]; then
