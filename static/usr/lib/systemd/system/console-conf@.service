@@ -17,11 +17,13 @@ OnSuccess=getty@%i.service
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop getty@%i
 ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/console-conf-wrapper %I $TERM
 Type=idle
-Restart=always
+Restart=on-failure
 RestartSec=0
+# explicit exit code to force redisplay
+RestartForceExitStatus=42
+SuccessExitStatus=42
 UtmpIdentifier=%I
 TTYPath=/dev/%I
 TTYReset=yes
