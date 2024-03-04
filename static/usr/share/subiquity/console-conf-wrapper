@@ -10,12 +10,20 @@ trap echo_on EXIT
 # happened and need to force it on. Yay UNIX!
 stty icrnl -echo
 
+redisplay_and_exit() { exit 42; }
+
 if [ -e /run/snapd-recovery-chooser-triggered ]; then
     # make sure the chooser binary is there to avoid getting into an awkward
     # state and locking out the user
     if [ -x /usr/lib/snapd/snap-recovery-chooser ]; then
         # when recovery chooser is invoked it takes over the terminal
-        exec /usr/lib/snapd/snap-recovery-chooser
+        /usr/lib/snapd/snap-recovery-chooser
+        rval=$?
+        if [ "$rval" -eq 0 ]; then
+            redisplay_and_exit
+        else
+            exit $rval
+        fi
     fi
     if [ -e /var/lib/console-conf/complete ]; then
         exit 0
@@ -70,12 +78,12 @@ if [ "$(snap managed)" = "true" ]; then
             read -r "${readargs[@]}" REPLY
             if [ $? -le 128 ]; then
                 # If we didn't time out, re-display everything.
-                exit 42
+                redisplay_and_exit
             fi
             if ip addr show | grep -qE "scope global"; then
                 # If we timed out, but it appears that we may now have
                 # an IP address, re-display everything.
-                exit 42
+                redisplay_and_exit
             fi
         done
     else
@@ -110,7 +118,7 @@ snap run console-conf "$@"
 rval=$?
 if [ ${rval} -eq 0 ]; then
   # explicitly redisplay login information from the wrapper
-  exit 42
+  redisplay_and_exit
 else
   exit "$rval"
 fi
