@@ -24,9 +24,9 @@ fi
 
 # always prefer to use modeevn if it is available
 if [ -e "/var/lib/snapd/modeenv" ]; then
-    mode="$(sed -n 's/mode=\([^[:space:]]*\)/\1/p' /var/lib/snapd/modeenv)"
+    mode="$(/usr/libexec/core/get-mode mode)"
 else
-    mode="$(sed 's/.*snapd_recovery_mode=\([^[:space:]]*\)[[:space:]].*/\1/' /proc/cmdline)"
+    mode="$(/usr/libexec/core/get-arg snapd_recovery_mode)"
 fi
 
 if [ "${mode}" = "install" ]; then
