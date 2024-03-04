@@ -8,8 +8,9 @@ After=core.start-snapd.service
 # on core20 the user may invoke a recovery chooser, make sure the detection
 # service runs before
 After=snapd.recovery-chooser-trigger.service
-ConditionPathExists=!/var/lib/console-conf/complete
 StartLimitInterval=0
+# because of Conflicts being defined here, this service will get a priority over
+# getty@%i
 Conflicts=serial-getty@%i.service
 OnSuccess=serial-getty@%i.service
 
