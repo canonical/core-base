@@ -29,10 +29,3 @@ TTYVHangup=yes
 KillMode=process
 IgnoreSIGPIPE=no
 SendSIGHUP=yes
-
-#TTYVTDisallocate=yes
-#KillMode=process
-#Restart=always
-#StandardInput=tty-force
-#StandardOutput=tty
-#StandardError=tty
