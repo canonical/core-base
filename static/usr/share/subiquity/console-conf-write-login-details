@@ -21,10 +21,9 @@ get_first_ip() {
 
 print_ssh_commands() {
   local user_name
-  # take any user with non zero
-  for h in /root $(getent passwd | grep -v -e '/nologin' -e '/false' | cut -d: -f6 | grep /home)
+  # take any user with non zero authorized keys file
+  for h in $(getent passwd | grep -v -e /nologin -e /false | cut -d: -f6 | grep -e /home -e /root)
   do
-    # ignore users without .ssh/authorized_keys
     if [ ! -s "${h}/.ssh/authorized_keys" ]; then
       continue
     fi
@@ -72,8 +71,9 @@ write_login_details() {
 write_login() {
   # handle unmanaged devices
   local ret=0
+  # fish for non-root users
   # shellcheck disable=SC2143
-  if [ -z "$(getent passwd | grep -v -e /nologin -e /false)" ]; then
+  if [ -z "$(getent passwd | grep -v -e /nologin -e /false | grep /home)" ]; then
     ip=$(get_first_ip)
     if [ -n "${ip}" ]; then
       echo "device managed without user @ ${ip}"
