@@ -29,6 +29,5 @@ TTYPath=/dev/%I
 TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
-KillMode=process
 IgnoreSIGPIPE=no
 SendSIGHUP=yes
