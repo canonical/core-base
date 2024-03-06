@@ -8,6 +8,9 @@ After=core.start-snapd.service
 # service runs before
 After=snapd.recovery-chooser-trigger.service
 ConditionPathExists=/dev/tty0
+# do not fail if the service is forced to restart/redisplay a couple of times
+# quickly due to user's input, see
+# https://bugs.launchpad.net/snappy/+bug/1650091 for details
 StartLimitInterval=0
 # because of Conflicts being defined here, this service will get a priority over
 # getty@%i
