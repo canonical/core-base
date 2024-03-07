@@ -81,19 +81,6 @@ EOF
 
 fi
 
-if [ -d /install-data/local-debs ]; then
-    cat <<EOF >/etc/apt/sources.list.d/local-packages.list
-deb [trusted=yes] file:/install-data/local-debs ./
-EOF
-fi
-
-# This gives higher priority to local-debs repository
-cat <<EOF >/etc/apt/preferences
-Package: *
-Pin: origin ""
-Pin-Priority: 1001
-EOF
-
 # install some packages we need
 apt update
 apt dist-upgrade -y
