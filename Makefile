@@ -34,9 +34,6 @@ install:
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
 	mkdir -p $(DESTDIR)/install-data
-	if [ -d $(CRAFT_STAGE)/local-debs ]; then \
-		/bin/cp -r $(CRAFT_STAGE)/local-debs $(DESTDIR)/install-data/local-debs; \
-	fi
 	# customize
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
 		base="$$(basename "$${f}")";			\
