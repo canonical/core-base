@@ -16,5 +16,3 @@ rm /usr/sbin/create-cracklib-dict
 rm /usr/sbin/update-cracklib
 rm /usr/share/dict/cracklib-small
 rm /var/cache/cracklib/src-dicts
-
-gzip /var/cache/cracklib/cracklib_dict.pwd
