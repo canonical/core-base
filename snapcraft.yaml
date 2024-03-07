@@ -12,42 +12,6 @@ grade: devel
 assumes: [snapd2.55.5]
 
 parts:
-  probert-deb:
-    plugin: nil
-    build-packages:
-      - apt-utils
-      - devscripts
-    source: https://github.com/canonical/probert.git
-    source-type: git
-    # following branch server/jammy
-    source-commit: 253acbe1480fba69d12d6e72f53412da79e27410
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
-
-  consoleconf-deb:
-    build-packages:
-      - apt-utils
-      - devscripts
-    plugin: nil
-    source: https://github.com/canonical/subiquity.git
-    source-type: git
-    # following main until there is a noble branch
-    source-commit: 89c1ea2afef14c4e1ba47aa2008812d09f5de8c7
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
-
   base:
     plugin: nil
     source: keyrings
@@ -86,8 +50,6 @@ parts:
       ubuntu-core: usr/share/plymouth/themes/ubuntu-core
   bootstrap:
     after:
-      - probert-deb
-      - consoleconf-deb
       - base
     plugin: make
     source: .

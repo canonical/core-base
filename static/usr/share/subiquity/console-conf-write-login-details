@@ -1,0 +1,100 @@
+#!/bin/bash
+
+pretty_name="$( awk -F "=" '$1 = /PRETTY_NAME/ {print $2;}' /usr/lib/os-release | sed 's/"//g')"
+tty_name=$(tty | cut -c 6-)
+
+get_first_ip() {
+  local ip_address
+  for iface in $(ip -br address | awk '{print $1}')
+  do
+    if [ -n "${iface}" ] && [ "${iface}" != "lo" ] && ip addr show dev "${iface}" >/dev/null 2>&1; then
+        ip_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+        if [ -n "${ip_address}" ]; then
+          echo "${ip_address}"
+          return 0
+        fi
+    fi
+  done
+  echo "<no ip address>"
+  return 2
+}
+
+print_ssh_commands() {
+  local user_name
+  # take any user with non zero authorized keys file
+  for h in $(getent passwd | grep -v -e /nologin -e /false | cut -d: -f6 | grep -e /home -e /root)
+  do
+    if [ ! -s "${h}/.ssh/authorized_keys" ]; then
+      continue
+    fi
+    user_name="$(basename "${h}")"
+    for iface in $(ip -br address | awk '$2 == "UP" {print $1}')
+    do
+      if [ -n "${iface}" ] && [ "${iface}" != "lo" ] && ip addr show dev "${iface}" >/dev/null 2>&1; then
+        ip4_address="$(ip -4 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+        ip6_address="$(ip -6 -br addr show dev "${iface}" | awk '{print$3}' | sed 's|\(.*\)/.*|\1|')"
+        if [ -n "${ip4_address}" ]; then
+          printf "\tssh %s@%s\n" "${user_name}" "${ip4_address}"
+          printf "\tssh %s@%s\n" "${user_name}" "${ip6_address}"
+        fi
+      fi
+    done
+    echo ""
+  done
+}
+
+print_sshd_finger_prints() {
+  (
+    shopt -s nullglob
+    for key in /etc/ssh/*.pub; do
+        ssh-keygen -lf "${key}" | awk '{print "\t"substr($4,2,length($4)-2)"\t"$2}'
+    done
+  )
+  return 0
+}
+
+write_login_details() {
+  ip=$(get_first_ip)
+  local ret=${?}
+  echo "${pretty_name} on ${ip} (${tty_name})"
+  echo ""
+  print_sshd_finger_prints
+  echo ""
+  echo "To login:"
+  echo ""
+  print_ssh_commands
+  echo "Personalize your account at https://login.ubuntu.com."
+  return ${ret}
+}
+
+
+write_login() {
+  # handle unmanaged devices
+  local ret=0
+  # fish for non-root users
+  # shellcheck disable=SC2143
+  if [ -z "$(getent passwd | grep -v -e /nologin -e /false | grep /home)" ]; then
+    ip=$(get_first_ip)
+    if [ -n "${ip}" ]; then
+      echo "device managed without user @ ${ip}"
+    else
+      echo "device managed without user"
+    fi
+  else
+    write_login_details
+    ret=${?}
+  fi
+  return ${ret}
+}
+
+case ${1} in
+  --host-fingerprints)
+    print_sshd_finger_prints
+    ;;
+  *)
+    write_login
+    ;;
+esac
+
+# pass on return code
+exit ${?}
