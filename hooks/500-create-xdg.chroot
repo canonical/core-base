@@ -8,6 +8,7 @@ cat >/usr/bin/xdg-open <<'EOF'
 exec snapctl user-open "$@"
 EOF
 chmod 755 /usr/bin/xdg-open
+ln -s /usr/bin/xdg-open /usr/bin/xdg-email
 
 # corresponding .desktop entry, needed for mimetype registration
 mkdir -p /usr/share/applications
