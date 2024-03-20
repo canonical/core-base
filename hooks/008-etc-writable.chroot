@@ -4,7 +4,7 @@ mkdir -p /etc/writable/default
 
 # cloud-init needs to be able to modify hostname and has the ability to
 # set the other two.
-for f in timezone localtime hostname motd issue; do
+for f in localtime hostname motd issue; do
     if [ -e /etc/$f ]; then
         echo "I: Moving /etc/$f to /etc/writable/"
         mv /etc/$f /etc/writable/$f
@@ -19,3 +19,6 @@ for f in system user; do
     mkdir -p /etc/systemd/$f.conf.d
 done
 
+# Work-around for tzdata still adding /etc/timezone. But:
+# https://git.launchpad.net/ubuntu/+source/systemd/commit/?h=ubuntu/noble&id=28efd34bc095a7bae923f13e23198610b5fe253d
+rm -f /etc/timezone
