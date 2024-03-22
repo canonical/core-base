@@ -161,6 +161,7 @@ PACKAGES=(
     squashfs-tools
     sudo
     systemd
+    systemd-coredump
     systemd-sysv
     systemd-timesyncd
     systemd-resolved
