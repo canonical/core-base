@@ -25,8 +25,8 @@ execute: |
     retry -d 1 -t 20 lxc exec $INSTANCE_NAME -- bash -c 'systemctl is-system-running --wait' || true
 
     # we build libtpms and swptm from source and preinstall that in the image for TPM emulation support
-    lxc exec $INSTANCE_NAME -- bash -c "apt update -yqq"
-    lxc exec $INSTANCE_NAME -- bash -c "apt install initramfs-tools-core psmisc fdisk openssh-server whois git coreutils net-tools iproute2 automake software-properties-common autoconf libtool gcc build-essential libssl-dev dh-exec pkg-config dh-autoreconf libtasn1-6-dev libjson-glib-dev libgnutls28-dev expect gawk socat libseccomp-dev make -yqq"
+    lxc exec $INSTANCE_NAME -- bash -c "apt-get update -yqq"
+    lxc exec $INSTANCE_NAME -- bash -c "apt-get install initramfs-tools-core psmisc fdisk openssh-server whois git coreutils net-tools iproute2 automake software-properties-common autoconf libtool gcc build-essential libssl-dev dh-exec pkg-config dh-autoreconf libtasn1-6-dev libjson-glib-dev libgnutls28-dev expect gawk socat libseccomp-dev make -yqq"
     lxc exec $INSTANCE_NAME -- bash -c "git clone https://github.com/stefanberger/libtpms"
     lxc exec $INSTANCE_NAME -- bash -c "git clone https://github.com/stefanberger/swtpm"
     lxc exec $INSTANCE_NAME -- bash -c "cd libtpms && ./autogen.sh --with-openssl --prefix=/usr --with-tpm2 && make -j4 && make install"

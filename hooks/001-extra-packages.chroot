@@ -20,8 +20,8 @@ trap 'umount /proc' EXIT
 mkdir -p /var/log/journal
 
 # We need to install first the certificates as apt will need them for https to lp
-apt update
-apt install --no-install-recommends -y ca-certificates
+apt-get update
+apt-get install --no-install-recommends -y ca-certificates
 
 # shellcheck disable=SC1091
 CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
@@ -120,8 +120,8 @@ EOF
 
 
 # install some packages we need
-apt update
-apt dist-upgrade -y
+apt-get update
+apt-get dist-upgrade -y
 
 PACKAGES=(
     apparmor
@@ -186,12 +186,12 @@ case "$(dpkg --print-architecture)" in
         ;;
 esac
 
-apt install --no-install-recommends -y "${PACKAGES[@]}"
+apt-get install --no-install-recommends -y "${PACKAGES[@]}"
 
-apt autoremove -y
+apt-get autoremove -y
 
 # Copy snapd-generator, which will handle mounts for /lib/{firmware,modules}
-apt download snapd
+apt-get download snapd
 dpkg --fsys-tarfile snapd_*.deb |
        tar xf - ./usr/lib/systemd/system-generators/snapd-generator
 rm snapd_*.deb

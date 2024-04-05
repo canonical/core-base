@@ -32,8 +32,8 @@ setup_deps() {
 
     # carries ubuntu-core-initframfs
     add-apt-repository ppa:snappy-dev/image -y
-    apt update -y
-    apt install ubuntu-core-initramfs -y
+    apt-get update -y
+    apt-get install ubuntu-core-initramfs -y
 }
 
 get_kver() {
