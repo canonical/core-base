@@ -5,8 +5,8 @@ systems: [ubuntu-20.04-64]
 
 execute: |
     # install dependencies
-    apt update -yqq
-    apt install snapd
+    apt-get update -yqq
+    apt-get install snapd
 
     # download the kernel snap
     snap download pc-kernel --channel=20/stable --basename=upstream-pc-kernel

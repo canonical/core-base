@@ -131,11 +131,11 @@ get_core_snap_name() {
 }
 
 install_base_deps() {
-    sudo apt update -qq
+    sudo apt-get update -qq
 
     # these should already be installed in GCE and LXD images with the google/lxd-nested 
     # backend, but in qemu local images from qemu-nested, we might not have them
-    sudo apt install psmisc fdisk snapd mtools ovmf qemu-system-x86 sshpass whois -yqq
+    sudo apt-get install psmisc fdisk snapd mtools ovmf qemu-system-x86 sshpass whois -yqq
 
     # TODO: https://bugs.launchpad.net/snapd/+bug/1712808
     # There is a bug in snapd that prevents udev rules from reloading in privileged containers

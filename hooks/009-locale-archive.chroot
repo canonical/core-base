@@ -23,7 +23,7 @@ for encoding in "${!found_encodings[@]}"; do
     localedef --no-archive -f "${encoding}" -i C "C.${encoding_canonical}"
 done
 
-apt purge -y locales
+apt-get purge -y locales
 
 # restore configuration so the default locale can be found
 printf 'LANG=C.UTF-8\n' > /etc/locale.conf
