@@ -48,6 +48,9 @@ parts:
     source-type: git
     organize:
       ubuntu-core: usr/share/plymouth/themes/ubuntu-core
+      copyright: usr/share/doc/plymouth-theme-ubuntu-core/copyright
+    stage:
+      - -README.md
   bootstrap:
     after:
       - base
