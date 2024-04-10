@@ -2,9 +2,10 @@
 
 set -e
 
-grep -q "This Ubuntu Core 24 machine is a tiny" etc/motd
+grep -q "Welcome to Ubuntu Core 24" etc/motd
 
 test ! -e etc/default/motd-news
+test ! -e etc/update-motd.d/00-header
 test ! -e etc/update-motd.d/10-help-text
 test ! -e usr/lib/systemd/system/motd-news.service
 test ! -e usr/lib/systemd/system/motd-news.timer
