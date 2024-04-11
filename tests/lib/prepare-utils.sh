@@ -170,7 +170,7 @@ create_cloud_init_cdimage_config() {
     local CONFIG_PATH=$1
     cat << 'EOF' > "$CONFIG_PATH"
 #cloud-config
-datasource_list: [NoCloud]
+datasource_list: [NoCloud,None]
 users:
   - name: external
     sudo: "ALL=(ALL) NOPASSWD:ALL"
