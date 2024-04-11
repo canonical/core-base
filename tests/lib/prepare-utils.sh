@@ -147,7 +147,7 @@ install_base_deps() {
     fi
     sudo snap install lxd
     sudo lxd init --auto
-    sudo snap install ubuntu-image --classic --channel=latest/edge
+    sudo snap install ubuntu-image --classic --channel=latest/stable
 }
 
 download_core24_snaps() {
