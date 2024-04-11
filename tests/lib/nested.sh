@@ -6,7 +6,7 @@ MON_PORT=${MON_PORT:-8888}
 IMAGE_FILE="${WORK_DIR}/ubuntu-core-24.img"
 
 execute_remote(){
-    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@localhost "$*"
+    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ServerAliveInterval=60 -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ubuntu@localhost "$*"
 }
 
 wait_for_ssh(){
