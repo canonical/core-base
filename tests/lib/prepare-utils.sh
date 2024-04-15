@@ -151,14 +151,26 @@ install_base_deps() {
 }
 
 download_core24_snaps() {
+    # FIXME: there is no reason to select a branch when the model is
+    # hard coded.
     local snap_branch="$1"
 
     # get the model
     curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-$(get_arch)-dangerous.model
 
+    case "${snap_branch}" in
+        edge)
+            # dangerous/edge models use beta branch for the kernel
+            # snap
+            kernel_branch=beta
+            ;;
+        *)
+            kernel_branch="${snap_branch}"
+            ;;
+    esac
+
     # download neccessary images
-    # TODO: publish 24 kernel
-    snap download pc-kernel --channel=24/${snap_branch} --basename=upstream-pc-kernel
+    snap download pc-kernel --channel=24/"${kernel_branch}" --basename=upstream-pc-kernel
     snap download pc --channel=24/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
