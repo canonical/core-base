@@ -33,6 +33,7 @@ install:
 	/bin/cp -a static/* $(DESTDIR)
 	mkdir -p $(DESTDIR)/install-data
 	/bin/cp -r $(CRAFT_STAGE)/local-debs $(DESTDIR)/install-data/local-debs
+	/bin/cp -r patch $(DESTDIR)/install-data
 	# customize
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
 		base="$$(basename "$${f}")";			\
