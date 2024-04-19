@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -eux
+
+apt-get install --no-install-recommends -y patch
+
+# Apply netplan patch (workaround for LP#2058976
+patch -p0 -i /install-data/patch/netplan-apply.diff
+
+apt-get remove -y patch
