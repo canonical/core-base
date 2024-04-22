@@ -9,10 +9,3 @@ dpkg -r --force-depends dh-python
 # Remove file which got pulled in by cracklib-runtime. We are discarding
 # cracklib-runtime binary programs in later hooks (601-clean-cracklib.chroot).
 dpkg -r --force-depends file libmagic1 libmagic-mgc
-
-# cloud-init pulls in dhcpcd-base which we aren't (currently)
-# interested in. It's marked as required, but cloud-init works with
-# multiple dhcp clients. This change occurred recently (from time of commit)
-# since isc-dhcp-client will be deprecated and is currently in the process
-# of being demoted from packages in main universe.
-dpkg --purge --force-depends dhcpcd-base
