@@ -24,3 +24,7 @@ for encoding in "${!found_encodings[@]}"; do
 done
 
 apt purge -y locales
+
+# restore configuration so the default locale can be found
+printf 'LANG=C.UTF-8\n' > /etc/locale.conf
+ln -s ../locale.conf /etc/default/locale
