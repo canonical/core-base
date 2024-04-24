@@ -29,6 +29,7 @@
 /etc/dbus-1                             auto                    persistent  transition  none
 /etc/hosts                              auto                    persistent  transition  none
 /etc/iproute2                           auto                    persistent  transition  none
+/etc/locale.conf                        auto                    persistent  transition  none
 /etc/modprobe.d                         auto                    persistent  transition  none
 /etc/modules-load.d                     auto                    persistent  transition  none
 /etc/netplan                            auto                    persistent  transition  none
