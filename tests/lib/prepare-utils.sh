@@ -187,7 +187,7 @@ users:
   - name: external
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: false
-    plain_text_passwd: 'ubuntu'
+    plain_text_passwd: 'ubuntu123'
   - name: test
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: false
