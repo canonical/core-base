@@ -12,7 +12,7 @@ To learn how to create your custom Ubuntu Core image, see our guide:
 
 * Getting Started: https://ubuntu.com/core/docs/get-started
 
-In this image, why not try creating an IoT web-kiosk. First, connect a 
+In this image, why not create an IoT web-kiosk. First, connect a 
 screen, then run: 
 
    snap install ubuntu-frame wpe-webkit-mir-kiosk
