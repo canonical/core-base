@@ -7,6 +7,7 @@ FILE=usr/share/snappy/dpkg.yaml
 test -e $FILE
 
 #second check the PPA section of dpkg.yaml
+# TODO: need to figure this out, no ppas are added in the manifest right now
 if grep -Fq "canonical-foundations/ubuntu/ubuntu-image" $FILE
 then
   echo "Content of PPA section is as expected in dpkg.yaml."
@@ -18,7 +19,7 @@ else
 fi
 
 # check for some of the core packages
-for pkg in adduser apt bash coreutils dpkg fdisk gcc-10-base hostname iptables libc6 lsb-base mount netbase openssl passwd python3 ubuntu-keyring
+for pkg in adduser apt bash coreutils dpkg fdisk gcc-15-base hostname iptables libc6 lsb-base mount netbase openssl passwd python3 ubuntu-keyring
 do
   if !(grep -Fq "$pkg" $FILE); then
     echo "Error! Packages section of dpkg.yaml not as expected."

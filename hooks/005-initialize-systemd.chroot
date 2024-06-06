@@ -1,0 +1,88 @@
+#!/bin/bash
+
+set -ex
+
+# ensure we have /proc or systemd will fail
+mkdir -p /proc
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# Move some .wants around
+echo "ensure the systemd target.wants are in /lib instead of /etc"
+for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
+    if ! [ -d etc/systemd/system/"$d" ]; then
+        continue
+    fi
+
+    for unit in etc/systemd/system/"$d"/*; do
+        unit_name=${unit##*/}
+        
+        # Create symlink in /usr/lib
+        ln -s ../"$unit_name" usr/lib/systemd/system/"$d"/"$unit_name"
+
+        # To make "systemclt is-enabled" successful while having symlinks in
+        # /usr/lib, the unit needs to be considered static. To achieve this,
+        # the unit [Install] section needs to be removed. If there is an Alias
+        # we move it to /usr/lib too.
+        aliases=$(sed -n 's/^Alias=//p' "$unit")
+        if [ -n "$aliases" ]; then
+            while read -r alias; do
+                rm etc/systemd/system/"$alias"
+                ln -s "$unit_name" usr/lib/systemd/system/"$alias"
+            done <<< "$aliases"
+        fi
+        sed -i --quiet --follow-symlinks '/\[Install\]/q;p' "$unit"
+    done
+
+    # Remove all symlinks in etc
+    rm etc/systemd/system/"$d"/*
+done
+
+# Reset all unit files
+systemctl preset-all
+
+# enable some services by default
+systemctl enable getty@tty1.service || true
+systemctl enable remote-fs.target || true
+systemctl enable systemd-resolved.service || true
+systemctl enable systemd-pstore.service || true
+
+# Enable persistent journal, in auto-mode, by default
+mkdir -p /var/log/journal
+# create tmpfiles only when running systemd, otherwise %b substitution fails
+if [ -d /run/systemd/system ]; then
+    systemd-tmpfiles --create --prefix /var/log/journal
+fi
+
+# Initial update of the Message Catalogs database
+journalctl --update-catalog || true
+
+# Setup tmpfiles
+systemd-tmpfiles --create
+
+# Clean up removed ondemand service
+rm -f /etc/systemd/system/multi-user.target.wants/ondemand.service
+
+add_maybe_wants() {
+  if [ -e "usr/lib/systemd/system/$1" ]; then
+    ln -s "usr/lib/systemd/system/$1" "usr/lib/systemd/system/$2/$1"
+  fi
+}
+
+remove_maybe_symlink() {
+    if [ -e "usr/lib/systemd/system/$2/$1" ]; then
+        rm "usr/lib/systemd/system/$2/$1"
+    fi
+}
+
+# Add some additional .wants that are otherwise generated
+add_maybe_wants wpa_supplicant.service multi-user.target.wants
+add_maybe_wants apparmor.service sysinit.target.wants
+add_maybe_wants finalrd.service sysinit.target.wants
+add_maybe_wants fstrim.timer timers.target.wants
+
+# Setup resolv.conf to use systemd-resolved's stub resolver
+ln -sf ../run/systemd/resolve/stub-resolv.conf etc/resolv.conf
+
+# Generate the hwdb
+systemd-hwdb --usr update || true

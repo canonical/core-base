@@ -1,0 +1,109 @@
+#!/bin/sh
+# This script is sourced from the base-files package postinst script.
+# It mostly creates base directories, installs base-files and other defaults.
+# This is changed to fit the ubuntu-core base in a chiselled environment.
+
+set -e
+
+install_local_dir() {
+  if [ ! -d "$1" ]; then
+    mkdir -p "$1"
+  fi
+}
+
+install_from_default() {
+  if [ ! -f "$2" ]; then
+    cp -p "/usr/share/base-files/$1" "$2"
+  fi
+}
+
+install_directory() {
+  if [ ! -d "/$1" ]; then
+    mkdir "/$1"
+    chown "root:$3" "/$1"
+    chmod "$2" "/$1"
+  fi
+}
+
+migrate_directory() {
+  if [ ! -L "$1" ]; then
+    if [ -d "$1" ]; then
+      rmdir "$1"
+    fi
+    ln -s "$2" "$1"
+  fi
+}
+
+ln -sf usr/lib32 /lib32
+
+# install_from_default dot.profile   /root/.profile
+# install_from_default dot.bashrc    /root/.bashrc
+# install_from_default profile       /etc/profile
+# install_from_default networks      /etc/networks
+install_directory mnt            755 root
+install_directory srv            755 root
+install_directory sys            755 root
+install_directory opt            755 root
+install_directory run            755 root
+install_directory etc/opt        755 root
+install_directory var/opt        755 root
+install_directory media          755 root
+install_directory var/backups    755 root
+install_directory var/cache      755 root
+install_directory var/cache/man  755 root
+install_directory var/list       755 root
+install_directory var/spool      755 root
+install_directory var/spool/lpd  755 root
+install_directory var/spool/news 755 root
+install_directory var/spool/uucp 755 root
+install_directory var/mail       2775 mail
+install_directory var/lib/misc   755 root
+install_directory var/www        755 root
+
+if [ ! -L /var/spool/mail ]; then
+    ln -s ../mail /var/spool/mail
+fi
+
+# needed by pc gadget hook
+install_directory usr/src 755 root
+
+install_directory run/lock 1777 root
+migrate_directory /var/run /run
+migrate_directory /var/lock /run/lock
+
+install_local_dir /usr/local
+install_local_dir /usr/local/share
+install_local_dir /usr/local/share/man
+install_local_dir /usr/local/bin
+install_local_dir /usr/local/games
+install_local_dir /usr/local/lib
+install_local_dir /usr/local/include
+install_local_dir /usr/local/sbin
+install_local_dir /usr/local/src
+install_local_dir /usr/local/etc
+
+ln -sf share/man /usr/local/man
+ln -sf share/games /usr/local/games
+
+if [ ! -f /var/log/wtmp ]; then
+    echo "">/var/log/wtmp
+fi
+if [ ! -f /var/log/btmp ]; then
+    echo "">/var/log/btmp
+fi
+if [ ! -f /var/log/lastlog ]; then
+    echo "">/var/log/lastlog
+fi
+chown root:utmp /var/log/wtmp /var/log/btmp /var/log/lastlog
+chmod 664 /var/log/wtmp /var/log/lastlog
+chmod 660 /var/log/btmp
+
+# if [ -d /usr/share/info ] && [ ! -f /usr/info/dir ] && [ ! -f /usr/share/info/dir ]; then
+#     install_from_default info.dir /usr/share/info/dir
+#     chmod 644 /usr/share/info/dir
+# fi
+
+# Add PATH to /etc/environment
+echo "putting a PATH in place that contains /snap/bin"
+echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"' >/etc/environment
+chmod 644 /etc/environment

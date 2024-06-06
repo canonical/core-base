@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-grep pam_faillock.so etc/pam.d/common-auth
