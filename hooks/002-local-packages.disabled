@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -eux
+
+# Copy snapd-generator, which will handle mounts for /lib/{firmware,modules}
+apt-get download snapd
+dpkg --fsys-tarfile snapd_*.deb |
+       tar xf - ./usr/lib/systemd/system-generators/snapd-generator
+rm snapd_*.deb

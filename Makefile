@@ -20,7 +20,6 @@ all: check
 
 .PHONY: install
 install:
-	# install base
 	set -ex; if [ -z "$(DESTDIR)" ]; then \
 		echo "no DESTDIR set"; \
 		exit 1; \
@@ -38,6 +37,7 @@ install:
 
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
+	mkdir -p $(DESTDIR)/dev
 	[ -e $(DESTDIR)/dev/null ] || mknod -m 666 $(DESTDIR)/dev/null c 1 3
 	[ -e $(DESTDIR)/dev/zero ] || mknod -m 666 $(DESTDIR)/dev/zero c 1 5
 	[ -e $(DESTDIR)/dev/random ] || mknod -m 666 $(DESTDIR)/dev/random c 1 8
@@ -58,7 +58,14 @@ ifdef SNAP_FIPS_BUILD
 	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
 endif
 	mkdir -p $(DESTDIR)/install-data
-	# customize
+
+.PHONY: hooks
+hooks:
+	set -ex; if [ -z "$(DESTDIR)" ]; then \
+		echo "no DESTDIR set"; \
+		exit 1; \
+	fi
+	
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
 		base="$$(basename "$${f}")";			\
 		cp -a "$${f}" $(DESTDIR)/install-data/;		\
