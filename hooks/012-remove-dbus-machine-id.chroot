@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+# remove the dbus machine-id, it will be re-generated on first boot
+rm /var/lib/dbus/machine-id
+
+# truncate, do not remove otherwise systemd is unhappy
+printf "" > /etc/machine-id
+
