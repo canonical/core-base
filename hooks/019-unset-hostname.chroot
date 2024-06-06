@@ -1,3 +1,5 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 echo "" > /etc/hostname

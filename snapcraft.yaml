@@ -11,48 +11,216 @@ grade: devel
 assumes: [snapd2.55.5]
 
 parts:
-  base:
+  chisel-libs:
     plugin: nil
-    source: keyrings
     build-packages:
-      - wget
-    build-environment:
-      #- RELEASE: "26.04"
-      #- BASE: ubuntu-base-${RELEASE}${DOT_RELEASE:+.$DOT_RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
-      #- DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
-      - BASE: resolute-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
-      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/daily/current
-
-      - URL: ${DIR_URL}/${BASE}
-      - SHA256: ${DIR_URL}/SHA256SUMS
-      - SIG: ${SHA256}.gpg
-    override-pull: |
-      craftctl default
-      wget -q "${SHA256}" "${SIG}" "${URL}"
-      gpg --no-default-keyring \
-          --keyring ./cd-image-keying.gpg \
-          --verify SHA256SUMS.gpg SHA256SUMS
-      awk -v "file=${BASE}" '$2=="*"file' SHA256SUMS | sha256sum -c
+      - golang
+      - file
+    source: https://github.com/Meulengracht/chisel-releases.git
+    source-type: git
+    source-branch: ubuntu-core-25.10
     override-build: |
-      mkdir -p "${CRAFT_PART_INSTALL}/base"
-      tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"
-    override-stage: |
-      rm -rf "${CRAFT_STAGE}/base"
-      craftctl default
-    override-prime: |
-      # Do nothing
+      go install github.com/canonical/chisel/cmd/chisel@latest
+      
+      # Define the system utilities that we want to include in the base
+      # These are the ones where we can probably slim down the number of binaries
+      # later on, but for now we include them all to ensure maximum compatibility.
+      UTILS=(
+        apparmor_bins
+        bash_bins
+        bzip2_bins
+        coreutils-from-gnu_bins
+        diffutils_bins
+        dosfstools_bins
+        file_bins
+        gdbserver_bins
+        gnutls-bin_bins
+        gpgv_bins
+        grep_bins
+        gzip_scripts
+        hostname_bins
+        iptables_bins
+        iputils-ping_bins
+        less_bins
+        login_bins
+        mawk_bins
+        sed_bins
+        sudo_bins
+        squashfs-tools_bins
+        util-linux_bins
+        vim-tiny_bins
+      )
+
+      # Define the system libraries and services that we want to include in the base
+      # 
+      SLICES=(
+        apparmor_extras
+        base-files_motd
+        base-files_release-info
+        bash-completion_config
+        bash-completion_completions
+        ca-certificates_data
+        cloud-init_bins
+        cracklib-runtime_bins
+        cryptsetup_bins
+        cryptsetup-bin_bins
+        dbus_services
+        dbus-user-session_services
+        distro-info-data_data
+        dmsetup_rules
+        e2fsprogs_services
+        fonts-ubuntu_all
+        fonts-ubuntu_config
+        finalrd_services
+        kmod_bins
+        kmod_config
+
+        libc6_config
+        libc6_gconv
+        libc-bin_iconv
+        libc-bin_nsswitch
+        libc-bin_ldconfig
+        libc-bin_locale
+        libc-bin_getconf
+        libc-bin_getent
+
+        libpam-modules_config
+        libpam-modules_pam-config
+        libpam-pwquality_pam-config
+        libpam-modules-bin_standard
+        libpam-modules-bin_extrausers
+        libpam-modules-bin_namespace
+        libpam-modules-bin_timestamp
+        libpam-systemd_libs
+        libengine-pkcs11-openssl_libs
+        libgnutls30t64_config
+        libopts25_libs
+        libp11-3t64_libs
+        libnss-mdns_mdns4-minimal
+        libnss-extrausers_libs
+        libpam-pwquality_libs
+        libpciaccess0_libs
+        libwrap0_host-files
+        locales_standard
+
+        ncurses-base_terminfo
+
+        openssh-client_config
+        openssh-client_services
+        openssh-server_bins
+        openssh-server_config
+        openssh-server_services
+        openssl_bins
+        opensc_bins
+        p11-kit_bins
+        passwd_pam-config
+        polkitd_services
+        plymouth_bins
+        plymouth-label-ft_libs
+        procps_config
+        rfkill_bins
+
+        udev_services
+        util-linux_services
+        systemd_extras
+        systemd_kernel-parameters
+        systemd_standard
+        systemd_user-services
+        systemd-bootchart_services
+        systemd-coredump_bins
+        systemd-cryptsetup_bins
+        systemd-resolved_bins
+        systemd-sysv_bins
+        systemd-timesyncd_services
+        systemd-zram-generator_services
+        
+        tzdata_zoneinfo
+        wpasupplicant_services
+      )
+
+      # eh not sure about FIPS yet, this will have to come 
+      # if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+      #   # Ensure vital crypt packages are refreshed / downgraded and downloaded
+      #   # from the FIPS ppa. This should also contain openssh-server, but we already
+      #   # have that one listed above.
+      #   SLICES+=(libgcrypt20 libgnutls30t64 openssl-fips-module-3 ssh)
+      # fi
+      
+      case "$(dpkg --print-architecture)" in
+          amd64|i386)
+              SLICES+=(secureboot-db_services)
+              ;;
+          riscv64)
+              SLICES+=(gdbserver_bins systemd-bootchart_services)
+              ;;
+      esac
+
+      CHISEL_CACHE_DIR="$(mktemp -d)"
+
+      mkdir -p "${CRAFT_STAGE}"/base
+
+      XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}"
+
+      # Install foreign libraries
+      case "$(dpkg --print-architecture)" in
+          amd64)
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              ;;
+          arm64)
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              ;;
+      esac
+      
+      "${CRAFT_PROJECT_DIR}/generate-manifest.sh" "$CHISEL_CACHE_DIR/chisel/sha256" "${CRAFT_STAGE}"/base
+
+  snapd-generator:
+    plugin: nil
+    source: .
+    build-packages:
+      - snapd
+    after:
+      - chisel-libs
+    override-build: |
+      # copy /usr/lib/systemd/system-generators/snapd-generator into CRAFT_STAGE
+      mkdir -p "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators
+      cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
+
+  nvidia-deps:
+    plugin: nil
+    source: .
+    build-packages:
+      - nvidia-kernel-common-570
+    after:
+      - chisel-libs
+    override-build: |
+      case "$(dpkg --print-architecture)" in
+          amd64|arm64)
+              # Copy nvidia config files and dependencies (sources for this come from
+              # Canonical, not from Nvidia, see
+              # https://github.com/canonical/nvidia-graphics-drivers).
+              mkdir -m 755 -p "${CRAFT_STAGE}"/base/usr/sbin
+              cp /sbin/ub-device-create "${CRAFT_STAGE}"/base/usr/sbin/ub-device-create
+              
+              mkdir -m 755 -p "${CRAFT_STAGE}"/base/usr/lib/udev/rules.d
+              cp /lib/udev/rules.d/71-nvidia.rules "${CRAFT_STAGE}"/base/usr/lib/udev/rules.d/71-nvidia.rules
+              
+              mkdir -m 755 -p "${CRAFT_STAGE}"/base/etc/modprobe.d
+              cp /etc/modprobe.d/nvidia-graphics-drivers-kms.conf "${CRAFT_STAGE}"/base/etc/modprobe.d/nvidia-graphics-drivers-kms.conf
+              ;;
+      esac
+
   splash-theme:
     plugin: dump
     source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
     source-type: git
     organize:
       ubuntu-core: usr/share/plymouth/themes/ubuntu-core
-      copyright: usr/share/doc/plymouth-theme-ubuntu-core/copyright
-    stage:
-      - -README.md
+  
   bootstrap:
     after:
-      - base
+      - chisel-libs
+      - snapd-generator
+      - nvidia-deps
     plugin: make
     source: .
     build-packages:
@@ -84,5 +252,9 @@ parts:
       fi
     override-prime: |
       craftctl default
+
+      # run all the hooks
+      cd ${CRAFT_PART_SRC} && make hooks DESTDIR=${CRAFT_PRIME}
+
       # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}

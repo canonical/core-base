@@ -1,7 +1,0 @@
-#!/bin/sh -ex
-
-# Fix the PATH to also contain /snap/bin for non-interactive
-# ssh shells LP: #1659719
-
-echo "putting a PATH in place that contains /snap/bin"
-echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"' >/etc/environment
