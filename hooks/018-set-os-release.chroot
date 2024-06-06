@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 cat >/usr/lib/os-release<<EOF
 NAME="Ubuntu Core"

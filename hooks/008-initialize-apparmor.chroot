@@ -1,0 +1,86 @@
+#! /bin/sh
+
+set -e
+
+# create /etc/apparmor.d/tunables/home.d/ubuntu
+
+tmp=$(mktemp)
+
+cat > "$tmp" <<EOM
+# This file is auto-generated. It is recommended you update it using:
+# $ sudo dpkg-reconfigure apparmor
+#
+# The following is a space-separated list of where additional user home
+# directories are stored, each must have a trailing '/'. Directories added
+# here are appended to @{HOMEDIRS}.  See tunables/home for details.
+EOM
+if [ -n "$RET" ]; then
+    cat >> "$tmp" <<EOM
+@{HOMEDIRS}+=$RET
+EOM
+else
+    cat >> "$tmp" <<EOM
+#@{HOMEDIRS}+=
+EOM
+fi
+
+mkdir -p /etc/apparmor.d/tunables/home.d 2>/dev/null || true
+mv -Z -f "$tmp" /etc/apparmor.d/tunables/home.d/ubuntu
+chmod 644 /etc/apparmor.d/tunables/home.d/ubuntu
+
+# create /etc/apparmor.d/tunables/xdg-user-dirs.d/site.local
+
+tmp=$(mktemp)
+cat > "$tmp" <<EOM
+# ------------------------------------------------------------------
+#
+#    Copyright (C) 2014 Canonical Ltd.
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of version 2 of the GNU General Public
+#    License published by the Free Software Foundation.
+#
+# ------------------------------------------------------------------
+# The following may be used to add additional entries such as for
+# translations. See tunables/xdg-user-dirs for details. Eg:
+#@{XDG_MUSIC_DIR}+="Musique"
+#@{XDG_DESKTOP_DIR}+=""
+#@{XDG_DOWNLOAD_DIR}+=""
+#@{XDG_TEMPLATES_DIR}+=""
+#@{XDG_PUBLICSHARE_DIR}+=""
+#@{XDG_DOCUMENTS_DIR}+=""
+#@{XDG_MUSIC_DIR}+=""
+#@{XDG_PICTURES_DIR}+=""
+#@{XDG_VIDEOS_DIR}+=""
+EOM
+
+mkdir -p /etc/apparmor.d/tunables/xdg-user-dirs.d 2>/dev/null || true
+mv -Z -n "$tmp" /etc/apparmor.d/tunables/xdg-user-dirs.d/site.local
+chmod 644 /etc/apparmor.d/tunables/xdg-user-dirs.d/site.local
+
+# Remove various profiles from Ubuntu Touch since they no longer exist
+# in the archive and require files from apparmor-easyprof-ubuntu (which
+# was also removed) to load correctly.
+for i in usr.bin.media-hub-server usr.bin.mediascanner-service-2.0 usr.lib.mediascanner-2.0.mediascanner-extractor usr.bin.messaging-app usr.bin.webbrowser-app ; do
+    rm -f "/etc/apparmor.d/$i"
+    rm -f "/etc/apparmor.d/local/$i"
+done
+
+create_null_profile() {
+    test -e "$1" || {
+        mkdir -p "$(dirname "$1")"
+        install --mode 644 /dev/null "$1"
+    }
+}
+
+# Add the local/ includes per post-install scripts
+if [ -f "/etc/apparmor.d/lsb_release" ]; then
+    create_null_profile "/etc/apparmor.d/local/lsb_release"
+fi
+
+if [ -f "/etc/apparmor.d/nvidia_modprobe" ]; then
+    create_null_profile "/etc/apparmor.d/local/nvidia_modprobe"
+fi
+
+if [ -f "/etc/apparmor.d/sbin.dhclient" ]; then
+    create_null_profile "/etc/apparmor.d/local/sbin.dhclient"
+fi
