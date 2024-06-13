@@ -18,8 +18,8 @@ parts:
       - devscripts
     source: https://github.com/canonical/probert.git
     source-type: git
-    # following branch server/jammy
-    source-commit: 253acbe1480fba69d12d6e72f53412da79e27410
+    # following branch core/jammy
+    source-commit: 94be2fa3f45e766ecee526fdc0c15f65a78667e6
     override-pull: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
@@ -36,8 +36,8 @@ parts:
     plugin: nil
     source: https://github.com/canonical/subiquity.git
     source-type: git
-    # following branch server/jammy
-    source-commit: d2fe66f1b624274f2b1ff53bcbbc093cc9ebfca2
+    # following branch core/jammy
+    source-commit: c6452b904798d94d8dea7d00bb84cefbb98e3238
     override-pull: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
