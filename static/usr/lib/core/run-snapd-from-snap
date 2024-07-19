@@ -21,7 +21,7 @@ run_on_unseeded() {
     # a systemd socket unit so that systemd own the socket, otherwise
     # the socket file would be removed by snapd on exit and the snapd.seeded
     # service will fail because it has nothing to talk to anymore.
-    systemd-run --unit=snapd-seeding --service-type=notify --socket-property ListenStream=/run/snapd.socket --socket-property ListenStream=/run/snapd-snap.socket "$SNAPD_BASE_DIR"/usr/lib/snapd/snapd
+    systemd-run --unit=snapd-seeding --service-type=notify --socket-property ListenStream=/run/snapd.socket --socket-property ListenStream=/run/snapd-snap.socket --property KeyringMode=inherit "$SNAPD_BASE_DIR"/usr/lib/snapd/snapd
     # we need to start the snapd service from above explicitly, systemd-run
     # only enables the socket but does not start the service.
     systemctl start --wait snapd-seeding.service
