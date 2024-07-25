@@ -35,6 +35,7 @@ chmod 700 /var/lib/private
 echo "extra cloud init files"
 mkdir -p /etc/cloud
 mkdir -p /var/lib/cloud
+mkdir -p /var/lib/waagent
 
 echo "console-conf directories"
 mkdir -p /var/lib/console-conf
