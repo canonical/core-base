@@ -45,11 +45,31 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	# generate the changelog, for this we need the previous core snap
+	# to be installed, this should be handled in snapcraft.yaml
+	if [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
+		./tools/generate-changelog.py \
+			"/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" \
+			"$(DESTDIR)/usr/share/snappy/dpkg.yaml" \
+			"$(DESTDIR)/usr/share/doc" \
+			$(DESTDIR)/usr/share/doc/ChangeLog; \
+	else \
+		echo "WARNING: changelog will not be generated for this build"; \
+	fi
+
 	# only generate manifest and dpkg.yaml files for lp build
 	if [ -e /build/core22 ]; then \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
+			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
+		fi \
 	fi;
+
+	# after generating changelogs we can cleanup those bits
+	# from the base
+	find "$(DESTDIR)/usr/share/doc/" -name 'changelog.Debian.gz' -print -delete
+	find "$(DESTDIR)/usr/share/doc/" -name 'changelog.gz' -print -delete
 
 .PHONY: check
 check:
