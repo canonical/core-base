@@ -4,10 +4,9 @@
 
 set -ex
 
-echo "I: Removing docs"
+echo "I: Removing docs (leaving copyrights and changelogs)"
 
-# docs, drop changelogs and examples, but leave the copyright
-find usr/share/doc/ -name 'changelog.Debian.gz' -print -delete
+# docs, drop examples, but leave the copyright and changelog
 find usr/share/doc/ -depth -type d -name 'examples' -print -exec rm -rv \{\} \;
 rm -r usr/share/doc-base
 
