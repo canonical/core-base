@@ -1,0 +1,14 @@
+name: Release snap
+
+on: workflow_dispatch
+
+jobs:
+  build_release:
+    runs-on: self-hosted
+    environment: store
+    steps:
+      - name: Build release
+        env:
+          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        uses: snapcore/system-snaps-cicd-tools/action-release@main
