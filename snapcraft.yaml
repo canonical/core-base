@@ -55,6 +55,15 @@ parts:
     build-packages:
       - shellcheck
       - distro-info
+      - python3-debian
+      - python3-requests
+      - python3-yaml
+    # to generate changelogs, it's own snap need to be present,
+    # obviously for new core bases this cannot be the case, and
+    # we need to wait until the first release with introducing
+    # changelogs.
+    build-snaps:
+      - core24=latest/beta
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
