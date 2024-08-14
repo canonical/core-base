@@ -20,56 +20,19 @@ parts:
     source-branch: ubuntu-25.10
     override-build: |
       go install github.com/canonical/chisel/cmd/chisel@latest
-      # apparmor
-      # bash-completion
-      #bzip2
-      #cloud-init
-      #cryptsetup
-      #dbus
-      #dbus-user-session
-      #distro-info-data
-      #dmsetup
-      #dosfstools
-      #finalrd
-      #gnutls-bin
-      #fonts-ubuntu
-      #iproute2
-      #iptables
-      #iputils-ping
-      #kmod
-      #less
-      #libengine-pkcs11-openssl
-      #libnss-extrausers
-      #libopts25
-      #libp11-3t64
-      #libpam-modules
-      #libpam-systemd
-      #libpam-pwquality
-      #netcat-openbsd
-      #netplan.io
-      #opensc
-      #openssh-server
-      #p11-kit
-      #p11-kit-modules
-      #plymouth-label-ft
-      #polkitd
-      #rfkill
-      #squashfs-tools
-      #sudo
-      #systemd
-      #systemd-coredump
-      #systemd-sysv
-      #systemd-timesyncd
-      #systemd-resolved
-      #tzdata
-      #udev
-      #vim-tiny
-      #wpasupplicant
-      #locales
-      #cracklib-runtime
       SLICES=(
+        bash_bins
         base-files_base
+        ca-certificates_data
+        coreutils_bins
+        mount_bins
         openssh-server_bins
+        passwd_config
+        libc6_config
+        libc6_gconv
+        libwrap0_host-files
+        sed_bins
+        tzdata_zoneinfo
       )
       
       case "$(dpkg --print-architecture)" in
@@ -77,25 +40,6 @@ parts:
               SLICES+=(secureboot-db_data)
               ;;
       esac
-
-      setup_chroot_folder() {
-        cd "${CRAFT_PART_INSTALL}"
-        mkdir "$1"
-        chown "root:$3" "$1"
-        chmod "$2" "$1"
-        if [ "$#" -eq 4 ]; then
-          ln -s "$1" "$4"
-        fi
-        cd -
-      }
-
-      # Initialize the base folder structure where symlinks are expected
-      setup_chroot_folder usr       755 root
-      setup_chroot_folder usr/bin   755 root bin
-      setup_chroot_folder usr/sbin  755 root sbin
-      setup_chroot_folder usr/lib   755 root lib
-      setup_chroot_folder usr/lib32 755 root lib32
-      setup_chroot_folder usr/lib64 755 root lib64
 
       CHISEL_CACHE_DIR="$(mktemp -d)"
 
