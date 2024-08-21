@@ -37,8 +37,7 @@ from collections import namedtuple
 # keep the list short to not increase the time it takes
 # to generate changelogs
 pkg_allowed_list = [
-    'dpkg',   # is removed during hook
-    'openssl' # contains a symlink which is broken currently
+    'distro-info-data', # is removed during hook
 ]
 
 # Returns a dictionary from package name to version, using

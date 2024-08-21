@@ -47,9 +47,9 @@ install:
 
 	# generate the changelog, for this we need the previous core snap
 	# to be installed, this should be handled in snapcraft.yaml
-	if [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
+	if [ -e "/snap/core22/current/usr/share/snappy/dpkg.yaml" ]; then \
 		./tools/generate-changelog.py \
-			"/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" \
+			"/snap/core22/current/usr/share/snappy/dpkg.yaml" \
 			"$(DESTDIR)/usr/share/snappy/dpkg.yaml" \
 			"$(DESTDIR)/usr/share/doc" \
 			$(DESTDIR)/usr/share/doc/ChangeLog; \
@@ -62,7 +62,7 @@ install:
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
-			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
+			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
 	fi;
 
