@@ -2,6 +2,7 @@
 TESTDIR ?= "prime/"
 SNAP_NAME=core24
 BUILDDIR=/build/$(SNAP_NAME)
+REPO_URL=https://github.com/canonical/core-base
 
 .PHONY: all
 all: check
@@ -48,12 +49,14 @@ install:
 
 	# generate the changelog, for this we need the previous core snap
 	# to be installed, this should be handled in snapcraft.yaml
+	commit="$$(git rev-parse HEAD)"
 	if [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		./tools/generate-changelog.py \
 			"/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" \
 			"$(DESTDIR)/usr/share/snappy/dpkg.yaml" \
 			"$(DESTDIR)/usr/share/doc" \
 			$(DESTDIR)/usr/share/doc/ChangeLog; \
+			"$(REPO_URL)/tree/$(commit)"
 	else \
 		echo "WARNING: changelog will not be generated for this build"; \
 	fi

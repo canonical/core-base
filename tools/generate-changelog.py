@@ -175,13 +175,17 @@ def main():
     parser.add_argument('new', metavar='new-manifest', help='Path to the manifest of the new snap')
     parser.add_argument('docs', metavar='docs-dir', help='Path to the usr/share/doc directory in the rootfs of the new snap')
     parser.add_argument('out', help='Optionally a path to where the changelog should be written')
+    parser.add_argument('permalink', help='Permalink to embed inside the changelog')
     args = parser.parse_args()
 
     old_manifest = args.old
     new_manifest = args.new
     docs_dir = args.docs
 
-    changes = '[ Changes in primed packages ]\n\n'
+    # add a header that helps us audit where the current build is
+    # sourced from.
+    changes = f"Built from commit {args.permalink}\n\n"
+    changes += '[ Changes in primed packages ]\n\n'
     pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir)
     if pkg_changes != '':
         changes += pkg_changes
