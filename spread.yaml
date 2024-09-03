@@ -3,7 +3,7 @@ project: core22
 environment:
   SETUPDIR: /home/core22
   PROJECT_PATH: $SETUPDIR
-  PATH: $PATH:$PROJECT_PATH/tests/bin
+  PATH: $PATH:$PROJECT_PATH/tests/bin:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
   TESTSLIB: $PROJECT_PATH/tests/lib
   SNAP_BRANCH: "edge" # stable/edge/beta
   UC_VERSION: 22
@@ -16,12 +16,25 @@ backends:
     type: google
     key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
     location: snapd-spread/us-east1-b
-    plan: n2-standard-2
+    plan: n2-standard-4
     halt-timeout: 2h
     systems:
       - ubuntu-22.04-64:
+          workers: 4
           image: ubuntu-2204-64-virt-enabled
           storage: 20G
+
+  google-nested-arm:
+    type: google
+    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
+    location: snapd-spread/us-central1-a
+    plan: t2a-standard-4
+    halt-timeout: 2h
+    systems:
+      - ubuntu-22.04-arm-64:
+          workers: 4
+          image: ubuntu-2204-arm-64-virt-enabled
+          storage: 25G
 
   qemu-nested:
     type: qemu
@@ -83,7 +96,7 @@ prepare: |
   unset REBOOT
 
 warn-timeout: 40m
-kill-timeout: 50m
+kill-timeout: 60m
 
 suites:
   tests/spread/build/:

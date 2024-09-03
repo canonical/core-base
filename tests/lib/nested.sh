@@ -11,7 +11,7 @@ execute_remote(){
 
 wait_for_ssh(){
     local service_name="$1"
-    retry=800
+    retry=1800
     wait=1
     while ! execute_remote true; do
         if ! systemctl is-active "$service_name"; then
@@ -54,7 +54,7 @@ cleanup_nested_core_vm(){
         # remove the swtpm
         # TODO: we could just remove/reset the swtpm instead of removing the snap 
         # wholesale
-        snap remove swtpm-mvo
+        snap remove test-snapd-swtpm
     fi
 
     # delete the image file
@@ -74,13 +74,10 @@ start_nested_core_vm_unit(){
     cp "${SETUPDIR}/pc.img" "${IMAGE_FILE}"
 
     # use only 2G of RAM for qemu-nested
-    if [ "${SPREAD_BACKEND}" = "google-nested" ]; then
-        # Do not enable SMP on GCE as it will cause boot issues. There is most likely
-        # a bug in the combination of the kernel version used in GCE images, combined with
-        # a new qemu version (v6) and OVMF
-        # TODO try again to enable more cores in the future to see if it is fixed
+    if [ "${SPREAD_BACKEND}" = "google-nested" ] ||
+           [ "${SPREAD_BACKEND}" = "google-nested-arm" ]; then
         PARAM_MEM="-m 4096"
-        PARAM_SMP="-smp 1"
+        PARAM_SMP="-smp 4"
     elif [ "${SPREAD_BACKEND}" = "lxd-nested" ]; then
         PARAM_MEM="-m 4096"
         PARAM_SMP="-smp 2"
@@ -103,40 +100,55 @@ start_nested_core_vm_unit(){
     PARAM_SERIAL="-serial file:${WORK_DIR}/serial.log"
     PARAM_TPM=""
 
-    ATTR_KVM=""
-    if [ "$ENABLE_KVM" = "true" ]; then
-        ATTR_KVM=",accel=kvm"
-        # CPU can be defined just when kvm is enabled
-        PARAM_CPU="-cpu host"
-    fi
-
     # TODO: enable ms key booting for i.e. nightly edge jobs ?
-    OVMF_CODE=""
-    OVMF_VARS=""
+    VMF_CODE=""
+    VMF_VARS=""
     if [ "${ENABLE_SECURE_BOOT:-false}" = "true" ]; then
-        OVMF_CODE=".secboot"
+        VMF_CODE=".ms"
     fi
     if [ "${ENABLE_OVMF_SNAKEOIL:-false}" = "true" ]; then
-        OVMF_VARS=".snakeoil"
+        VMF_VARS=".snakeoil"
     fi
 
     mkdir -p "${WORK_DIR}/image/"
-    cp -f "/usr/share/OVMF/OVMF_VARS${OVMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS${OVMF_VARS}.fd"
-    PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE${OVMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS${OVMF_VARS}.fd,if=pflash,format=raw"
-    PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
+    if os.query is-pc-amd64; then
+        ATTR_KVM=""
+        if [ "$ENABLE_KVM" = "true" ]; then
+            ATTR_KVM=",accel=kvm"
+            # CPU can be defined just when kvm is enabled
+            PARAM_CPU="-cpu host"
+        fi
+        QEMU_BIN=qemu-system-x86_64
+        PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
+        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS${VMF_VARS}.fd,if=pflash,format=raw"
+        TPM_DEVICE=tpm-tis
+        cp -f "/usr/share/OVMF/OVMF_VARS${VMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS${VMF_VARS}.fd"
+    elif os.query is-arm64; then
+        # Assume arm64
+        # Unfortunately gce does not offer kvm enabled arm64 VMs
+        PARAM_CPU="-cpu cortex-a57"
+        QEMU_BIN=qemu-system-aarch64
+        PARAM_MACHINE="-machine virt"
+        PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/AAVMF_VARS${VMF_VARS}.fd,if=pflash,format=raw"
+        TPM_DEVICE=tpm-tis-device
+        cp -f "/usr/share/AAVMF/AAVMF_VARS${VMF_VARS}.fd" "${WORK_DIR}/image/AAVMF_VARS${VMF_VARS}.fd"
+    else
+        printf "ERROR: unsupported archtecture\n"
+        exit 1
+    fi
 
-    # Unfortunately the swtpm-mvo snap does not work correctly in lxd container. It's not possible
+    # Unfortunately the test-snapd-swtpm snap does not work correctly in lxd container. It's not possible
     # for the socket to come up due to being containerized.
     if [ "${ENABLE_TPM:-false}" = "true" ]; then
-        TPMSOCK_PATH="/var/snap/swtpm-mvo/current/swtpm-sock"
+        TPMSOCK_PATH="/var/snap/test-snapd-swtpm/current/swtpm-sock"
         if [ "${SPREAD_BACKEND}" = "lxd-nested" ]; then
             mkdir -p /tmp/qtpm
             swtpm socket --tpmstate dir=/tmp/qtpm --ctrl type=unixio,path=/tmp/qtpm/sock --tpm2 -d -t
             TPMSOCK_PATH="/tmp/qtpm/sock"
-        elif ! snap list swtpm-mvo > /dev/null; then
-            snap install swtpm-mvo --beta
+        elif ! snap list test-snapd-swtpm > /dev/null; then
+            snap install test-snapd-swtpm --beta
             retry=60
-            while ! test -S /var/snap/swtpm-mvo/current/swtpm-sock; do
+            while ! test -S /var/snap/test-snapd-swtpm/current/swtpm-sock; do
                 retry=$(( retry - 1 ))
                 if [ $retry -le 0 ]; then
                     echo "Timed out waiting for the swtpm socket. Aborting!"
@@ -145,14 +157,15 @@ start_nested_core_vm_unit(){
                 sleep 1
             done
         fi
-        PARAM_TPM="-chardev socket,id=chrtpm,path=${TPMSOCK_PATH} -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0"
+        PARAM_TPM="-chardev socket,id=chrtpm,path=${TPMSOCK_PATH} -tpmdev emulator,id=tpm0,chardev=chrtpm -device $TPM_DEVICE,tpmdev=tpm0"
     fi
 
     PARAM_IMAGE="-drive file=${IMAGE_FILE},cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
     SVC_NAME="nested-vm-$(systemd-escape "${SPREAD_JOB:-unknown}")"
+    # shellcheck disable=SC2086
     if ! systemd-run --service-type=simple --unit="${SVC_NAME}" -- \
-                qemu-system-x86_64 \
+         "$QEMU_BIN" \
                 ${PARAM_SMP} \
                 ${PARAM_CPU} \
                 ${PARAM_MEM} \
