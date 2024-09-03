@@ -18,7 +18,8 @@ parts:
       - wget
     build-environment:
       - RELEASE: "24.04"
-      - BASE: ubuntu-base-${RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
+      - DOT_RELEASE: "1"
+      - BASE: ubuntu-base-${RELEASE}${DOT_RELEASE:+.$DOT_RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
       - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
       - URL: ${DIR_URL}/${BASE}
       - SHA256: ${DIR_URL}/SHA256SUMS
