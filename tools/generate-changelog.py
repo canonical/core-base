@@ -179,7 +179,7 @@ def read_remote_git_url() -> str:
     remote_url = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('ascii').strip()
     if remote_url.startswith("git@github.com:"):
         remote_url = remote_url.replace("git@github.com:", "https://github.com/")
-    return remote_url
+    return remote_url.removesuffix(".git")
 
 
 def main():
