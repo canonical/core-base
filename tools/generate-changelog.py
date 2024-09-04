@@ -22,11 +22,13 @@
 # obtained from the debian changelog for the different packages.
 
 import argparse
+from datetime import datetime
 import debian.changelog
 import debian.debian_support
 import gzip
 import os
 import requests
+import subprocess
 import sys
 import yaml
 from collections import namedtuple
@@ -38,7 +40,8 @@ from collections import namedtuple
 # to generate changelogs
 pkg_allowed_list = [
     'dpkg',   # is removed during hook
-    'openssl' # contains a symlink which is broken currently
+    'openssl', # contains a symlink which is broken currently
+    'base-files' # seems to be missing for 24.04.1
 ]
 
 # Returns a dictionary from package name to version, using
@@ -168,6 +171,17 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d):
     return changes
 
 
+def read_commit_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
+
+def read_remote_git_url() -> str:
+    remote_url = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('ascii').strip()
+    if remote_url.startswith("git@github.com:"):
+        remote_url = remote_url.replace("git@github.com:", "https://github.com/")
+    return remote_url
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manifest changelog generator")
 
@@ -175,7 +189,6 @@ def main():
     parser.add_argument('new', metavar='new-manifest', help='Path to the manifest of the new snap')
     parser.add_argument('docs', metavar='docs-dir', help='Path to the usr/share/doc directory in the rootfs of the new snap')
     parser.add_argument('out', help='Optionally a path to where the changelog should be written')
-    parser.add_argument('permalink', help='Permalink to embed inside the changelog')
     args = parser.parse_args()
 
     old_manifest = args.old
@@ -184,7 +197,8 @@ def main():
 
     # add a header that helps us audit where the current build is
     # sourced from.
-    changes = f"Built from commit {args.permalink}\n\n"
+    now = datetime.now()
+    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{read_commit_hash()}\n\n"
     changes += '[ Changes in primed packages ]\n\n'
     pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir)
     if pkg_changes != '':
