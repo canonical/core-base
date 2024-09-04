@@ -8,13 +8,13 @@
 # See writable-paths(5) for full details.
 # --------------------------------------------------------------------
 /home                                   user-data               persistent  transition  none
-/snap                                   auto                    persistent  none        none
+/snap                                   auto                    persistent  none        x-initrd.mount
 # snappy security policy, etc
-/var/lib/snapd                         auto                     persistent  transition  none
+/var/lib/snapd                         auto                     persistent  transition  x-initrd.mount
 # snap catalogue (sections, pkgnames)
 /var/cache/snapd                        auto                    persistent  transition  none
 # snap data
-/var/snap                               auto                    persistent  transition  none
+/var/snap                               auto                    persistent  transition  x-initrd.mount
 # generic
 /media                                  none                    temporary   none        defaults
 /mnt                                    none                    temporary   none        defaults
