@@ -1,0 +1,41 @@
+name: Tests main workflow
+
+on:
+  workflow_call:
+    inputs:
+      snapd_branch:
+        required: true
+        type: string
+
+jobs:
+  tests-main:
+    runs-on: self-hosted
+    env:
+      SNAP_BRANCH: ${{ inputs.snapd_branch }}
+    steps:
+      - name: Cleanup job workspace
+        id: cleanup-job-workspace
+        run: |
+          rm -rf "${{ github.workspace }}"
+          mkdir "${{ github.workspace }}"
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: core-snap
+          path: "${{ github.workspace }}/core24.artifact"
+
+      - name: Run x86 tests
+        run: |
+          spread google-nested:tests/spread/main/
+
+      - name: Run arm64 tests
+        run: |
+          spread google-nested-arm:tests/spread/main/
+
+      - name: Discard spread workers
+        if: always()
+        run: |
+          shopt -s nullglob
+          for r in .spread-reuse.*.yaml; do
+            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
+          done

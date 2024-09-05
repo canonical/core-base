@@ -5,7 +5,7 @@ environment:
   PROJECT_PATH: $SETUPDIR
   PATH: $PATH:$PROJECT_PATH/tests/bin:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
   TESTSLIB: $PROJECT_PATH/tests/lib
-  SNAP_BRANCH: "edge" # stable/edge/beta
+  SNAP_BRANCH: '$(HOST: echo "${SNAP_BRANCH:-stable}")'
   UC_VERSION: 24
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"

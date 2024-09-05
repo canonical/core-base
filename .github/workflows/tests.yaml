@@ -46,95 +46,26 @@ jobs:
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
 
-  tests-main:
-    runs-on: self-hosted
+  tests-main-stable:
     needs: build
-    steps:
-      - name: Cleanup job workspace
-        id: cleanup-job-workspace
-        run: |
-          rm -rf "${{ github.workspace }}"
-          mkdir "${{ github.workspace }}"
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
-        with:
-          name: core-snap
-          path: "${{ github.workspace }}/core24.artifact"
-      
-      - name: Run x86 tests
-        run: |
-          spread google-nested:tests/spread/main/
+    uses: ./.github/workflows/tests-main.yml
+    with:
+      snapd_branch: stable
 
-      - name: Run arm64 tests
-        run: |
-          spread-arm google-nested-arm:tests/spread/main/
-
-      - name: Discard spread workers
-        if: always()
-        run: |
-          shopt -s nullglob
-          for r in .spread-reuse.*.yaml; do
-            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
-          done
-  tests-snapd:
-    runs-on: ubuntu-latest
+  tests-main-edge:
     needs: build
-    steps:
-      - name: Cleanup job workspace
-        id: cleanup-job-workspace
-        run: |
-          rm -rf "${{ github.workspace }}"
-          mkdir "${{ github.workspace }}"
-      
-      - uses: actions/checkout@v2
-        with:
-          path: core-base
-      - uses: actions/checkout@v2
-        with:
-          repository: 'snapcore/snapd'
-          path: snapd
-      - uses: actions/download-artifact@v2
-        with:
-          name: core-snap
-      
-      - name: Install spread
-        run: curl -s https://storage.googleapis.com/snapd-spread-tests/spread/spread-amd64.tar.gz | sudo tar xzv -C /usr/bin
+    uses: ./.github/workflows/tests-main.yml
+    with:
+      snapd_branch: edge
 
-      - name: Build image
-        working-directory: '${{ github.workspace }}'
-        run: |
-          PROJECT_PATH=$PWD/core-base
-          # For os.query and others
-          PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
-          . "core-base/tests/lib/prepare-utils.sh"
+  tests-snapd-stable:
+    needs: build
+    uses: ./.github/workflows/tests-snapd.yml
+    with:
+      snapd_branch: stable
 
-          echo "************* INSTALLING DEPS *************"
-          install_base_deps
-
-          echo "************* DOWNLOADING SNAPS *************"
-          download_core24_snaps 'edge'
-
-          echo "************* WRITING CLOUD-INIT CONFIG *************"
-          prepare_base_cloudinit
-
-          echo "************* BUILDING CORE24 IMAGE *************"
-          uc_snap="$(get_core_snap_name)"
-          mv core24.artifact "$uc_snap"
-          build_base_image
-
-          echo "************* STARTING CORE24 VM *************"
-          start_snapd_core_vm '${{ github.workspace }}'
-
-          cd snapd
-
-          # add any test suites that should be tested here
-          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-24-64:tests/smoke/
-
-      - name: Discard spread workers
-        if: always()
-        run: |
-          shopt -s nullglob
-          for r in .spread-reuse.*.yaml; do
-            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
-          done
-
+  tests-snapd-edge:
+    needs: build
+    uses: ./.github/workflows/tests-snapd.yml
+    with:
+      snapd_branch: edge
