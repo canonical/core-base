@@ -171,6 +171,20 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d):
     return changes
 
 
+def find_commit_in_changelog(clog_p) -> str:
+    if clog_p == "" or not os.path.exists(clog_p):
+        print(f"No previous changelog existed at {clog_p}, skipping changelog generation for local repo")
+        return ""
+    
+    # expect commit in the first line
+    with open(clog_p, "r") as f:
+        line = f.readline().strip()
+        if "commit" in line:
+            tokens = line.split("/")
+            return tokens[-1]
+        return ""
+
+
 def read_commit_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
@@ -182,30 +196,47 @@ def read_remote_git_url() -> str:
     return remote_url.removesuffix(".git")
 
 
+def log_between_commits(start, end):
+    return subprocess.check_output(['git', 'log', f'{start}..{end}']).decode()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manifest changelog generator")
 
-    parser.add_argument('old', metavar='old-manifest', help='Path to the manifest of the previous snap')
-    parser.add_argument('new', metavar='new-manifest', help='Path to the manifest of the new snap')
-    parser.add_argument('docs', metavar='docs-dir', help='Path to the usr/share/doc directory in the rootfs of the new snap')
-    parser.add_argument('out', help='Optionally a path to where the changelog should be written')
+    parser.add_argument('old', metavar='previous-snap-root', help='Path to the root of the previous snap directory')
+    parser.add_argument('new', metavar='new-snap-root', help='Path to the root of the new snap directory')
+    parser.add_argument('name', help='The name of the snap')
     args = parser.parse_args()
 
-    old_manifest = args.old
-    new_manifest = args.new
-    docs_dir = args.docs
+    old_changelog = os.path.join(args.old, "usr", "share", "doc", "ChangeLog")
+    new_changelog = os.path.join(args.new, "usr", "share", "doc", "ChangeLog")
+    old_manifest = os.path.join(args.old, "usr", "share", "snappy", "dpkg.yaml")
+    new_manifest = os.path.join(args.new, "usr", "share", "snappy", "dpkg.yaml")
+    docs_dir = os.path.join(args.new, "usr", "share", "doc")
+
+    # get previous commit for the base
+    pcommit = find_commit_in_changelog(old_changelog)
+    ccommit = read_commit_hash()
 
     # add a header that helps us audit where the current build is
     # sourced from.
     now = datetime.now()
-    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{read_commit_hash()}\n\n"
+    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
+    changes += f'[ Changes in the {args.name} snap ]\n\n'
+
+    if pcommit != "":
+        changes += log_between_commits(pcommit, ccommit)
+        changes += "\n\n"
+    else:
+        changes += f'No changes for the core{args.name} snap\n\n'
+
     changes += '[ Changes in primed packages ]\n\n'
     pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir)
     if pkg_changes != '':
         changes += pkg_changes
     else:
         changes += 'No changes for primed packages\n\n'
-    with open(args.out, "w") as f:
+    with open(new_changelog, "w") as f:
         f.write(changes)
     return 0
 

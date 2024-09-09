@@ -46,19 +46,20 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
-	if ! snap list core24 | grep "core24"; then \
-		snap install core24 --beta; \
+	if ! snap list "$(SNAP_NAME)" | grep "$(SNAP_NAME)"; then \
+		snap install "$(SNAP_NAME)" --beta; \
 	else \
-		snap refresh core24 --beta; \
+		snap refresh "$(SNAP_NAME)" --beta; \
 	fi
 
-	# generate the changelog, for this we need the previous core snap
-	if [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
+	# When building through spread there is no .git, which means we cannot
+	# generate the changelog in this case, ensure that the current folder is
+	# a git repository
+	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		./tools/generate-changelog.py \
-			"/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" \
-			"$(DESTDIR)/usr/share/snappy/dpkg.yaml" \
-			"$(DESTDIR)/usr/share/doc" \
-			$(DESTDIR)/usr/share/doc/ChangeLog; \
+			"/snap/$(SNAP_NAME)/current" \
+			"$(DESTDIR)" \
+			"$(SNAP_NAME)"; \
 	else \
 		echo "WARNING: changelog will not be generated for this build"; \
 	fi
