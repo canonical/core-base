@@ -93,6 +93,9 @@ parts:
     build-packages:
       - shellcheck
       - distro-info
+      - python3-debian
+      - python3-requests
+      - python3-yaml
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
