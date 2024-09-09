@@ -46,8 +46,13 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	if ! snap list core24 | grep "core24"; then \
+		snap install core24 --beta; \
+	else \
+		snap refresh core24 --beta; \
+	fi
+
 	# generate the changelog, for this we need the previous core snap
-	# to be installed, this should be handled in snapcraft.yaml
 	if [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		./tools/generate-changelog.py \
 			"/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" \
