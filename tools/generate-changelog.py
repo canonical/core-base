@@ -238,7 +238,6 @@ def main():
     # if pcommit != ccommit.
     if pcommit != "" and pcommit != ccommit:
         changes += log_between_commits(args.name, pcommit, ccommit)
-        changes += "\n\n"
     else:
         changes += f'No detected changes for the {args.name} snap\n\n'
 
