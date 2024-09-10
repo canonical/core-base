@@ -196,8 +196,16 @@ def read_remote_git_url() -> str:
     return remote_url.removesuffix(".git")
 
 
-def log_between_commits(start, end):
-    return subprocess.check_output(['git', 'log', f'{start}..{end}']).decode()
+def log_between_commits(name, start, end):
+    try:
+        return subprocess.check_output(['git', 'shortlog', '--pretty=short', f'{start}..{end}']).decode()
+    except:
+        # if there is no path from start..end then this might fail, however this
+        # should only happen if the branch has diverged so much that the previous
+        # release commit does not exist in the current fork. In this case let us
+        # notify that we could not generate the changelog
+        print(f"Failed to run 'git log' for the current repo starting at commit {start}, has branch diverged to much?")
+        return f'No detected changes for the {name} snap\n\n'
 
 
 def main():
@@ -214,7 +222,9 @@ def main():
     new_manifest = os.path.join(args.new, "usr", "share", "snappy", "dpkg.yaml")
     docs_dir = os.path.join(args.new, "usr", "share", "doc")
 
-    # get previous commit for the base
+    # get previous commit for the base, however important to note here that
+    # the previous changelog might not exist (i.e before this was introduced)
+    # and thus this might be empty.
     pcommit = find_commit_in_changelog(old_changelog)
     ccommit = read_commit_hash()
 
@@ -224,11 +234,13 @@ def main():
     changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
     changes += f'[ Changes in the {args.name} snap ]\n\n'
 
-    if pcommit != "":
-        changes += log_between_commits(pcommit, ccommit)
+    # Is there a previous commit? Then we get a log between them
+    # if pcommit != ccommit.
+    if pcommit != "" and pcommit != ccommit:
+        changes += log_between_commits(args.name, pcommit, ccommit)
         changes += "\n\n"
     else:
-        changes += f'No changes for the core{args.name} snap\n\n'
+        changes += f'No detected changes for the {args.name} snap\n\n'
 
     changes += '[ Changes in primed packages ]\n\n'
     pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir)
