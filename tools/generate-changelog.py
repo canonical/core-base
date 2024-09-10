@@ -39,7 +39,8 @@ from collections import namedtuple
 # keep the list short to not increase the time it takes
 # to generate changelogs
 pkg_allowed_list = [
-    'distro-info-data', # is removed during hook
+    'apt', # is removed during hook
+    'libapt-pkg6.0', # is removed as well
 ]
 
 # Returns a dictionary from package name to version, using
@@ -229,7 +230,7 @@ def main():
     # add a header that helps us audit where the current build is
     # sourced from.
     now = datetime.now()
-    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
+    changes = f'{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n'
     changes += f'[ Changes in the {args.name} snap ]\n\n'
 
     # Is there a previous commit? Then we get a log between them
