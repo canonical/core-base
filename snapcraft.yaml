@@ -62,7 +62,16 @@ parts:
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
+    override-build: |
+      # apply fips patch if the remote is a fips remote
+      if git remote get-url origin | grep "fips"; then
+        git apply "$CRAFT_PROJECT_DIR"/snap-patch/01-switch-to-fips.patch
+        git apply "$CRAFT_PROJECT_DIR"/snap-patch/02-enable-local-fips.patch
+      fi
+
+      craftctl default
     override-prime: |
       craftctl default
+      
       # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
