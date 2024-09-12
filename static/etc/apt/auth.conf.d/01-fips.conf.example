@@ -1,0 +1,3 @@
+# replace the <LOGIN> and <PASSWORD> with your own private access
+# information from launchpad
+machine private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification login <LOGIN> password <PASSWORD>

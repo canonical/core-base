@@ -117,8 +117,47 @@ FSbrQ9ACQFlqN49Ogbl47J6TZ7BrjDpROote55ixmrU=
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
-# write the pin file for the FIPS PPA
+# write FIPS PPA files if the current build is a FIPS build
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+    # for private builds a conf file is neccessary, setup for PPA access
+    # if provided
+    if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
+        # add fips personal token
+        echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
+        cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: Hostname: 
+Version: Hockeypuck 2.2
+
+xsFNBFd0YRgBEADfq65pgoIg/iNw2NddIIoBiEr19Aan8KfUfi/yDMBXiBywARMQ
+NDRJgicfOZOAjKUcuBXNKa4rAqBNXdl6AMGvOy3wRjppiyzWN8Se2KNzaLiIit2S
+zHF+NBWX6EFyod1CL92kOsIdPyg+/vUGoJqGA7AsD7Rmfmkt/xscdcV+vFJD+rNj
+gYAaMAD+oHU6EtNKi8ALdPH5+tVktmOQIn7rrTnSTFkh7uV4trYSGWHLIwP5LF/c
+U86oRKAJG/6vRW5Es7SonvvTIOMa/kDl3Es9hwPP4pNqcVvrbLECkwQPPKmdT8mC
+KTO2a9WF9Hmmf0XtBNju+3SfZtfIhQpvyWLOfQ8FwwNWPiKp7LG3zAtjd/lzT1Ot
+A2uL2UmJ7bnaPy2wK9j1gj2caCLUqdkJl3Wkk1MAm5tZ0HfIgpIJgsM0wrda425r
+zlI+yhrJWKLoie40Rj4rAe3rVHl+6W5/pCaPauRjF8OdYbY/PvhydGBnvpWQqe0F
+StuuLJmyUHljVkEByJKc1HbnhdUPpJLvs9fZSnFn9GadINaQ29Qd3lbkqdBisBVK
+IbLaib7hdEQ+H/t8wjvzQ1Zwa94HzdT9U4TpT9o/RMyD/FsoVmHtsKSdu0nSla8b
+lTa/1iGpWA1G3j3+40olG2hWRP5dFe3LTMIDrags+6X5Evj0QSmk1njzBwARAQAB
+zSJMYXVuY2hwYWQgUFBBIGZvciBUaGUgRklQUy1DQy1TVElHwsF4BBMBAgAiBQJX
+dGEYAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAYW6d9nbNEw9jdEACC
+ZlP2megNeBK3XGq3akYveAItfnKfjCRvDyQ7D8Kaqmj1Izq6Qd6beg4Lznyiz2QZ
+6pwqYcHNC9P7itl5bVa/zw0gP3XVgdIU6oGkzQk9NDbLPTuKSZyUDSYaMd+vNIqR
+Ppl6v9jBf5sYayhbYCxs5ZUK1EJDvVqIAaTQtFGULJhVeBw5W5LLXx7j8d+piws4
+E/toXzZk9gK8KsWAdzUZl4HHEV1Bq82aUFVaS16bxL5ci8Q58aS/0BNl6EX9tO69
+VWNbQI8T/dcBDQqYhrT3wliod/GvRjFcE8ZQlvToQxx2Telo0FahIPWNWnuC3Hl4
+Qe6mbOOXiFDw5o/nCjtS/x1G9xjOHniVzg4zemk84+71PC9CmBBg+wsl+kYBfPTV
+7cDmlOg/bxqi4XdQdyPCH/wxNAZeeCSv1VyMIkm4lmTa7cfjm8b4+sroMLX6UJ/v
++lFv9LtuF3ErCaoaUKkgPpBYKUokosds8wpgPYLBfKYlzvEmvePwMF7t79/XeeLv
+Mcp1q0QiFDChMZQ3KqyFhyxYVRI9GNWgbdbjgHl6LLoV3SVq/toZmAmwKtNhRYj1
+jIdKcjjWuo2jYQHndcxmzof0xpVaforni094zZA/jjN5z7Xsqh7qrOL5ZR9w7qfl
+UNuHk+m6RrdnU0GhZFiccabKzM11OElMcupvOQeIRA==
+=MKdQ
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+    fi
+
     mkdir -p etc/apt/preferences.d/
     cat >etc/apt/preferences.d/fips.pref <<'EOF'
 Package: *
