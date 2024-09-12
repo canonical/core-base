@@ -67,6 +67,7 @@ parts:
         echo "SNAP_FIPS_BUILD=1" > ./.fips-env
       else
         craftctl set version="$(/bin/date +%Y%m%d)"
+        rm ./.fips-env || true
       fi
     override-prime: |
       craftctl default

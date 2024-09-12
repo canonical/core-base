@@ -8,7 +8,7 @@ BUILDDIR=/build/$(SNAP_NAME)
 # - SNAP_FIPS_BUILD
 ifneq (,$(wildcard ./.fips-env))
     include .fips-env
-    export
+    export SNAP_FIPS_BUILD
 endif
 
 .PHONY: all
@@ -48,6 +48,14 @@ endif
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
+	# copy the FIPS PPA config file in if it exists and if
+	# the current build is a FIPS build
+ifdef SNAP_FIPS_BUILD
+	if [ -e ./fips.conf ]; then \
+		mkdir -p $(DESTDIR)/etc/apt/auth.conf.d/; \
+		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
+	fi
+endif
 	mkdir -p $(DESTDIR)/install-data
 	# customize
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
@@ -57,6 +65,9 @@ endif
 		rm "$(DESTDIR)/install-data/$${base}";		\
 	done
 	rm -rf $(DESTDIR)/install-data
+
+	# remove the auth file again
+	rm $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf || true
 
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
