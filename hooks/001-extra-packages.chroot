@@ -11,7 +11,6 @@ export DEBIAN_FRONTEND=noninteractive
 # ensure we don't use proposed for new installs
 rm -f /etc/apt/sources.list.d/proposed.list
 
-
 # ensure we have /proc or systemd will fail
 mount -t proc proc /proc
 trap 'umount /proc' EXIT
@@ -118,10 +117,26 @@ FSbrQ9ACQFlqN49Ogbl47J6TZ7BrjDpROote55ixmrU=
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
+# write the pin file for the FIPS PPA
+if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+    mkdir -p etc/apt/preferences.d/
+    cat >etc/apt/preferences.d/fips.pref <<'EOF'
+Package: *
+Pin: release o=LP-PPA-fips-cc-stig-fips-under-certification
+Pin-Priority: 1010
+EOF
+fi
 
 # install some packages we need
 apt-get update
-apt-get dist-upgrade -y
+
+# when doing a FIPS build we will allow downgrades due to package
+# versions possibly being lower in the FIPS ppa
+if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+    apt-get dist-upgrade -y --allow-downgrades
+else
+    apt-get dist-upgrade -y
+fi
 
 PACKAGES=(
     apparmor
@@ -187,7 +202,15 @@ case "$(dpkg --print-architecture)" in
         ;;
 esac
 
-apt-get install --no-install-recommends -y "${PACKAGES[@]}"
+if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+    # Ensure vital crypt packages are refreshed / downgraded and downloaded
+    # from the FIPS ppa. This should also container openssh-server, but we already
+    # have that one listed above.
+    PACKAGES+=(libgcrypt20 libgnutls30t64 openssl-fips-module-3)
+    apt-get install --no-install-recommends --allow-downgrades -y "${PACKAGES[@]}"
+else
+    apt-get install --no-install-recommends -y "${PACKAGES[@]}"
+fi
 
 apt-get autoremove -y
 

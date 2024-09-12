@@ -3,6 +3,14 @@ TESTDIR ?= "prime/"
 SNAP_NAME=core24
 BUILDDIR=/build/$(SNAP_NAME)
 
+# include any fips environmental setup if the file exists.
+# Variables:
+# - SNAP_FIPS_BUILD
+ifneq (,$(wildcard ./.fips-env))
+    include .fips-env
+    export
+endif
+
 .PHONY: all
 all: check
 	# nothing
@@ -24,6 +32,13 @@ install:
 		cp /etc/apt/trusted.gpg $(DESTDIR)/etc/apt/ || true; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
+	
+	# If we are doing a fips build, make sure updates are enabled
+	# and we export that to the hooks
+ifdef SNAP_FIPS_BUILD
+	sed -n 's/noble-security/noble-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
+endif
+
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
 	[ -e $(DESTDIR)/dev/null ] || mknod -m 666 $(DESTDIR)/dev/null c 1 3
