@@ -6,8 +6,8 @@ BUILDDIR=/build/$(SNAP_NAME)
 # include any fips environmental setup if the file exists.
 # Variables:
 # - SNAP_FIPS_BUILD
-ifneq (,$(wildcard ./.fips-env))
-    include .fips-env
+-include .fips-env
+ifdef SNAP_FIPS_BUILD
     export SNAP_FIPS_BUILD
 endif
 
@@ -67,7 +67,7 @@ endif
 	rm -rf $(DESTDIR)/install-data
 
 	# remove the auth file again
-	rm $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf || true
+	rm -f $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf
 
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
