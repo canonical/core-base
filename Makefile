@@ -32,12 +32,6 @@ install:
 		cp /etc/apt/trusted.gpg $(DESTDIR)/etc/apt/ || true; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
-	
-	# If we are doing a fips build, make sure updates are enabled
-	# and we export that to the hooks
-ifdef SNAP_FIPS_BUILD
-	sed -n 's/noble-security/noble-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
-endif
 
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
@@ -48,13 +42,18 @@ endif
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
+ifdef SNAP_FIPS_BUILD
 	# copy the FIPS PPA config file in if it exists and if
 	# the current build is a FIPS build
-ifdef SNAP_FIPS_BUILD
 	if [ -e ./fips.conf ]; then \
 		mkdir -p $(DESTDIR)/etc/apt/auth.conf.d/; \
 		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
 	fi
+
+	# If we are doing a fips build, make sure updates are enabled
+	# and we export that to the hooks
+	CODENAME="$$(lsb_release -c -s)"
+	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
 endif
 	mkdir -p $(DESTDIR)/install-data
 	# customize
