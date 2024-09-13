@@ -1,5 +1,6 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
+SNAP_NAME=core22
 
 .PHONY: all
 all: check
@@ -46,29 +47,30 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
-	if ! snap list core22 | grep "core22"; then \
-		snap install core22 --beta; \
+	if ! snap list "$(SNAP_NAME)" | grep "$(SNAP_NAME)"; then \
+		snap install "$(SNAP_NAME)" --beta; \
 	else \
-		snap refresh core22 --beta; \
+		snap refresh "$(SNAP_NAME)" --beta; \
 	fi
 
-	# generate the changelog, for this we need the previous core snap
-	if [ -e "/snap/core22/current/usr/share/snappy/dpkg.yaml" ]; then \
+	# When building through spread there is no .git, which means we cannot
+	# generate the changelog in this case, ensure that the current folder is
+	# a git repository
+	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		./tools/generate-changelog.py \
-			"/snap/core22/current/usr/share/snappy/dpkg.yaml" \
-			"$(DESTDIR)/usr/share/snappy/dpkg.yaml" \
-			"$(DESTDIR)/usr/share/doc" \
-			$(DESTDIR)/usr/share/doc/ChangeLog; \
+			"/snap/$(SNAP_NAME)/current" \
+			"$(DESTDIR)" \
+			"$(SNAP_NAME)"; \
 	else \
 		echo "WARNING: changelog will not be generated for this build"; \
 	fi
 
 	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e /build/core22 ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/core22/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	if [ -e /build/"$(SNAP_NAME)" ]; then \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/$(SNAP_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
-			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/core22-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
+			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
 	fi;
 
