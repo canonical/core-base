@@ -3,6 +3,14 @@ TESTDIR ?= "prime/"
 SNAP_NAME=core24
 BUILDDIR=/build/$(SNAP_NAME)
 
+# include any fips environmental setup if the file exists.
+# Variables:
+# - SNAP_FIPS_BUILD
+-include .fips-env
+ifdef SNAP_FIPS_BUILD
+    export SNAP_FIPS_BUILD
+endif
+
 .PHONY: all
 all: check
 	# nothing
@@ -24,6 +32,7 @@ install:
 		cp /etc/apt/trusted.gpg $(DESTDIR)/etc/apt/ || true; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
+
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
 	[ -e $(DESTDIR)/dev/null ] || mknod -m 666 $(DESTDIR)/dev/null c 1 3
@@ -33,6 +42,19 @@ install:
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
+ifdef SNAP_FIPS_BUILD
+	# copy the FIPS PPA config file in if it exists and if
+	# the current build is a FIPS build
+	if [ -e ./fips.conf ]; then \
+		mkdir -p $(DESTDIR)/etc/apt/auth.conf.d/; \
+		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
+	fi
+
+	# If we are doing a fips build, make sure updates are enabled
+	# and we export that to the hooks
+	CODENAME="$$(lsb_release -c -s)"
+	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
+endif
 	mkdir -p $(DESTDIR)/install-data
 	# customize
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
@@ -42,6 +64,9 @@ install:
 		rm "$(DESTDIR)/install-data/$${base}";		\
 	done
 	rm -rf $(DESTDIR)/install-data
+
+	# remove the auth file again
+	rm -f $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf
 
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
