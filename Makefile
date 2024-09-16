@@ -2,7 +2,7 @@
 TESTDIR ?= "prime/"
 SNAP_NAME=core24
 BUILDDIR=/build/$(SNAP_NAME)
-CODENAME="$$(. /etc/os-release; echo "$$VERSION_CODENAME")"
+CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 # include any fips environmental setup if the file exists.
 # Variables:
