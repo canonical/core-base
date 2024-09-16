@@ -2,6 +2,7 @@
 TESTDIR ?= "prime/"
 SNAP_NAME=core24
 BUILDDIR=/build/$(SNAP_NAME)
+CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 # include any fips environmental setup if the file exists.
 # Variables:
@@ -52,7 +53,6 @@ ifdef SNAP_FIPS_BUILD
 
 	# If we are doing a fips build, make sure updates are enabled
 	# and we export that to the hooks
-	CODENAME="$$(lsb_release -c -s)"
 	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
 endif
 	mkdir -p $(DESTDIR)/install-data
