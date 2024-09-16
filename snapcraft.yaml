@@ -60,8 +60,15 @@ parts:
       - python3-requests
       - python3-yaml
     override-pull: |
-      craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
+      # detect whether we are doing a fips build on LP
+      if git remote get-url origin | grep "fips"; then
+        craftctl set version="$(/bin/date +%Y%m%d)+fips"
+        echo "SNAP_FIPS_BUILD=1" > ./.fips-env
+      else
+        craftctl set version="$(/bin/date +%Y%m%d)"
+        rm -f ./.fips-env
+      fi
     override-prime: |
       craftctl default
       # ensure build-in tests are run
