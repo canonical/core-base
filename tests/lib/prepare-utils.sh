@@ -144,7 +144,7 @@ download_core22_snaps() {
     curl -o ubuntu-core-amd64-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-22-amd64-dangerous.model
 
     # download neccessary images
-    snap download pc-kernel --channel=22/${snap_branch} --basename=upstream-pc-kernel
+    snap download pc-kernel --channel=22/beta --basename=upstream-pc-kernel
     snap download pc --channel=22/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
@@ -156,12 +156,12 @@ create_cloud_init_cdimage_config() {
     local CONFIG_PATH=$1
     cat << 'EOF' > "$CONFIG_PATH"
 #cloud-config
-datasource_list: [NoCloud]
+datasource_list: [NoCloud,None]
 users:
   - name: external
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: false
-    plain_text_passwd: 'ubuntu'
+    plain_text_passwd: 'ubuntu123'
   - name: test
     sudo: "ALL=(ALL) NOPASSWD:ALL"
     lock_passwd: false
@@ -178,6 +178,9 @@ prepare_core22_cloudinit() {
 
     # add the cloud.conf to the gadget
     create_cloud_init_cdimage_config "${gadgetdir}/cloud.conf"
+
+    # set snapd.debug
+    echo "snapd.debug=1" > "${gadgetdir}/cmdline.extra"
 
     # repack kernel snap
     rm upstream-pc-gadget.snap
