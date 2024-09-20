@@ -10,7 +10,7 @@ jobs:
         run: |
           rm -rf "${{ github.workspace }}"
           mkdir "${{ github.workspace }}"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install spread
         run: curl -s https://storage.googleapis.com/snapd-spread-tests/spread/spread-amd64.tar.gz | sudo tar xzv -C /usr/bin
       - name: Run tests
