@@ -6,6 +6,9 @@ set -ex
 
 echo "I: Removing the debian legacy"
 
+# dpkg-deb and dpkg purposefully left behind
+dpkg --purge --force-depends apt libapt-pkg6.0 debconf
+
 # store manifest of all installed packages
 install -m755 -d usr/share/snappy
 dpkg -l > usr/share/snappy/dpkg.list
@@ -28,9 +31,6 @@ dpkg -l > usr/share/snappy/dpkg.list
   printf 'packages:\n'
   dpkg-query -W --showformat='- ${binary:Package}=${Version}\n'
 } > /usr/share/snappy/dpkg.yaml
-
-# dpkg-deb and dpkg purposefully left behind
-dpkg --purge --force-depends apt libapt-pkg5.0 debconf
 
 rm -r \
         var/lib/dpkg \
