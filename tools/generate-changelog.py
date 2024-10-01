@@ -71,12 +71,12 @@ def get_changelog_from_file(docs_d, pkg):
     else:
         raise FileNotFoundError("no supported changelog found for package " + pkg)
 
-def get_changelog_from_url(pkg, new_v):
+def get_changelog_from_url(pkg, new_v, on_lp):
     url = 'https://changelogs.ubuntu.com/changelogs/binary/'
     
     print(f"failed to resolve changelog for {pkg} locally, downloading from official repo")
     safe_name = package_name(pkg)
-    if safe_name not in pkg_allowed_list:
+    if not on_lp and safe_name not in pkg_allowed_list:
         raise Exception(f"{pkg} has not been whitelisted for changelog retrieval")
     
     if safe_name.startswith('lib'):
@@ -94,14 +94,14 @@ def get_changelog_from_url(pkg, new_v):
 
 # Gets difference in changelog between old and new versions
 # Returns source package and the differences
-def get_changes_for_version(docs_d, pkg, old_v, new_v, indent):
+def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
     # Try our best to resolve the changelog locally, if it does
     # not exist locally, then the package must be in the whitelisted
     # list of packages, when we try to resolve it from URL as backup.
     try:
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
-        changelog = get_changelog_from_url(pkg, new_v)
+        changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
 
@@ -135,7 +135,7 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent):
 # old_manifest_p: path to old manifest
 # new_manifest_p: path to newer manifest
 # docs_d: directory with docs from debian packages
-def compare_manifests(old_manifest_p, new_manifest_p, docs_d):
+def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
     old_packages = packages_from_manifest(old_manifest_p)
     new_packages = packages_from_manifest(new_manifest_p)
     changes = ''
@@ -147,7 +147,7 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d):
             old_v = old_packages[pkg]
             if old_v != new_v:
                 src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
-                                                          new_v, '  ')
+                                                          new_v, '  ', on_lp)
                 if src not in src_pkgs:
                     src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
                 else:
@@ -171,18 +171,37 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d):
 def main():
     parser = argparse.ArgumentParser(description="Manifest changelog generator")
 
-    parser.add_argument('old', metavar='old-manifest', help='Path to the manifest of the previous snap')
-    parser.add_argument('new', metavar='new-manifest', help='Path to the manifest of the new snap')
-    parser.add_argument('docs', metavar='docs-dir', help='Path to the usr/share/doc directory in the rootfs of the new snap')
-    parser.add_argument('out', help='Optionally a path to where the changelog should be written')
+    parser.add_argument('old', metavar='previous-snap-root', help='Path to the root of the previous snap directory')
+    parser.add_argument('new', metavar='new-snap-root', help='Path to the root of the new snap directory')
+    parser.add_argument('name', help='The name of the snap')
+    parser.add_argument("--launchpad", action="store_true", help='Indicate we are building on LP, ignoring the whitelist')
     args = parser.parse_args()
 
     old_manifest = args.old
     new_manifest = args.new
     docs_dir = args.docs
 
-    changes = '[ Changes in primed packages ]\n\n'
-    pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir)
+    # get previous commit for the base, however important to note here that
+    # the previous changelog might not exist (i.e before this was introduced)
+    # and thus this might be empty.
+    pcommit = find_commit_in_changelog(old_changelog)
+    ccommit = read_commit_hash()
+
+    # add a header that helps us audit where the current build is
+    # sourced from.
+    now = datetime.now()
+    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
+    changes += f'[ Changes in the {args.name} snap ]\n\n'
+
+    # Is there a previous commit? Then we get a log between them
+    # if pcommit != ccommit.
+    if pcommit != "" and pcommit != ccommit:
+        changes += log_between_commits(args.name, pcommit, ccommit)
+    else:
+        changes += f'No detected changes for the {args.name} snap\n\n'
+
+    changes += '[ Changes in primed packages ]\n\n'
+    pkg_changes = compare_manifests(old_manifest, new_manifest, docs_dir, args.launchpad)
     if pkg_changes != '':
         changes += pkg_changes
     else:
