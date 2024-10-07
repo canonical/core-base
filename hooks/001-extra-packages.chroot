@@ -123,37 +123,49 @@ if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     # if provided
     if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
         # add fips personal token
-        echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
-        cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
+        echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-prerelease/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
+        cat >etc/apt/trusted.gpg.d/fips-pro.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Comment: Hostname: 
 Version: Hockeypuck 2.2
+Comment: Hostname: 
 
-xsFNBFd0YRgBEADfq65pgoIg/iNw2NddIIoBiEr19Aan8KfUfi/yDMBXiBywARMQ
-NDRJgicfOZOAjKUcuBXNKa4rAqBNXdl6AMGvOy3wRjppiyzWN8Se2KNzaLiIit2S
-zHF+NBWX6EFyod1CL92kOsIdPyg+/vUGoJqGA7AsD7Rmfmkt/xscdcV+vFJD+rNj
-gYAaMAD+oHU6EtNKi8ALdPH5+tVktmOQIn7rrTnSTFkh7uV4trYSGWHLIwP5LF/c
-U86oRKAJG/6vRW5Es7SonvvTIOMa/kDl3Es9hwPP4pNqcVvrbLECkwQPPKmdT8mC
-KTO2a9WF9Hmmf0XtBNju+3SfZtfIhQpvyWLOfQ8FwwNWPiKp7LG3zAtjd/lzT1Ot
-A2uL2UmJ7bnaPy2wK9j1gj2caCLUqdkJl3Wkk1MAm5tZ0HfIgpIJgsM0wrda425r
-zlI+yhrJWKLoie40Rj4rAe3rVHl+6W5/pCaPauRjF8OdYbY/PvhydGBnvpWQqe0F
-StuuLJmyUHljVkEByJKc1HbnhdUPpJLvs9fZSnFn9GadINaQ29Qd3lbkqdBisBVK
-IbLaib7hdEQ+H/t8wjvzQ1Zwa94HzdT9U4TpT9o/RMyD/FsoVmHtsKSdu0nSla8b
-lTa/1iGpWA1G3j3+40olG2hWRP5dFe3LTMIDrags+6X5Evj0QSmk1njzBwARAQAB
-zSJMYXVuY2hwYWQgUFBBIGZvciBUaGUgRklQUy1DQy1TVElHwsF4BBMBAgAiBQJX
-dGEYAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAYW6d9nbNEw9jdEACC
-ZlP2megNeBK3XGq3akYveAItfnKfjCRvDyQ7D8Kaqmj1Izq6Qd6beg4Lznyiz2QZ
-6pwqYcHNC9P7itl5bVa/zw0gP3XVgdIU6oGkzQk9NDbLPTuKSZyUDSYaMd+vNIqR
-Ppl6v9jBf5sYayhbYCxs5ZUK1EJDvVqIAaTQtFGULJhVeBw5W5LLXx7j8d+piws4
-E/toXzZk9gK8KsWAdzUZl4HHEV1Bq82aUFVaS16bxL5ci8Q58aS/0BNl6EX9tO69
-VWNbQI8T/dcBDQqYhrT3wliod/GvRjFcE8ZQlvToQxx2Telo0FahIPWNWnuC3Hl4
-Qe6mbOOXiFDw5o/nCjtS/x1G9xjOHniVzg4zemk84+71PC9CmBBg+wsl+kYBfPTV
-7cDmlOg/bxqi4XdQdyPCH/wxNAZeeCSv1VyMIkm4lmTa7cfjm8b4+sroMLX6UJ/v
-+lFv9LtuF3ErCaoaUKkgPpBYKUokosds8wpgPYLBfKYlzvEmvePwMF7t79/XeeLv
-Mcp1q0QiFDChMZQ3KqyFhyxYVRI9GNWgbdbjgHl6LLoV3SVq/toZmAmwKtNhRYj1
-jIdKcjjWuo2jYQHndcxmzof0xpVaforni094zZA/jjN5z7Xsqh7qrOL5ZR9w7qfl
-UNuHk+m6RrdnU0GhZFiccabKzM11OElMcupvOQeIRA==
-=MKdQ
+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
+5PWi/YMXleL8jD8NwK6eBIkbcBkd
+=1S42
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
     fi
@@ -161,7 +173,7 @@ EOF
     mkdir -p etc/apt/preferences.d/
     cat >etc/apt/preferences.d/fips.pref <<'EOF'
 Package: *
-Pin: release o=LP-PPA-fips-cc-stig-fips-under-certification
+Pin: release o=LP-PPA-fips-cc-stig-fips-prerelease
 Pin-Priority: 1010
 EOF
 fi
@@ -245,7 +257,7 @@ if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     # Ensure vital crypt packages are refreshed / downgraded and downloaded
     # from the FIPS ppa. This should also contain openssh-server, but we already
     # have that one listed above.
-    PACKAGES+=(libgcrypt20 libgnutls30t64 openssl-fips-module-3)
+    PACKAGES+=(libgcrypt20 libgnutls30t64)
     apt-get install --no-install-recommends --allow-downgrades -y "${PACKAGES[@]}"
 else
     apt-get install --no-install-recommends -y "${PACKAGES[@]}"
