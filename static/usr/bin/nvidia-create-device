@@ -1,0 +1,11 @@
+#!/bin/sh -eux
+
+mknod -m 666 /dev/nvidia0 c 195 0
+mknod -m 666 /dev/nvidiactl c 195 255
+mknod -m 666 /dev/nvidia-modeset c 195 254
+
+major=$(sed -n 's|^\([0-9]*\) nvidia-uvm$|\1|p' /proc/devices)
+if [ -n "$major" ]; then
+    mknod -m 666 /dev/nvidia-uvm c "$major" 0
+    mknod -m 666 /dev/nvidia-uvm-tools c "$major" 1
+fi
