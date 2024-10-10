@@ -5,23 +5,32 @@
 
 set -eux
 
-# run_on_unseeded will mount/run snapd on an unseeded system
+# run_on_unseeded will run snapd on an unseeded system. The snapd snap
+# is expected to have been mounted and current link is expected to
+# have been created by the initramfs.
 run_on_unseeded() {
-    SNAPD_BASE_DIR="/run/mnt/snapd"
-
-    # We need to initialize /snap/snapd/current symlink so that the
-    # dynanic linker
-    # /snap/snapd/current/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
-    # is available to run snapd.
-    [ -d /snap/snapd ] || mkdir -p /snap/snapd
-    ln -sf "${SNAPD_BASE_DIR}" /snap/snapd/current
+    SNAPD_BASE_DIR="/snap/snapd/current"
+    if ! mountpoint -q "$SNAPD_BASE_DIR"; then
+        # Compatibility with old way where we had a duplicated mount in /run
+        # and "current" link was not created by initramfs.
+        SNAPD_BASE_DIR="/run/mnt/snapd"
+        # We need to initialize /snap/snapd/current symlink so that the
+        # dynamic linker
+        # /snap/snapd/current/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+        # is available to run snapd.
+        [ -d /snap/snapd ] || mkdir -p /snap/snapd
+        ln -sf "${SNAPD_BASE_DIR}" /snap/snapd/current
+    fi
 
     # snapd will write all its needed snapd.{service,socket}
     # units and restart once it seeded the snapd snap. We create
-    # a systemd socket unit so that systemd own the socket, otherwise
+    # a systemd socket unit so that systemd owns the socket, otherwise
     # the socket file would be removed by snapd on exit and the snapd.seeded
     # service will fail because it has nothing to talk to anymore.
-    systemd-run --unit=snapd-seeding --service-type=notify --socket-property ListenStream=/run/snapd.socket --socket-property ListenStream=/run/snapd-snap.socket --property KeyringMode=inherit "$SNAPD_BASE_DIR"/usr/lib/snapd/snapd
+    systemd-run --unit=snapd-seeding --service-type=notify \
+                --socket-property ListenStream=/run/snapd.socket \
+                --socket-property ListenStream=/run/snapd-snap.socket \
+                --property KeyringMode=inherit "$SNAPD_BASE_DIR"/usr/lib/snapd/snapd
     # we need to start the snapd service from above explicitly, systemd-run
     # only enables the socket but does not start the service.
     systemctl start --wait snapd-seeding.service
@@ -29,7 +38,7 @@ run_on_unseeded() {
     systemctl stop snapd-seeding.socket
 
     # At this point snap is available and seeding is at the point where
-    # were snapd to installed and restarted successfully. Show progress
+    # were snapd is installed and restarted successfully. Show progress
     # now. Even without showing progress we *must* wait here until
     # seeding is done to ensure that console-conf is only started
     # after this script has finished.
@@ -40,8 +49,8 @@ run_on_unseeded() {
 # Unseeded systems need to be seeded first, this will start snapd
 # and snapd will restart itself after the seeding.
 set +e
-# systemctl status returns exit code 4 for missing services, and 3 for disabled
-# services
+# systemctl status returns exit code 4 for missing services, and 3 for
+# non-running services
 systemctl status snapd.service
 snapdExists=$?
 if [ ! -e /var/lib/snapd/state.json ] || [ $snapdExists = 4 ] ; then
@@ -53,4 +62,3 @@ if [ ! -e /var/lib/snapd/state.json ] || [ $snapdExists = 4 ] ; then
     exit 0
 fi
 set -e
-
