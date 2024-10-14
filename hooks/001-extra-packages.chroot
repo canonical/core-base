@@ -71,21 +71,40 @@ Pin: origin ""
 Pin-Priority: 1001
 EOF
 
-# enable security ICE ppa
-echo "deb http://ppa.launchpadcontent.net/ubuntu-security/fde-ice/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fde-ice.list
+# temporary
+echo "deb http://ppa.launchpadcontent.net/valentin.david/test-ucdev-base/ubuntu $CODENAME main" > /etc/apt/sources.list.d/valentin.david-test-ucdev-base.list
 
-cat >/etc/apt/trusted.gpg.d/canonical-security-fde-ice.asc <<'EOF'
+cat >/etc/apt/trusted.gpg.d/valentin.david-test-ucdev-base.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: Hostname: 
+Version: Hockeypuck 2.2
 
-xo0ESXbhhAEEAMgPw5cjuQparAFSRh4v/yrXGefOE4KzlV+OudbHPn/nxfhgXn1d
-RaF47lO+HLeBGd6X5UJzai//WoJcOPUBqLoiHIHgNr2pIi5iN29uZYnpEaN+LZyx
-pgM0db/jRzLFtBHM61ocKHflk/F9WeWMkSModxivBFK4NDpucEQzMzR1ABEBAAHN
-LkxhdW5jaHBhZCBQcml2YXRlIFBQQSBmb3IgVWJ1bnR1IFNlY3VyaXR5IFRlYW3C
-tgQTAQIAIAUCSXbhhAIbAwYLCQgHAwIEFQIIAwQWAgMBAh4BAheAAAoJEGjrQbzZ
-Mk9xo2kEAJCFZlNeFPiWUXpaOOVLsi5ZWST5RLIHiXJQgNHd+pqcxy9MpSUYZC/+
-J4rBYeOdB1v4qgJqVrks8b0Nixcvu0p7+ieZYP10fNt2uuNlj56eSV2v3z64VmZz
-ebrtrD1Hrw3BetRY4aQ0ysRSugvbTwqS0d17zepomYJS49Jy2w2D
-=ALlI
+xsFNBGFxbb4BEAC1Aq399YDvc0QqmkB6rwCcTVT+0AHpxBuMifntYBrigUwfPHa9
+QHoNcXjr7AvStekGCzS+2fypJpGnfn1HSkOFQRnIG9giKZoK6MMuOEpCX5GNb0Qc
+AlUo5qvQJaPEZBrSX/VbZt0KFeTdIzqVFlygAIeQ1Qhsk5wy4FDADT5n/8a9bO/C
+yaTJ99cKGzrQIUvG6ygC5YRoZdqaBY3RFQMnIOVSDDOG0NNXK8ircn1O3bowT9TP
+5x7cOTvDsBwcevBiuxTJ6GxtpedBvq3Da3xccLstd5tn7GZCpqOYJoEijDIdHKhw
+7rFTXPgSnicpceRXl37uaTT8EAF5iQ4FwI2lGcOCkR/Z1YtJsZyV6epIspW1Ri29
+HIMjye1QnDIXmv4sQk/pUuj4KJFtvw/gLZaeuMqDKNsqAckQ6lAE/c0byegD3Klt
+uVJrCVGKm2vDRDcy+fGCfEUUlpu4v+U9XsZFUx4c3FQe1QHq0IoGkGXLftjbt6HL
+SZWDShMoQdT3zjqp2+AWLPpfOiXtqFS5VAl9TQlXKrBWrGhCWbzJt+CTd/xyxfJN
+QwxW76xMmfIQEQGVfo1vOYoCqo/kwVlT9l9m0XDMEliKd5t4vQCxdXaHqWmI0O4I
+LZ/eEF4K+b9PbNEa18KygubQTQ2RcZwJFdS6vt/KixiAr4Zy5CSFD/7mFQARAQAB
+zSBMYXVuY2hwYWQgUFBBIGZvciBWYWxlbnRpbiBEYXZpZMLBjgQTAQoAOBYhBMBY
+MvM8gZfcb+Ooq2iWhz8BI/cFBQJhcW2+AhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4B
+AheAAAoJEGiWhz8BI/cF2ggP/3AOgPW1cbX7VNcKl/wgg8ALH82y9fnQsYWUFgFk
+B5H4LLARAovi14JvycCvCnCREJ/c8+W/BfMbaNcUvtvIXKjqcS6iQfhwk3OHkL9R
+W6o6JAu6ESvgFnnM60LlDJOZBHOWDMbWORH0ycQ3uwrmE9ua1CaHL++QlF4cS70x
+iDye4YSxHcwvUmvrU1Mi9enLnQg05B8+KLI9wQQRM6zoEu+IEoYF3NLFOHqAlAQn
+qIc/dsdFhYtXRvAGTXqY6KXdw6lDAKIJMquuEPdm/HMxiCVxP/qH7jXg6s8fCeNg
+AxakBJYr/pAfStYLdCTzyiM7jTjGUIpnQ20atjGQNN877FJsZ5B6Vq9b9gdKzvPN
+wgwAkU0seFSRVOUUyu5bGNd0YSKq2x8tNwPf1r8qDFy0anbh9iLpGqhc/4wQ8qAd
+o6dMdoBBCrUW5mT0nZpMAvNE4AwqPDFYj4S5fKjtYFAWhT9OkukYJo41STjTJOgx
+sdUPPley+qFZBK7narpSywGzCPFUBjWMEex3Ymh9bz5yNBy921uaTEChZfNSXDM5
+Lrn0I0t1vGdzczUMTppMnmvYlwKbtiBufFz8e60AO+3pjHrD2KRBTk5EBthXFJVU
+1dhKtixJ8rPz7zFS/hSRswIyGew/7Jj6umBS/FSYTxjFfKaXKpBV9kaEKZK8L9js
+Vzth
+=JNss
 -----END PGP PUBLIC KEY BLOCK-----
 
 EOF
