@@ -131,5 +131,5 @@ if [ -n "$DIFF" ]; then
 fi
 
 # TODO: test is not ideal but at this point we have no apt/dpkg db anymore
-echo "Ensure that the cryptsetup version is pulled from the fde-ice ppa"
-grep -E 'cryptsetup.*+ice' usr/share/snappy/dpkg.list 
+echo "Ensure that the cryptsetup version is pulled from the base ppa"
+grep -E 'cryptsetup.*+ice.*+fde' usr/share/snappy/dpkg.list
