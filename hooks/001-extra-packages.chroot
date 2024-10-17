@@ -225,6 +225,8 @@ PACKAGES=(
     wpasupplicant
     locales
     cracklib-runtime
+    # This is a ub-device-create dependency
+    libpciaccess0
 )
 
 case "$(dpkg --print-architecture)" in
@@ -258,3 +260,11 @@ apt-get download snapd
 dpkg --fsys-tarfile snapd_*.deb |
        tar xf - ./usr/lib/systemd/system-generators/snapd-generator
 rm snapd_*.deb
+
+# Copy nvidia udev rules and dependencies (sources for this come from
+# Canonical, not from Nvidia, see
+# https://github.com/canonical/nvidia-graphics-drivers).
+nvidia_common_pkg=nvidia-kernel-common-550
+apt-get download "$nvidia_common_pkg"
+dpkg --fsys-tarfile "$nvidia_common_pkg"_*.deb |
+       tar xf - ./sbin/ub-device-create ./lib/udev/rules.d/71-nvidia.rules
