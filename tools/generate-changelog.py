@@ -28,6 +28,7 @@ import debian.debian_support
 import gzip
 import os
 import requests
+import re
 import subprocess
 import sys
 import yaml
@@ -43,7 +44,6 @@ pkg_allowed_list = [
     'libapt-pkg6.0', # is removed as well
     'base-files', # unstable on local builds
     'ca-certificates', # unstable on local builds
-    'gnutls-bin', # fails for FIPS builds
     'distro-info-data' # unstable on local builds
 ]
 
@@ -60,6 +60,13 @@ def packages_from_manifest(manifest_p):
             pkg_data = pkg.split('=')
             pkg_dict[pkg_data[0]] = pkg_data[1]
         return pkg_dict
+
+
+def is_fips(s):
+    m = re.search("[+~][Ff]ips[1-2\.]{1,3}", s)
+    if m is None:
+        return False
+    return True
 
 
 def package_name(pkg):
@@ -110,6 +117,11 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
     try:
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
+        # If the package is coming from the fips PPA, do not attempt
+        # to download from regular archive.
+        if is_fips(new_v):
+            print(f"failed to resolve FIPS changelog for {pkg}/{new_v}")
+            raise KeyError
         changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
