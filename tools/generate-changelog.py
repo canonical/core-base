@@ -41,8 +41,10 @@ from collections import namedtuple
 pkg_allowed_list = [
     'apt', # is removed during hook
     'libapt-pkg6.0', # is removed as well
-    'base-files', # changelog missing in rootfs
-    'ca-certificates' # changelog missing in rootfs
+    'base-files', # unstable on local builds
+    'ca-certificates', # unstable on local builds
+    'gnutls-bin', # fails for FIPS builds
+    'distro-info-data' # unstable on local builds
 ]
 
 # Returns a dictionary from package name to version, using
@@ -59,9 +61,11 @@ def packages_from_manifest(manifest_p):
             pkg_dict[pkg_data[0]] = pkg_data[1]
         return pkg_dict
 
+
 def package_name(pkg):
     t = pkg.split(':')
     return t[0]
+
 
 def get_changelog_from_file(docs_d, pkg):
     chl_deb_path = docs_d + '/' + package_name(pkg) + '/changelog.Debian.gz'
@@ -73,7 +77,8 @@ def get_changelog_from_file(docs_d, pkg):
         with gzip.open(chl_deb_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     else:
-        raise FileNotFoundError("no supported changelog found for package " + pkg)
+        raise FileNotFoundError(f"no supported changelog found for package {pkg}")
+
 
 def get_changelog_from_url(pkg, new_v, on_lp):
     url = 'https://changelogs.ubuntu.com/changelogs/binary/'
