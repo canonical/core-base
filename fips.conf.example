@@ -1,0 +1,4 @@
+# replace the <LOGIN> and <PASSWORD> with your own private access
+# information from launchpad
+# OBS: these comments should be removed
+machine private-ppa.launchpadcontent.net/ubuntu-advantage/pro-fips-updates login <LOGIN> password <PASSWORD>
