@@ -209,5 +209,6 @@ case "$(dpkg --print-architecture)" in
         apt-get download "$nvidia_common_pkg"
         dpkg --fsys-tarfile "$nvidia_common_pkg"_*.deb |
             tar xf - ./sbin/ub-device-create ./lib/udev/rules.d/71-nvidia.rules
+        rm "$nvidia_common_pkg"_*.deb
         ;;
 esac
