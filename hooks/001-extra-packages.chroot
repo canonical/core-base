@@ -119,12 +119,8 @@ EOF
 
 # write FIPS PPA files if the current build is a FIPS build
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
-    # for private builds a conf file is neccessary, setup for PPA access
-    # if provided
-    if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
-        # add fips personal token
-        echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
-        cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
+    echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
+    cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: Hostname: 
 Version: Hockeypuck 2.2
@@ -156,8 +152,7 @@ UNuHk+m6RrdnU0GhZFiccabKzM11OElMcupvOQeIRA==
 =MKdQ
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-    fi
-
+  
     mkdir -p etc/apt/preferences.d/
     cat >etc/apt/preferences.d/fips.pref <<'EOF'
 Package: *
