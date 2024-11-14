@@ -120,7 +120,7 @@ EOF
 # write FIPS PPA files if the current build is a FIPS build
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
-    cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
+    cat >/etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: Hostname: 
 Version: Hockeypuck 2.2
@@ -153,8 +153,8 @@ UNuHk+m6RrdnU0GhZFiccabKzM11OElMcupvOQeIRA==
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
   
-    mkdir -p etc/apt/preferences.d/
-    cat >etc/apt/preferences.d/fips.pref <<'EOF'
+    mkdir -p /etc/apt/preferences.d/
+    cat >/etc/apt/preferences.d/fips.pref <<'EOF'
 Package: *
 Pin: release o=LP-PPA-fips-cc-stig-fips-under-certification
 Pin-Priority: 1010
