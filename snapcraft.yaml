@@ -37,7 +37,7 @@ parts:
     source: https://github.com/canonical/subiquity.git
     source-type: git
     # following branch core/jammy
-    source-commit: 639b5ec6ad83b3a34ecd7ea41913cc3ba66e1cd9
+    source-commit: a75099e0226ebb65653526c32d533a6ecdc8e33c
     override-pull: |
       "${CRAFT_PROJECT_DIR}/build-package.sh" pull
     override-build: |
