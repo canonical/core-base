@@ -7,6 +7,7 @@ CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 # include any fips environmental setup if the file exists.
 # Variables:
 # - SNAP_FIPS_BUILD
+# - SNAP_BUILD_NAME
 -include .fips-env
 ifdef SNAP_FIPS_BUILD
     export SNAP_FIPS_BUILD
@@ -30,8 +31,8 @@ install:
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
 	if grep -q ftpmaster.internal /etc/apt/sources.list.d/lp-buildd.sources; then \
-		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list; \
-		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources; \
+		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list || true; \
+		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources || true; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
 
