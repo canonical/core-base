@@ -1,7 +1,7 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
 SNAP_NAME=core24
-BUILDDIR=/build/$(SNAP_NAME)
+SNAP_BUILD_NAME=core24
 CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 # include any fips environmental setup if the file exists.
@@ -10,6 +10,7 @@ CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 -include .fips-env
 ifdef SNAP_FIPS_BUILD
     export SNAP_FIPS_BUILD
+    export SNAP_BUILD_NAME
 endif
 
 .PHONY: all
@@ -28,9 +29,10 @@ install:
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
-	if grep -q ftpmaster.internal /etc/apt/sources.list; then \
+	cat /etc/apt/sources.list.d/lp-buildd.sources;
+	if grep -q ftpmaster.internal /etc/apt/sources.list.d/lp-buildd.sources; then \
 		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list; \
-		cp /etc/apt/trusted.gpg $(DESTDIR)/etc/apt/ || true; \
+		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
 
@@ -82,7 +84,7 @@ endif
 	# a git repository
 	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		CHG_PARAMS=; \
-		if [ -e /build/$(SNAP_NAME) ]; then \
+		if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
 			CHG_PARAMS=--launchpad; \
 		fi; \
 		./tools/generate-changelog.py \
@@ -95,11 +97,11 @@ endif
 	fi
 
 	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e $(BUILDDIR) ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
-			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
+			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
 	fi;
 
