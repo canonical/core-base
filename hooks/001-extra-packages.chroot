@@ -119,9 +119,13 @@ EOF
 
 # write FIPS PPA files if the current build is a FIPS build
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
-    echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
-    # this allow launchpad intenal build access private ppa without credentials
-    echo "deb http://private-ppa.buildd/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" >> /etc/apt/sources.list.d/fips.list
+    # for private builds a conf file is neccessary, setup for PPA access if provided
+    if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
+        echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
+    else
+        # this allow launchpad intenal build access private ppa without credentials
+        echo "deb http://private-ppa.buildd/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" >> /etc/apt/sources.list.d/fips.list
+    fi
     cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: Hostname: 
