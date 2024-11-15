@@ -117,9 +117,9 @@ FSbrQ9ACQFlqN49Ogbl47J6TZ7BrjDpROote55ixmrU=
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
-# write FIPS PPA files if the current build is a FIPS build
+# write FIPS PPA files if the current build is a local FIPS build
+# for private builds a conf file is neccessary, setup for PPA access if provided
 if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
-    # for private builds a conf file is neccessary, setup for PPA access if provided
     echo "deb https://private-ppa.launchpadcontent.net/fips-cc-stig/fips-under-certification/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
     cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
