@@ -29,7 +29,6 @@ install:
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
-	cat /etc/apt/sources.list.d/lp-buildd.sources;
 	if grep -q ftpmaster.internal /etc/apt/sources.list.d/lp-buildd.sources; then \
 		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list; \
 		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources; \
