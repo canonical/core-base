@@ -6,8 +6,11 @@ set -ex
 
 echo "I: Removing the debian legacy"
 
-# dpkg-deb and dpkg purposefully left behind
-dpkg --purge --force-depends apt libapt-pkg6.0t64 debconf
+# leave libapt6.0 behind for now, it's unfortunately currently imported
+# by the snapcraft snap. See https://github.com/canonical/core-base/issues/283.
+# we have been carrying this library since core20 because of a we never updated
+# the library name (we were removing libapt5.0 which did not exist).
+dpkg --purge --force-depends apt debconf
 
 # store manifest of all installed packages
 install -m755 -d usr/share/snappy
