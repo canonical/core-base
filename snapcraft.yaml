@@ -103,6 +103,7 @@ parts:
         craftctl set version="$(/bin/date +%Y%m%d)+fips"
         echo "SNAP_FIPS_BUILD=1" > ./.fips-env
         echo "SNAP_CORE_TRACK=fips-updates" >> ./.fips-env
+        echo "SNAP_BUILD_NAME=core22-fips" >> ./.fips-env
       else
         craftctl set version="$(/bin/date +%Y%m%d)"
         rm -f ./.fips-env

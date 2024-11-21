@@ -1,17 +1,20 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
 SNAP_NAME=core22
-CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
+SNAP_BUILD_NAME=core22
 SNAP_CORE_TRACK:=latest
+CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 # include any fips environmental setup if the file exists.
 # Variables:
 # - SNAP_FIPS_BUILD
 # - SNAP_CORE_TRACK
+# - SNAP_BUILD_NAME
 -include .fips-env
 ifdef SNAP_FIPS_BUILD
     export SNAP_FIPS_BUILD
     export SNAP_CORE_TRACK
+    export SNAP_BUILD_NAME
 endif
 
 .PHONY: all
@@ -86,7 +89,7 @@ endif
 	# a git repository
 	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		CHG_PARAMS=; \
-		if [ -e /build/$(SNAP_NAME) ]; then \
+		if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
 			CHG_PARAMS=--launchpad; \
 		fi; \
 		./tools/generate-changelog.py \
@@ -99,11 +102,11 @@ endif
 	fi
 
 	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e /build/"$(SNAP_NAME)" ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/$(SNAP_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+	if [ -e /build/"$(SNAP_BUILD_NAME)" ]; then \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
+		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
 		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
-			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog $(BUILDDIR)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
+			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
 	fi;
 
