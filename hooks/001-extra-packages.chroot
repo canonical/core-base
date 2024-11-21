@@ -90,14 +90,11 @@ ebrtrD1Hrw3BetRY4aQ0ysRSugvbTwqS0d17zepomYJS49Jy2w2D
 
 EOF
 
-# write FIPS PPA files if the current build is a FIPS build
-if [[ ${SNAP_FIPS_BUILD+x} ]]; then
-    # for private builds a conf file is neccessary, setup for PPA access
-    # if provided
-    if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
-        # add fips personal token
-        echo "deb https://private-ppa.launchpadcontent.net/ubuntu-advantage/pro-fips-updates/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
-        cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
+# write FIPS PPA files if the current build is a local FIPS build
+# for private builds a conf file is necessary, setup for PPA access if provided
+if [ -e etc/apt/auth.conf.d/01-fips.conf ]; then
+    echo "deb https://private-ppa.launchpadcontent.net/ubuntu-advantage/pro-fips-updates/ubuntu $CODENAME main" > /etc/apt/sources.list.d/fips.list
+    cat >etc/apt/trusted.gpg.d/fips-cc-stig.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: Hostname: 
 Version: Hockeypuck 2.2
@@ -141,8 +138,11 @@ Dyi6+RIJ+lHVuuiZH3fqNER795RdpLHKLpgj4kO6ywfeliM3qLeJMWulTHvt6bUY
 =1S42
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-    fi
+fi
 
+# always install the preference though, both for LP and
+# local
+if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     mkdir -p etc/apt/preferences.d/
     cat >etc/apt/preferences.d/fips.pref <<'EOF'
 Package: *
@@ -232,9 +232,8 @@ esac
 
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     # Ensure vital crypt packages are refreshed / downgraded and downloaded
-    # from the FIPS ppa. This should also contain openssh-server, but we already
-    # have that one listed above.
-    PACKAGES+=(libgcrypt20 libgnutls30 openssl-fips-module-3)
+    # from the FIPS ppa.
+    PACKAGES+=(libgcrypt20 libgnutls30 openssl-fips-module-3 ssh)
     apt-get install --no-install-recommends --allow-downgrades -y "${PACKAGES[@]}"
 else
     apt-get install --no-install-recommends -y "${PACKAGES[@]}"
