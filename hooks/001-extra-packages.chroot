@@ -12,10 +12,6 @@ export DEBIAN_FRONTEND=noninteractive
 rm -f /etc/apt/sources.list.d/proposed.list
 
 
-# ensure we have /proc or systemd will fail
-mount -t proc proc /proc
-trap 'umount /proc' EXIT
-
 # systemd postinst needs this
 mkdir -p /var/log/journal
 
