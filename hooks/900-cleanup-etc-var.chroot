@@ -18,8 +18,6 @@ rm -rvf /etc/binfmt.d
 rm /etc/gai.conf
 rm /etc/debian_version
 
-# pam stuff, move pam.d files into /usr/lib/pam.d instead of
-# /etc/pam.d to allow snaps to mount their own pam.d files as well
 rm /etc/pam.conf
 
 # move pam.d files from /etc/pam.d to /usr/lib/pam.d to allow snaps
