@@ -21,9 +21,9 @@ backends:
     cpu-family: "Intel Cascade Lake"
     systems:
       - ubuntu-22.04-64:
-            image: ubuntu-2204-64-virt-enabled
-            storage: 25G
-            workers: 14
+          image: ubuntu-2204-64-virt-enabled
+          storage: 25G
+          workers: 14
 
   google-nested-arm:
     type: google
