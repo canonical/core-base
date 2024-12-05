@@ -35,10 +35,10 @@ backends:
     plan: t2a-standard-4
     halt-timeout: 2h
     systems:
-      - ubuntu-24.04-arm-64:
-          workers: 4
-          image: ubuntu-2404-arm-64-virt-enabled
+      - ubuntu-22.04-arm-64:
+          image: ubuntu-2204-arm-64-virt-enabled
           storage: 25G
+          workers: 8
 
   qemu-nested:
     type: qemu
