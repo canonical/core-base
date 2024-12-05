@@ -15,13 +15,27 @@ backends:
   google-nested:
     type: google
     key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
-    location: snapd-spread/us-east1-b
+    location: snapd-spread/us-central1-a
     plan: n2-standard-2
     halt-timeout: 2h
+    cpu-family: "Intel Cascade Lake"
     systems:
       - ubuntu-22.04-64:
-          image: ubuntu-2204-64-virt-enabled
-          storage: 20G
+            image: ubuntu-2204-64-virt-enabled
+            storage: 25G
+            workers: 14
+
+  google-nested-arm:
+    type: google
+    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
+    location: snapd-spread/us-central1-a
+    plan: t2a-standard-2
+    halt-timeout: 2h
+    systems:
+      - ubuntu-22.04-arm-64:
+          image: ubuntu-2204-arm-64-virt-enabled
+          storage: 25G
+          workers: 8
 
   qemu-nested:
     type: qemu
