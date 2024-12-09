@@ -164,13 +164,13 @@ start_nested_core_vm_unit(){
 
     # In this case the kernel.efi is unsigned and signed with snaleoil certs
     if [ "${ENABLE_OVMF_SNAKEOIL:-false}" = "true" ]; then
-        OVMF_VARS=".snakeoil"
+        OVMF_VARS="snakeoil"
     else
-        OVMF_VARS=".ms"
+        OVMF_VARS="ms"
     fi
 
     if nested_is_secure_boot_enabled; then
-        OVMF_CODE=".secboot"
+        OVMF_CODE="secboot"
         if os.query is-arm; then
             cp -f "/usr/share/AAVMF/AAVMF_VARS.fd" "${WORK_DIR}/AAVMF_VARS.fd"
             PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/AAVMF_VARS.fd,if=pflash,format=raw"
@@ -184,14 +184,12 @@ start_nested_core_vm_unit(){
     if os.query is-pc-amd64; then
         QEMU_BIN=qemu-system-x86_64
         PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
-        cp -f "/usr/share/OVMF/OVMF_VARS${OVMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS${OVMF_VARS}.fd"
     elif os.query is-arm64; then
         # Assume arm64
         # Unfortunately gce does not offer kvm enabled arm64 VMs
         PARAM_CPU="-cpu cortex-a57"
         QEMU_BIN=qemu-system-aarch64
         PARAM_MACHINE="-machine virt"
-        cp -f "/usr/share/AAVMF/AAVMF_VARS.fd" "${WORK_DIR}/image/AAVMF_VARS.fd"
     else
         printf "ERROR: unsupported architecture\n"
         exit 1
