@@ -139,9 +139,9 @@ start_nested_core_vm_unit(){
 
     # In this case the kernel.efi is unsigned and signed with snaleoil certs
     if [ "${ENABLE_OVMF_SNAKEOIL:-false}" = "true" ]; then
-        OVMF_VARS="snakeoil"
+        OVMF_VARS=".snakeoil"
     else
-        OVMF_VARS="ms"
+        OVMF_VARS=".ms"
     fi
 
     if nested_is_secure_boot_enabled; then
