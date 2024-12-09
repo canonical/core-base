@@ -87,6 +87,13 @@ nested_is_secure_boot_enabled() {
     fi
 }
 
+nested_is_kvm_enabled() {
+    if [ -n "$ENABLE_KVM" ]; then
+        [ "$ENABLE_KVM" = true ]
+    fi
+    return 0
+}
+
 start_nested_core_vm_unit(){
     # copy the image file to create a new one to use
     # TODO: maybe create a snapshot qcow image instead?
@@ -110,6 +117,15 @@ start_nested_core_vm_unit(){
         exit 1
     fi
 
+    # Set kvm attribute
+    local ATTR_KVM
+    ATTR_KVM=""
+    if nested_is_kvm_enabled; then
+        ATTR_KVM=",accel=kvm"
+        # CPU can be defined just when kvm is enabled
+        PARAM_CPU="-cpu host"
+    fi
+
     PARAM_DISPLAY="-nographic"
     PARAM_NETWORK="-net nic,model=virtio -net user,hostfwd=tcp::${SSH_PORT}-:22"
     # TODO: do we need monitor port still?
@@ -129,6 +145,15 @@ start_nested_core_vm_unit(){
     OVMF_CODE=""
     OVMF_VARS=""
 
+    # use a bundle EFI bios by default
+    local PARAM_BIOS
+    PARAM_BIOS=""
+    if os.query is-arm; then
+        PARAM_BIOS="-bios /usr/share/AAVMF/AAVMF_CODE.fd"
+    else
+        PARAM_BIOS="-bios /usr/share/ovmf/OVMF.fd"
+    fi
+
     # for core22+
     wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_CODE.secboot.fd
     mv OVMF_CODE.secboot.fd /usr/share/OVMF/OVMF_CODE.secboot.fd
@@ -146,21 +171,19 @@ start_nested_core_vm_unit(){
 
     if nested_is_secure_boot_enabled; then
         OVMF_CODE=".secboot"
+        if os.query is-arm; then
+            cp -f "/usr/share/AAVMF/AAVMF_VARS.fd" "${WORK_DIR}/AAVMF_VARS.fd"
+            PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/AAVMF_VARS.fd,if=pflash,format=raw"
+        else
+            cp -f "/usr/share/OVMF/OVMF_VARS.${OVMF_VARS}.fd" "${WORK_DIR}/OVMF_VARS.${OVMF_VARS}.fd"
+            PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE.${OVMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/OVMF_VARS.${OVMF_VARS}.fd,if=pflash,format=raw"
+        fi
     fi
 
     mkdir -p "${WORK_DIR}/image/"
     if os.query is-pc-amd64; then
-        ATTR_KVM=""
-        if [ "$ENABLE_KVM" = "true" ]; then
-            ATTR_KVM=",accel=kvm"
-            # CPU can be defined just when kvm is enabled
-            PARAM_CPU="-cpu host"
-        fi
-        
         QEMU_BIN=qemu-system-x86_64
         PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
-        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE${OVMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS${OVMF_VARS}.fd,if=pflash,format=raw"
-        TPM_DEVICE=tpm-tis
         cp -f "/usr/share/OVMF/OVMF_VARS${OVMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS${OVMF_VARS}.fd"
     elif os.query is-arm64; then
         # Assume arm64
@@ -168,11 +191,9 @@ start_nested_core_vm_unit(){
         PARAM_CPU="-cpu cortex-a57"
         QEMU_BIN=qemu-system-aarch64
         PARAM_MACHINE="-machine virt"
-        PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/AAVMF_VARS.fd,if=pflash,format=raw"
-        TPM_DEVICE=tpm-tis-device
         cp -f "/usr/share/AAVMF/AAVMF_VARS.fd" "${WORK_DIR}/image/AAVMF_VARS.fd"
     else
-        printf "ERROR: unsupported archtecture\n"
+        printf "ERROR: unsupported architecture\n"
         exit 1
     fi
 
@@ -195,26 +216,26 @@ start_nested_core_vm_unit(){
             else
                 snap install test-snapd-swtpm --edge
             fi
-            
-            # wait for the tpm sock file to exist
-            retry -n 10 --wait 1 test -S /var/snap/test-snapd-swtpm/current/swtpm-sock
-            PARAM_TPM="-chardev socket,id=chrtpm,path=/var/snap/test-snapd-swtpm/current/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm"
-            if os.query is-arm; then
-                PARAM_TPM="$PARAM_TPM -device tpm-tis-device,tpmdev=tpm0"
-            else
-                PARAM_TPM="$PARAM_TPM -device tpm-tis,tpmdev=tpm0"
-            fi
-            snap install test-snapd-swtpm --beta
-            retry=60
-            while ! test -S /var/snap/test-snapd-swtpm/current/swtpm-sock; do
-                retry=$(( retry - 1 ))
-                if [ $retry -le 0 ]; then
-                    echo "Timed out waiting for the swtpm socket. Aborting!"
-                    return 1
-                fi
-                sleep 1
-            done
         fi
+
+        # wait for the tpm sock file to exist
+        retry -n 10 --wait 1 test -S "$TPMSOCK_PATH"
+        PARAM_TPM="-chardev socket,id=chrtpm,path=$TPMSOCK_PATH -tpmdev emulator,id=tpm0,chardev=chrtpm"
+        if os.query is-arm; then
+            PARAM_TPM="$PARAM_TPM -device tpm-tis-device,tpmdev=tpm0"
+        else
+            PARAM_TPM="$PARAM_TPM -device tpm-tis,tpmdev=tpm0"
+        fi
+        snap install test-snapd-swtpm --beta
+        retry=60
+        while ! test -S "$TPMSOCK_PATH"; do
+            retry=$(( retry - 1 ))
+            if [ $retry -le 0 ]; then
+                echo "Timed out waiting for the swtpm socket. Aborting!"
+                return 1
+            fi
+            sleep 1
+        done
     fi
 
     PARAM_IMAGE="-drive file=${IMAGE_FILE},cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
