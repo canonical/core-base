@@ -117,15 +117,6 @@ start_nested_core_vm_unit(){
         exit 1
     fi
 
-    # Set kvm attribute
-    local ATTR_KVM
-    ATTR_KVM=""
-    if nested_is_kvm_enabled; then
-        ATTR_KVM=",accel=kvm"
-        # CPU can be defined just when kvm is enabled
-        PARAM_CPU="-cpu host"
-    fi
-
     PARAM_DISPLAY="-nographic"
     PARAM_NETWORK="-net nic,model=virtio -net user,hostfwd=tcp::${SSH_PORT}-:22"
     # TODO: do we need monitor port still?
@@ -136,6 +127,15 @@ start_nested_core_vm_unit(){
     PARAM_LOG="-D ${WORK_DIR}/qemu.log"
     PARAM_TPM=""
     
+    # Set kvm attribute
+    local ATTR_KVM
+    ATTR_KVM=""
+    if nested_is_kvm_enabled; then
+        ATTR_KVM=",accel=kvm"
+        # CPU can be defined just when kvm is enabled
+        PARAM_CPU="-cpu host"
+    fi
+
     # Open port 7777 on the host so that failures in the nested VM (e.g. to
     # create users) can be debugged interactively via
     # "telnet localhost 7777". Also keeps the logs
@@ -186,8 +186,7 @@ start_nested_core_vm_unit(){
         PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
     elif os.query is-arm64; then
         QEMU_BIN=qemu-system-aarch64
-        PARAM_MACHINE="-machine virt${ATTR_KVM}"
-        PARAM_CPU="-cpu host"
+        PARAM_MACHINE="-machine virt"
     else
         printf "ERROR: unsupported architecture\n"
         exit 1
