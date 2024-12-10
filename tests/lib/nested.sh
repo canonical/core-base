@@ -186,7 +186,8 @@ start_nested_core_vm_unit(){
         PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
     elif os.query is-arm64; then
         QEMU_BIN=qemu-system-aarch64
-        PARAM_MACHINE="-machine virt"
+        PARAM_MACHINE="-machine virt,gic-version=max"
+        PARAM_CPU="-cpu max"
     else
         printf "ERROR: unsupported architecture\n"
         exit 1
