@@ -26,7 +26,7 @@ backends:
       - ubuntu-24.04-64:
           image: ubuntu-2404-64-virt-enabled
           storage: 25G
-          workers: 14
+          workers: 4
 
   google-nested-arm:
     type: google
@@ -38,7 +38,7 @@ backends:
       - ubuntu-22.04-arm-64:
           image: ubuntu-2204-arm-64-virt-enabled
           storage: 25G
-          workers: 8
+          workers: 1
 
   qemu-nested:
     type: qemu
