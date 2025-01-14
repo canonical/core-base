@@ -55,9 +55,6 @@ ifdef SNAP_FIPS_BUILD
 		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
 	fi    
 
-	# If we are doing a fips build, make sure updates are enabled
-	# and we export that to the hooks
-	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
 endif
 	mkdir -p $(DESTDIR)/install-data
 	/bin/cp -r $(CRAFT_STAGE)/local-debs $(DESTDIR)/install-data/local-debs
