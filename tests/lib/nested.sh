@@ -26,11 +26,6 @@ wait_for_ssh(){
             return 1
         fi
         sleep "$wait"
-
-        # temporary measure
-        if [ $retry -eq 1000 ]; then
-            cat ${WORK_DIR}/serial.log
-        fi
     done
 }
 
@@ -235,6 +230,7 @@ start_nested_core_vm_unit(){
     PARAM_NETWORK="-net nic,model=virtio -net user,hostfwd=tcp::${SSH_PORT}-:22"
     # TODO: do we need monitor port still?
     PARAM_MONITOR="-monitor tcp:127.0.0.1:${MON_PORT},server=on,wait=off"
+    PARAM_USB="-usb"
     PARAM_RANDOM="-object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0"
     PARAM_CPU=""
     PARAM_TRACE="-d cpu_reset"
@@ -296,6 +292,7 @@ start_nested_core_vm_unit(){
                 ${PARAM_RANDOM} \
                 ${PARAM_IMAGE} \
                 ${PARAM_SERIAL} \
+                ${PARAM_USB} \
                 ${PARAM_MONITOR}; then
         echo "Failed to start ${SVC_NAME}" 1>&2
         systemctl status "${SVC_NAME}" || true
@@ -304,8 +301,6 @@ start_nested_core_vm_unit(){
 
     # Wait until ssh is ready
     if ! wait_for_ssh "${SVC_NAME}"; then
-        # dump the logs
-        cat ${WORK_DIR}/serial.log
         return 1
     fi
 }
