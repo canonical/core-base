@@ -16,9 +16,11 @@ runs:
     shell: bash
     run: |
         # Configure parameters to filter logs (these logs are sent read by grafana agent)
-        CHANGE_ID="${{ github.event.number }}"
-        if [ -z "$CHANGE_ID" ]; then
-          CHANGE_ID="main"
+        
+        if [ "${{ github.event.pull_request }}" ]; then
+          CHANGE_ID="${{ github.event.pull_request.base.ref }}_pr_${{ github.event.number }}"
+        else
+          CHANGE_ID="${{ github.ref_name }}"
         fi
         FILTERED_LOG_FILE="${{ github.workspace }}/spread_${CHANGE_ID}_n${{ github.run_attempt }}.filtered.log"
         echo FILTERED_LOG_FILE="$FILTERED_LOG_FILE"  >> $GITHUB_ENV
