@@ -76,16 +76,12 @@ start_snapd_core_vm() {
     fi
 
     # for core22+
-    wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_CODE.secboot.fd
-    sudo mv OVMF_CODE.secboot.fd /usr/share/OVMF/OVMF_CODE.secboot.fd
-    wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_VARS.snakeoil.fd
-    sudo mv OVMF_VARS.snakeoil.fd /usr/share/OVMF/OVMF_VARS.snakeoil.fd
     wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_VARS.ms.fd
     sudo mv OVMF_VARS.ms.fd /usr/share/OVMF/OVMF_VARS.ms.fd
 
     mkdir -p "${work_dir}/image/"
     cp -f "/usr/share/OVMF/OVMF_VARS.ms.fd" "${work_dir}/image/OVMF_VARS.fd"
-    PARAM_BIOS="-bios /usr/share/ovmf/OVMF.fd"
+    PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${work_dir}/image/OVMF_VARS.fd,if=pflash,format=raw"
     PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
     PARAM_IMAGE="-drive file=${work_dir}/pc.img,cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
@@ -214,9 +210,9 @@ prepare_base_cloudinit() {
     create_cloud_init_cdimage_config "${gadgetdir}/cloud.conf"
 
     # add extra debug params to kernel command line
-    printf "systemd.journald.forward_to_console=1 console=ttyS0\n" > $gadgetdir/cmdline.extra
+    printf "snapd.debug=1 systemd.journald.forward_to_console=1 console=ttyS0\n" > $gadgetdir/cmdline.extra
 
-    # repack kernel snap
+    # repack gadget snap
     rm upstream-pc-gadget.snap
     snap pack --filename=upstream-pc-gadget.snap "$gadgetdir"
     rm -r $gadgetdir

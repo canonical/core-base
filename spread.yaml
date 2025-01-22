@@ -32,13 +32,13 @@ backends:
     type: google
     key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
     location: snapd-spread/us-central1-a
-    plan: t2a-standard-4
+    plan: t2a-standard-2
     halt-timeout: 2h
     systems:
       - ubuntu-22.04-arm-64:
           image: ubuntu-2204-arm-64-virt-enabled
           storage: 25G
-          workers: 1
+          workers: 4
 
   qemu-nested:
     type: qemu
@@ -100,7 +100,7 @@ prepare: |
   unset REBOOT
 
 warn-timeout: 40m
-kill-timeout: 60m
+kill-timeout: 120m
 
 suites:
   tests/spread/build/:

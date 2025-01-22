@@ -67,7 +67,7 @@ jobs:
 
       - name: Run arm64 tests
         run: |
-          spread-arm google-nested-arm:tests/spread/main/
+          spread google-nested-arm:tests/spread/main/
 
       - name: Discard spread workers
         if: always()

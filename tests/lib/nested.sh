@@ -162,16 +162,6 @@ prepare_bios_22(){
 prepare_bios_24(){
     mkdir -p "${WORK_DIR}/image/"
 
-    # use a bundle EFI bios by default
-    local PARAM_BIOS OVMF_VARS
-    PARAM_BIOS=""
-    OVMF_VARS=""
-    if os.query is-arm; then
-        PARAM_BIOS="-bios /usr/share/AAVMF/AAVMF_CODE.fd"
-    else
-        PARAM_BIOS="-bios /usr/share/ovmf/OVMF.fd"
-    fi
-
     # for core22+
     wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_CODE.secboot.fd
     mv OVMF_CODE.secboot.fd /usr/share/OVMF/OVMF_CODE.secboot.fd
@@ -180,6 +170,11 @@ prepare_bios_24(){
     wget -q https://storage.googleapis.com/snapd-spread-tests/dependencies/OVMF_VARS.ms.fd
     mv OVMF_VARS.ms.fd /usr/share/OVMF/OVMF_VARS.ms.fd
 
+    local PARAM_BIOS OVMF_VARS OVMF_CODE
+    PARAM_BIOS=""
+    OVMF_CODE=""
+    OVMF_VARS=""
+
     # In this case the kernel.efi is unsigned and signed with snaleoil certs
     if [ "${ENABLE_OVMF_SNAKEOIL:-false}" = "true" ]; then
         OVMF_VARS="snakeoil"
@@ -187,8 +182,16 @@ prepare_bios_24(){
         OVMF_VARS="ms"
     fi
 
+    # use a bundle EFI bios by default
+    if os.query is-arm; then
+        cp -f /usr/share/AAVMF/AAVMF_VARS.fd "${WORK_DIR}/AAVMF_VARS.fd"
+        PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE.fd,if=pflash,format=raw,readonly=on -drive file=${WORK_DIR}/AAVMF_VARS.fd,if=pflash,format=raw"
+    else
+        cp -f "/usr/share/OVMF/OVMF_VARS.fd" "${WORK_DIR}/OVMF_VARS.fd"
+        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/OVMF_VARS.${OVMF_VARS}.fd,if=pflash,format=raw"
+    fi
+
     if nested_is_secure_boot_enabled; then
-        local OVMF_CODE
         OVMF_CODE="secboot"
         if os.query is-arm; then
             cp -f "/usr/share/AAVMF/AAVMF_VARS.fd" "${WORK_DIR}/AAVMF_VARS.fd"
