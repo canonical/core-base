@@ -120,9 +120,9 @@ start_nested_core_vm_unit(){
         fi
         QEMU_BIN=qemu-system-x86_64
         PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
-        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS${VMF_VARS}.fd,if=pflash,format=raw"
+        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE_4M${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS_4M${VMF_VARS}.fd,if=pflash,format=raw"
         TPM_DEVICE=tpm-tis
-        cp -f "/usr/share/OVMF/OVMF_VARS${VMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS${VMF_VARS}.fd"
+        cp -f "/usr/share/OVMF/OVMF_VARS_4M${VMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS_4M${VMF_VARS}.fd"
     elif os.query is-arm64; then
         # Assume arm64
         # Unfortunately gce does not offer kvm enabled arm64 VMs
