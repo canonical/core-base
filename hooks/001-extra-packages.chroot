@@ -211,6 +211,8 @@ PACKAGES=(
     p11-kit-modules
     plymouth-label-ft
     polkitd
+    python3-dbus
+    python3-netifaces
     rfkill
     squashfs-tools
     sudo
