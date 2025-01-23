@@ -71,4 +71,5 @@
 # allow to update password policy
 /etc/security/pwquality.conf            auto                    persistent  transition  none
 # polkit
+/etc/polkit-1/actions                   auto                    persistent  none        none
 /etc/polkit-1/rules.d                   auto                    persistent  none        none
