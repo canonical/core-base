@@ -3,7 +3,7 @@ TESTDIR ?= "prime/"
 SNAP_NAME=core22
 SNAP_BUILD_NAME=core22
 SNAP_CORE_TRACK:=latest
-CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
+CODENAME:=$(shell . /etc/os-release; echo "$$VERSION_CODENAME")
 
 # include any fips environmental setup if the file exists.
 # Variables:
@@ -53,7 +53,11 @@ ifdef SNAP_FIPS_BUILD
 	if [ -e ./fips.conf ]; then \
 		mkdir -p $(DESTDIR)/etc/apt/auth.conf.d/; \
 		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
-	fi    
+	fi
+
+	# If we are doing a fips build, make sure updates are enabled
+	# and we export that to the hooks
+	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
 
 endif
 	mkdir -p $(DESTDIR)/install-data
