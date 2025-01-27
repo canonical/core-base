@@ -33,7 +33,7 @@ EOF
 
 # Leave only the font used by ubuntu-core theme
 rm -rf /usr/share/fonts/truetype/dejavu/
-mv /usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf /usr/share/fonts/Plymouth.ttf
+cp '/usr/share/fonts/truetype/ubuntu/Ubuntu[wdth,wght].ttf' /usr/share/fonts/Plymouth.ttf
 rm -rf /usr/share/fonts/truetype/ubuntu/
 
 # We pull by "Wants" instead, so these units are not run unless plymouth-start is
