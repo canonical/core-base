@@ -69,18 +69,15 @@ qemu-kvm acceleration in the container for the nested instance.
 
 This backend requires that your host machine supports KVM.
 
-1. Setup any prerequisites and build the LXD image needed for testing. The following commands will install lxd
-and yq (needed for yaml manipulation), download the newest image and import it into LXD.
+1. Setup any prerequisites and build the LXD image needed for testing. The following commands will install LXD,
+download the newest image and import it into LXD.
 ```
 sudo snap install lxd
-sudo snap install yq
 curl -o lxd-core24-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core24-img.tar.gz
 lxc image import lxd-core24-img.tar.gz --alias ucspread24
-lxc image show ucspread24 > temp.profile
-yq e '.properties.aliases = "ucspread24,amd64"' -i ./temp.profile
-yq e '.properties.remote = "images"' -i ./temp.profile
-cat ./temp.profile | lxc image edit ucspread24
-rm ./temp.profile ./lxd-core24-img.tar.gz
+lxc image set-property ucspread24 aliases ucspread24,amd64
+lxc image set-property ucspread24 remote images
+rm ./lxd-core24-img.tar.gz
 ```
 2. Import the LXD core24 test profile. Make sure your working directory is the root of this repository.
 ```
