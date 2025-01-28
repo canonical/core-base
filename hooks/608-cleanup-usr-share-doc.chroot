@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Remove /usr/share/doc sub directories and symlinks which were pulled in from
+# multiple packages
+
+set -xe
+
+echo "I: Removing /usr/share/doc sub directories and symlinks"
+
+find /usr/share/doc/ -mindepth 1 -maxdepth 1 -type d -exec rm -rv {} +
+find /usr/share/doc/ -mindepth 1 -maxdepth 1 -type l -exec rm -v {} +
