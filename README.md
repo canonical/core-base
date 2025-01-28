@@ -82,7 +82,7 @@ rm ./lxd-core24-img.tar.gz
 2. Import the LXD core24 test profile. Make sure your working directory is the root of this repository.
 ```
 lxc profile create core24
-cat tests/spread/core24.lxdprofile | lxc profile edit core24
+lxc profile edit < tests/spread/core24.lxdprofile
 ```
 3. Set environment variable to enable KVM acceleration for the nested qemu instance
 ```
