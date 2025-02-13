@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -eu
-
-if [ "${SERVICE_RESULT}" == "success" ] && [ "${EXIT_STATUS}" -eq 22 ]; then
-  systemctl start --no-block "${1}"
-fi
