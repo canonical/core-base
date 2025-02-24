@@ -28,6 +28,12 @@ runs:
         # Add start line to filtered log
         echo "GRAFANA START: pr ${CHANGE_ID} attempt ${{ github.run_attempt }} run ${{ github.run_id }}" > "$FILTERED_LOG_FILE"
 
+  - name: Checkout snapd-testing-tools
+    uses: actions/checkout@v2
+    with:
+      repository: canonical/snapd-testing-tools
+      path: snapd-testing-tools
+
   - name: Run spread
     shell: bash
     run: |
@@ -35,7 +41,7 @@ runs:
       (
         set -o pipefail
         ${{ inputs.spread-command }} | \
-          ./tests/lib/external/snapd-testing-tools/utils/log-filter -o $FILTERED_LOG_FILE -e Debug -e WARNING: -f Failed=NO_LINES -f Error=NO_LINES | \
+          ${{ github.workspace }}/snapd-testing-tools/utils/log-filter -o $FILTERED_LOG_FILE -e Debug -e WARNING: -f Failed=NO_LINES -f Error=NO_LINES | \
           tee spread.log
       )
 
@@ -47,7 +53,7 @@ runs:
       if [ -e spread.log ]; then
         echo "Running spread log analyzer"
         ACTIONS_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
-        ./tests/lib/external/snapd-testing-tools/utils/log-parser spread.log --output spread-results.json --cut 1 >/dev/null
+        ${{ github.workspace }}/utils/log-parser spread.log --output spread-results.json --cut 1 >/dev/null
         while IFS= read -r line; do
             if [ ! -z "$line" ]; then
                 echo "Adding failed test line to filtered log"
