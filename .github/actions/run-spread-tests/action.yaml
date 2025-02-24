@@ -29,7 +29,7 @@ runs:
         echo "GRAFANA START: pr ${CHANGE_ID} attempt ${{ github.run_attempt }} run ${{ github.run_id }}" > "$FILTERED_LOG_FILE"
 
   - name: Checkout snapd-testing-tools
-    uses: actions/checkout@v2
+    uses: actions/checkout@v4
     with:
       repository: canonical/snapd-testing-tools
       path: snapd-testing-tools
