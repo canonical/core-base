@@ -27,9 +27,14 @@ mv etc/pam.d/* usr/lib/pam.d
 # Prefix all includes with /usr/lib/pam.d for now, we have to do this unfortunately
 # due to a bug in the debian patch for @includes.
 # See filed bug: https://bugs.launchpad.net/ubuntu/+source/pam/+bug/2087827
-# XXX: Remove these two line once its fixed upstream
+# XXX: Remove these two replacements once its fixed upstream
 find usr/lib/pam.d/ -type f -exec sed -i -e 's/\@include /\@include \/usr\/lib\/pam.d\//g' {} \;
-find usr/lib/pam.d/ -type f -name "*-l" -exec gawk -i inplace ' BEGIN{OFS="\t"} { if($2 == "include") $3="/usr/lib/pam.d/"$3; print } ' {} \;
+for file in usr/lib/pam.d/*-l;
+do
+    echo "replacing pam.d includes in $file"
+    awk ' BEGIN{OFS="\t"} { if($2 == "include") $3="/usr/lib/pam.d/"$3; print } ' "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
+done
 
 # cloud-init adds stuff here
 rm -rvf /etc/profile.d/Z99-cloud*
