@@ -29,6 +29,9 @@ mv etc/pam.d/* usr/lib/pam.d
 # See filed bug: https://bugs.launchpad.net/ubuntu/+source/pam/+bug/2087827
 # XXX: Remove these two replacements once its fixed upstream
 find usr/lib/pam.d/ -type f -exec sed -i -e 's/\@include /\@include \/usr\/lib\/pam.d\//g' {} \;
+# Also handle the other include file format. There are currently two different types of includes
+# `include` (inside files postfixed with -l) and @include, which can appear in all the other types
+# of files.
 for file in usr/lib/pam.d/*-l;
 do
     echo "replacing pam.d includes in $file"
