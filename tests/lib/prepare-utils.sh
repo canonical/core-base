@@ -76,16 +76,8 @@ start_snapd_core_vm() {
     fi
 
     mkdir -p "${work_dir}/image/"
-    if [ -e /usr/share/OVMF/OVMF_VARS.fd ]; then
-        cp -f /usr/share/OVMF/OVMF_VARS.fd "${work_dir}/image/OVMF_VARS.fd"
-    elif [ -e /usr/share/OVMF/OVMF_VARS_4M.fd ]; then 
-        cp -f /usr/share/OVMF/OVMF_VARS_4M.fd "${work_dir}/image/OVMF_VARS.fd"
-    else
-        echo "missing OVMF_VARS path"
-        exit 1
-    fi
-
-    PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${work_dir}/image/OVMF_VARS.fd,if=pflash,format=raw"
+    cp -f /usr/share/OVMF/OVMF_VARS_4M.fd "${work_dir}/image/OVMF_VARS.fd"
+    PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE_4M.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${work_dir}/image/OVMF_VARS.fd,if=pflash,format=raw"
     PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
     PARAM_IMAGE="-drive file=${work_dir}/pc.img,cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
