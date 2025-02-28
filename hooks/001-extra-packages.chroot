@@ -172,9 +172,9 @@ apt-get update
 # when doing a FIPS build we will allow downgrades due to package
 # versions possibly being lower in the FIPS ppa
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
-    apt-get dist-upgrade -y --allow-downgrades
+    apt-get dist-upgrade -y --allow-downgrades -o Dpkg::Options::="--force-confnew"
 else
-    apt-get dist-upgrade -y
+    apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew"
 fi
 
 PACKAGES=(
