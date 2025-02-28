@@ -12,6 +12,10 @@ on:
       - main
       - 'core[0-9][0-9]'
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: self-hosted
@@ -57,8 +61,9 @@ jobs:
           path: "${{ github.workspace }}/core22.artifact"
       
       - name: Run tests
-        run: |
-          spread google-nested:tests/spread/main/
+        uses: ./.github/actions/run-spread-tests
+        with:
+          spread-command: spread google-nested:tests/spread/main/
 
       - name: Discard spread workers
         if: always()
@@ -113,10 +118,11 @@ jobs:
           echo "************* STARTING CORE22 VM *************"
           start_snapd_core_vm '${{ github.workspace }}'
 
-          cd snapd
-          
-          # add any test suites that should be tested here
-          SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
+      - name: Run snapd spread
+        uses: ./core-base/.github/actions/run-spread-tests
+        with:
+          working-directory: snapd
+          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-22-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()
