@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This script will try to find a suiteable snapd snap and start
 # snapd and its associated services from it.
@@ -18,7 +18,7 @@ run_on_unseeded() {
         # dynamic linker
         # /snap/snapd/current/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
         # is available to run snapd.
-        [ -d /snap/snapd ] || mkdir -p /snap/snapd
+        mkdir -p /snap/snapd
         ln -sf "${SNAPD_BASE_DIR}" /snap/snapd/current
     fi
 
@@ -27,9 +27,13 @@ run_on_unseeded() {
     # a systemd socket unit so that systemd owns the socket, otherwise
     # the socket file would be removed by snapd on exit and the snapd.seeded
     # service will fail because it has nothing to talk to anymore.
+    socket_args=()
+    while IFS= read -r socket; do
+        socket_args+=(--socket-property)
+        socket_args+=("$socket")
+    done < <(grep -E '^ListenStream=.+' /snap/snapd/current/lib/systemd/system/snapd.socket)
     systemd-run --unit=snapd-seeding --service-type=notify \
-                --socket-property ListenStream=/run/snapd.socket \
-                --socket-property ListenStream=/run/snapd-snap.socket \
+                "${socket_args[@]}" \
                 --property KeyringMode=inherit "$SNAPD_BASE_DIR"/usr/lib/snapd/snapd
     # we need to start the snapd service from above explicitly, systemd-run
     # only enables the socket but does not start the service.
@@ -48,17 +52,14 @@ run_on_unseeded() {
 
 # Unseeded systems need to be seeded first, this will start snapd
 # and snapd will restart itself after the seeding.
-set +e
 # systemctl status returns exit code 4 for missing services, and 3 for
 # non-running services
-systemctl status snapd.service
-snapdExists=$?
-if [ ! -e /var/lib/snapd/state.json ] || [ $snapdExists = 4 ] ; then
-    set -e
+snapdExists=0
+systemctl status snapd.service || snapdExists=$?
+if [ ! -e /var/lib/snapd/state.json ] || [ $snapdExists -eq 4 ] ; then
     if ! run_on_unseeded; then
         echo "cannot run snapd from the seed"
         exit 1
     fi
     exit 0
 fi
-set -e
