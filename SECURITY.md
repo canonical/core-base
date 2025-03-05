@@ -4,7 +4,9 @@ The release model of the core22 snap is following rolling releases.
 
 The snap is released into the edge channel, where edge validation is performed. If the validation 
 succeeds, it is automatically promoted to the beta channel if a snap revision is not already in progress 
-for beta validation. When in beta-validation the snap is then tested on various real hardware.
+for beta validation. When in beta-validation the snap is then tested on various real hardware. If the beta
+validation is passed, the snap moves to candidate where it stays for some time to allow external testing
+and integration, before it moves to stable.
 
 ## Supported versions
 <!-- Include start supported versions -->
