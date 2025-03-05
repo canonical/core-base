@@ -1,10 +1,13 @@
 # Security policy
 
+The release model of the core22 snap is following rolling releases. 
+
+The snap is released into the edge channel, where edge validation is performed. If the validation 
+succeeds, it is automatically promoted to the beta channel if a snap revision is not already in progress 
+for beta validation. When in beta-validation the snap is then tested on various real hardware.
+
 ## Supported versions
 <!-- Include start supported versions -->
-The release model of the core22 snap is following rolling releases. 
-The snap is released into the edge channel, and automatically promoted to 
-the beta channel if a snap revision is not already in progress for beta validation. 
 When reporting security issues against the core22 snap, only the latest 
 release of the core22 snap is supported.
 
@@ -21,7 +24,9 @@ from debian packages carried inside the core22 snap.
 
 Security vulnerability that apply to packages in the Jammy archives also shipped by the
 core22 snap. Any vulnerability that allows the core22 snap to interfere outside 
-of the intended restrictions also qualifies as a security issue.
+of the intended restrictions also qualifies as a security issue, including vulnerabilities that
+allows an unprivileged user on the local system to escalate privileges or cause a 
+denial of service etc due to the use of the contents of the core22 snap on the system.
 
 ## Reporting a vulnerability
 
@@ -30,9 +35,6 @@ The easiest way to report a security issue is through
 [Privately reporting a security
 vulnerability](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
 for instructions.
-
-Alternatively, please email [security@ubuntu.com](mailto:security@ubuntu.com) with a description of the issue, the
-steps you took to create the issue, affected versions, and, if known, mitigations for the issue.
 
 The Ubuntu Core GitHub admins will be notified of the issue and will work with you
 to determine whether the issue qualifies as a security issue and, if so, in
