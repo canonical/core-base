@@ -8,7 +8,15 @@
 
 set -e
 
-if [ "$(dpkg --print-architecture)" != "amd64" ]; then
+arch=$(dpkg --print-architecture)
+
+if [ "$arch" = "amd64" ] || [ "$arch" = "arm64" ]; then
+    # TODO: test is not ideal but at this point we have no apt/dpkg db anymore
+    echo "Ensure that the cryptsetup version is pulled from the fde-ice ppa"
+    grep -E 'cryptsetup.*+ice' usr/share/snappy/dpkg.list
+fi
+
+if [ "$arch" != "amd64" ]; then
     echo "only testing on amd64 for now"
     exit 0
 fi
@@ -129,7 +137,3 @@ if [ -n "$DIFF" ]; then
     echo "test_pkg_removal.sh test."
     exit 1
 fi
-
-# TODO: test is not ideal but at this point we have no apt/dpkg db anymore
-echo "Ensure that the cryptsetup version is pulled from the fde-ice ppa"
-grep -E 'cryptsetup.*+ice' usr/share/snappy/dpkg.list 
