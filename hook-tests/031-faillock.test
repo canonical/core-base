@@ -2,4 +2,4 @@
 
 set -eu
 
-grep pam_faillock.so usr/lib/pam.d/common-auth
+grep pam_faillock.so etc/pam.d/common-auth
