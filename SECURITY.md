@@ -24,7 +24,7 @@ from debian packages carried inside the core22 snap.
 
 ## What qualifies as a security issue
 
-Security vulnerability that apply to packages in the Jammy archives also shipped by the
+Security vulnerabilities that apply to packages in the Ubuntu 22.04 LTS archives also shipped by the
 core22 snap. Any vulnerability that allows the core22 snap to interfere outside 
 of the intended restrictions also qualifies as a security issue, including vulnerabilities that
 allows an unprivileged user on the local system to escalate privileges or cause a 
