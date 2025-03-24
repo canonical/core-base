@@ -219,6 +219,7 @@ PACKAGES=(
     systemd-sysv
     systemd-timesyncd
     systemd-resolved
+    systemd-zram-generator
     tzdata
     udev
     vim-tiny

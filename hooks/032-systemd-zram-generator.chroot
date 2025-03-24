@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -eux
+
+mkdir -p /usr/lib/systemd/zram-generator.conf.d
+mv /etc/systemd/zram-generator.conf /usr/lib/systemd/zram-generator.conf.d/ram0.conf
+
+mkdir -p /usr/lib/modules-load.d
+mv /etc/modules-load.d/20-zram-generator.conf /usr/lib/modules-load.d/20-zram-generator.conf
