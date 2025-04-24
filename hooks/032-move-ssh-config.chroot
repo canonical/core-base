@@ -1,0 +1,22 @@
+#!/bin/sh -ex
+
+# We want the symlinks for the ssh service in the systemd distro directory
+# instead of in the admin directory. Previously, these links were copied to
+# /etc/systemd on first boot, which is an issue as these symlinks are new to
+# core24, so when remodeling from 20/22 to 24 they are not copied around as
+# handle-writable-paths sees that the /etc/systemd folder already exists. Now
+# this ensures that the links are static and will always be present. This is
+# not a problem when enabling/disabling ssh as for that the services rely on
+# the presence of the /etc/ssh/sshd_not_to_be_run file, and in any case is a
+# step forward in the path of having an empty /etc on installation in the
+# future.
+
+distro_sysd_d=/usr/lib/systemd/system
+mkdir -p "$distro_sysd_d"/ssh.service.requires
+
+ln -s ../ssh.socket "$distro_sysd_d"/sockets.target.wants/ssh.socket
+ln -s ../ssh.socket "$distro_sysd_d"/ssh.service.requires/ssh.socket
+
+admin_sysd_d=/etc/systemd/system
+rm "$admin_sysd_d"/sockets.target.wants/ssh.socket
+rm -r "$admin_sysd_d"/ssh.service.requires
