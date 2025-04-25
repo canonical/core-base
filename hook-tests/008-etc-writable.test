@@ -5,7 +5,6 @@ set -e
 echo "Ensure links worked"
 test -e etc/localtime
 test -e etc/hostname
-test -e etc/motd
 test -e etc/issue
 test $(readlink etc/localtime) = "writable/localtime"
 test $(readlink etc/writable/localtime) = "/usr/share/zoneinfo/Etc/UTC"
@@ -13,3 +12,4 @@ test $(readlink etc/writable/localtime) = "/usr/share/zoneinfo/Etc/UTC"
 echo "Ensure writable dirs are available"
 test -d etc/systemd/system.conf.d
 test -d etc/systemd/user.conf.d
+test -d etc/motd.d
