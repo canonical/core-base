@@ -2,12 +2,15 @@
 
 set -e
 
-grep -q "Welcome to Ubuntu Core 24" etc/motd
+grep -q "Welcome to Ubuntu Core 24" usr/lib/motd.d/50-default
 
 test ! -e etc/default/motd-news
-test ! -e etc/update-motd.d/00-header
-test ! -e etc/update-motd.d/10-help-text
 test ! -e usr/lib/systemd/system/motd-news.service
 test ! -e usr/lib/systemd/system/motd-news.timer
 
-! grep -q unminimize etc/update-motd.d/*
+# Checks for empty update-motd.d - for future bases this will be a canary to
+# check if we need to leave anything new there.
+# shellcheck disable=SC2034 # read needs a variable
+if find etc/update-motd.d -mindepth 1 -maxdepth 1 | read -r var
+then exit 1
+fi
