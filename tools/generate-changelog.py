@@ -69,7 +69,7 @@ def get_changelog_from_file(docs_d, pkg):
         with gzip.open(chl_deb_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     elif os.path.exists(chl_path):
-        with gzip.open(chl_deb_path) as chl_fh:
+        with gzip.open(chl_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     else:
         raise FileNotFoundError("no supported changelog found for package " + pkg)
