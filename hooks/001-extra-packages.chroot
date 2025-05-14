@@ -24,6 +24,14 @@ apt-get install --no-install-recommends -y ca-certificates
 
 # shellcheck disable=SC1091
 CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
+case "${CODENAME}" in
+    questing)
+        PPA_CODENAME=plucky
+        ;;
+    *)
+        PPA_CODENAME="${CODENAME}"
+        ;;
+esac
 
 # TODO: There is no PPA for noble yet.
 if false; then
@@ -82,7 +90,7 @@ EOF
 fi
 
 # enable snappy-dev so we can download latest snapd
-echo "deb http://ppa.launchpadcontent.net/snappy-dev/image/ubuntu $CODENAME main" > /etc/apt/sources.list.d/snappy-dev.list
+echo "deb http://ppa.launchpadcontent.net/snappy-dev/image/ubuntu ${PPA_CODENAME} main" > /etc/apt/sources.list.d/snappy-dev.list
 
 cat >/etc/apt/trusted.gpg.d/snappy-dev.asc <<'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
