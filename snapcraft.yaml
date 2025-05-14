@@ -6,8 +6,8 @@ description: |
   The base snap based on the Ubuntu 24.04 release.
 confinement: strict
 type: base
-build-base: core24
-grade: stable
+build-base: devel
+grade: devel
 assumes: [snapd2.55.5]
 
 parts:
