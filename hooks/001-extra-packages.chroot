@@ -224,6 +224,7 @@ PACKAGES=(
     sudo
     systemd
     systemd-coredump
+    systemd-cryptsetup
     systemd-sysv
     systemd-timesyncd
     systemd-resolved
