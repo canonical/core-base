@@ -1,7 +1,7 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
-SNAP_NAME=core24
-SNAP_BUILD_NAME=core24
+SNAP_NAME=core26
+SNAP_BUILD_NAME=core26
 CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 # include any fips environmental setup if the file exists.

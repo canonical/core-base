@@ -10,7 +10,7 @@ set -x
 install_base_deps
 
 # download snaps required for us to build the image
-download_core24_snaps "$SNAP_BRANCH"
+download_core26_snaps "$SNAP_BRANCH"
 
 # create test user for spread to use
 groupadd --gid 12345 test
