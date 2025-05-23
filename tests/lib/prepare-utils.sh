@@ -127,7 +127,7 @@ get_arch() {
 
 get_core_snap_name() {
     printf -v date '%(%Y%m%d)T' -1
-    echo "core24_${date}_$(get_arch).snap"
+    echo "core26_${date}_$(get_arch).snap"
 }
 
 install_base_deps() {
@@ -150,13 +150,13 @@ install_base_deps() {
     sudo snap install ubuntu-image --classic --channel=latest/edge
 }
 
-download_core24_snaps() {
+download_core26_snaps() {
     # FIXME: there is no reason to select a branch when the model is
     # hard coded.
     local snap_branch="$1"
 
     # get the model
-    curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-24-$(get_arch)-dangerous.model
+    curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-26-$(get_arch)-dangerous.model
 
     case "${snap_branch}" in
         edge)
@@ -170,8 +170,8 @@ download_core24_snaps() {
     esac
 
     # download neccessary images
-    snap download pc-kernel --channel=24/"${kernel_branch}" --basename=upstream-pc-kernel
-    snap download pc --channel=24/${snap_branch} --basename=upstream-pc-gadget
+    snap download pc-kernel --channel=26/"${kernel_branch}" --basename=upstream-pc-kernel
+    snap download pc --channel=26/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
 
