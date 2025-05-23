@@ -1,6 +1,6 @@
 # Security policy
 
-The release model of the core24 snap is following rolling releases. 
+The release model of the core26 snap is following rolling releases. 
 
 The snap is released into the edge channel, where edge validation is performed. If the validation 
 succeeds, it is automatically promoted to the beta channel if a snap revision is not already in progress 
@@ -10,25 +10,25 @@ and integration, before it moves to stable.
 
 ## Supported versions
 <!-- Include start supported versions -->
-When reporting security issues against the core24 snap, only the latest 
-release of the core24 snap is supported.
+When reporting security issues against the core26 snap, only the latest 
+release of the core26 snap is supported.
 
-The core24 snap has regular releases that are fully automated. There are two 
-types of security fixes that can be shipped with new versions of the core24 snap.
+The core26 snap has regular releases that are fully automated. There are two 
+types of security fixes that can be shipped with new versions of the core26 snap.
 
 - Security fixes that are relevant to the files inside this repository.
 - Security fixes that are carried from the official archives. I.e security fixes 
-from debian packages carried inside the core24 snap.
+from debian packages carried inside the core26 snap.
 
 <!-- Include end supported versions -->
 
 ## What qualifies as a security issue
 
-Security vulnerabilities that apply to packages in the Ubuntu 24.04 LTS archives also shipped by the
-core24 snap. Any vulnerability that allows the core24 snap to interfere outside 
+Security vulnerabilities that apply to packages in the Ubuntu 26.04 LTS archives also shipped by the
+core26 snap. Any vulnerability that allows the core26 snap to interfere outside 
 of the intended restrictions also qualifies as a security issue, including vulnerabilities that
 allows an unprivileged user on the local system to escalate privileges or cause a 
-denial of service etc due to the use of the contents of the core24 snap on the system.
+denial of service etc due to the use of the contents of the core26 snap on the system.
 
 ## Reporting a vulnerability
 

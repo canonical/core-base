@@ -1,13 +1,13 @@
-name: core24
-# version: "24"
+name: core26
+# version: "26"
 adopt-info: bootstrap
-summary: Runtime environment based on Ubuntu 24.04
+summary: Runtime environment based on Ubuntu 26.04
 description: |
-  The base snap based on the Ubuntu 24.04 release.
+  The base snap based on the Ubuntu 26.04 release.
 confinement: strict
 type: base
-build-base: core24
-grade: stable
+build-base: devel
+grade: devel
 assumes: [snapd2.55.5]
 
 parts:
@@ -17,16 +17,18 @@ parts:
     build-packages:
       - wget
     build-environment:
-      - RELEASE: "24.04"
-      - DOT_RELEASE: "2"
-      - BASE: ubuntu-base-${RELEASE}${DOT_RELEASE:+.$DOT_RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
-      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
+      #- RELEASE: "26.04"
+      #- BASE: ubuntu-base-${RELEASE}${DOT_RELEASE:+.$DOT_RELEASE}-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
+      #- DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/releases/${RELEASE}/release
+      - BASE: questing-base-${CRAFT_ARCH_BUILD_FOR}.tar.gz
+      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/daily/current
+
       - URL: ${DIR_URL}/${BASE}
       - SHA256: ${DIR_URL}/SHA256SUMS
       - SIG: ${SHA256}.gpg
     override-pull: |
       craftctl default
-      wget "${SHA256}" "${SIG}" "${URL}"
+      wget -q "${SHA256}" "${SIG}" "${URL}"
       gpg --no-default-keyring \
           --keyring ./cd-image-keying.gpg \
           --verify SHA256SUMS.gpg SHA256SUMS
@@ -63,6 +65,7 @@ parts:
     # obviously for new core bases this cannot be the case, and
     # we need to wait until the first release with introducing
     # changelogs.
+    # TODO change to core26 when available
     build-snaps:
       - core24=latest/beta
     override-pull: |
@@ -71,7 +74,7 @@ parts:
       if git remote get-url origin | grep "fips"; then
         craftctl set version="$(/bin/date +%Y%m%d)+fips"
         echo "SNAP_FIPS_BUILD=1" > ./.fips-env
-        echo "SNAP_BUILD_NAME=core24-fips" >> ./.fips-env
+        echo "SNAP_BUILD_NAME=core26-fips" >> ./.fips-env
       else
         craftctl set version="$(/bin/date +%Y%m%d)"
         rm -f ./.fips-env

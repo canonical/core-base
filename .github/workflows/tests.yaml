@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core24.artifact"
+          path: "${{ github.workspace }}/core26.artifact"
 
       - name: Discard spread workers
         if: always()
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core24.artifact"
+          path: "${{ github.workspace }}/core26.artifact"
 
       - name: Run x86 tests
         uses: ./.github/actions/run-spread-tests
@@ -118,24 +118,24 @@ jobs:
           install_base_deps
 
           echo "************* DOWNLOADING SNAPS *************"
-          download_core24_snaps 'edge'
+          download_core26_snaps 'edge'
 
           echo "************* WRITING CLOUD-INIT CONFIG *************"
           prepare_base_cloudinit
 
-          echo "************* BUILDING CORE24 IMAGE *************"
+          echo "************* BUILDING CORE26 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
-          mv core24.artifact "$uc_snap"
+          mv core26.artifact "$uc_snap"
           build_base_image
 
-          echo "************* STARTING CORE24 VM *************"
+          echo "************* STARTING CORE26 VM *************"
           start_snapd_core_vm '${{ github.workspace }}'
 
       - name: Run snapd spread
         uses: ./core-base/.github/actions/run-spread-tests
         with:
           working-directory: snapd
-          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-24-64:tests/smoke/
+          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-26-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()

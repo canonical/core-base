@@ -9,7 +9,7 @@ get_config_option() {
 	[ -f /etc/ssh/sshd_config ] || return
 
 	# TODO: actually only one '=' allowed after option
-	awk -v option=$option 'tolower($1) == tolower(option) {print $2}' \
+	awk -v option="$option" 'tolower($1) == tolower(option) {print $2}' \
 		/etc/ssh/sshd_config
 }
 
@@ -21,7 +21,6 @@ host_keys_required() {
 		# No HostKey directives at all, so the server picks some
 		# defaults.
 		echo /etc/ssh/ssh_host_rsa_key
-		echo /etc/ssh/ssh_host_dsa_key
 		echo /etc/ssh/ssh_host_ecdsa_key
 		echo /etc/ssh/ssh_host_ed25519_key
 	fi
@@ -53,8 +52,6 @@ create_keys() {
 
 	create_key "Creating SSH2 RSA key; this may take some time ..." \
 		"$hostkeys" /etc/ssh/ssh_host_rsa_key -t rsa
-	create_key "Creating SSH2 DSA key; this may take some time ..." \
-		"$hostkeys" /etc/ssh/ssh_host_dsa_key -t dsa
 	create_key "Creating SSH2 ECDSA key; this may take some time ..." \
 		"$hostkeys" /etc/ssh/ssh_host_ecdsa_key -t ecdsa
 	create_key "Creating SSH2 ED25519 key; this may take some time ..." \

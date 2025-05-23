@@ -30,11 +30,6 @@ rm /etc/cloud/cloud.cfg.d/90_dpkg.cfg
 
 rm /etc/rmt
 
-# sysctl.conf is not writable and everything in there is commented out
-rm /etc/sysctl.conf
-# 99-sysctl.conf is a symlink to /etc/sysctl.conf
-rm /etc/sysctl.d/99-sysctl.conf
-
 rm -rf /etc/terminfo
 rm -rf /etc/tmpfiles.d
 
