@@ -2,10 +2,10 @@
 
 cat >/usr/lib/os-release<<EOF
 NAME="Ubuntu Core"
-VERSION="24"
+VERSION="26"
 ID=ubuntu-core
-PRETTY_NAME="Ubuntu Core 24"
-VERSION_ID="24"
+PRETTY_NAME="Ubuntu Core 26"
+VERSION_ID="26"
 HOME_URL="https://snapcraft.io/"
 BUG_REPORT_URL="https://bugs.launchpad.net/snappy/"
 EOF
