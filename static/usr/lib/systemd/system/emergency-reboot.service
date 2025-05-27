@@ -8,6 +8,3 @@ SuccessAction=reboot
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/sleep 10
-
-[Install]
-WantedBy=emergency.target

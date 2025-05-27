@@ -11,6 +11,3 @@ Conflicts=shutdown.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/lib/core/remount-core-fs
-
-[Install]
-WantedBy=local-fs.target
