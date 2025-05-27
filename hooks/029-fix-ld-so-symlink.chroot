@@ -2,7 +2,7 @@
 
 set -eu
 
-echo "Making the abosolute /lib64/ld-linux-x86-64.so.2 symlinks relative"
+echo "Making the absolute /lib64/ld-linux-x86-64.so.2 symlinks relative"
 
 # This way core mounted at /snap/core*/current/... refers to the ld
 # inside the core snap, rather than the system one.
