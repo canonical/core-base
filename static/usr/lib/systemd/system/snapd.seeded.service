@@ -6,6 +6,3 @@ After=core.start-snapd.service
 Type=oneshot
 ExecStart=/usr/bin/snap wait system seed.loaded
 RemainAfterExit=true
-
-[Install]
-WantedBy=multi-user.target cloud-final.service

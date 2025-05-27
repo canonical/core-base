@@ -8,6 +8,3 @@ After=secureboot-db.service
 ExecStart=/usr/lib/core/run-snapd-from-snap start
 Type=oneshot
 RemainAfterExit=true
-
-[Install]
-WantedBy=multi-user.target
