@@ -18,3 +18,7 @@ rm -rv usr/share/cmake
 rm -rv usr/share/bug
 # apport isn't included, so hooks are not used
 rm -rv usr/share/apport
+# whatever is left in /run
+rm -rv run/*
+# links to non-existing apt timers
+rm usr/lib/systemd/system/timers.target.wants/apt-daily*
