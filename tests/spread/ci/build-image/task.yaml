@@ -3,7 +3,7 @@ manual: true
 
 execute: |
     INSTANCE_NAME=spread-test
-    IMAGE_NAME=lxd-spread-core24-img
+    IMAGE_NAME=lxd-spread-core26-img
 
     # be in project folder
     cd $PROJECT_PATH
@@ -38,8 +38,8 @@ execute: |
     lxc stop $INSTANCE_NAME
 
     # make a tarball out of the container image and delete the container
-    lxc publish $INSTANCE_NAME --alias ucspread24
-    lxc image export ucspread24 ./$IMAGE_NAME
+    lxc publish $INSTANCE_NAME --alias ucspread26
+    lxc image export ucspread26 ./$IMAGE_NAME
 
     # upload the image file as https://storage.googleapis.com/snapd-spread-core/lxd/$IMAGE_NAME.tar.gz
     gsutil -o GSUtil:parallel_composite_upload_threshold=2000M cp "./$IMAGE_NAME.tar.gz" "gs://snapd-spread-core/lxd/$IMAGE_NAME.tar.gz"
