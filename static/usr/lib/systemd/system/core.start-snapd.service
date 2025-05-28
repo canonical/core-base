@@ -1,8 +1,8 @@
 [Unit]
 Description=Start the snapd services from the snapd snap
 RequiresMountsFor=/run
-Wants=secureboot-db.service
-After=secureboot-db.service
+Wants=secureboot-db.service tee-supplicant.service
+After=secureboot-db.service tee-supplicant.service
 
 [Service]
 ExecStart=/usr/lib/core/run-snapd-from-snap start
