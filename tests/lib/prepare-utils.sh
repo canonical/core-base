@@ -156,7 +156,7 @@ download_core26_snaps() {
     local snap_branch="$1"
 
     # get the model
-    curl -o ubuntu-core-dangerous.model https://raw.githubusercontent.com/snapcore/models/master/ubuntu-core-26-$(get_arch)-dangerous.model
+    cp "$PROJECT_PATH"/tests/lib/models/ubuntu-core-26-$(get_arch)-dangerous.model ubuntu-core-dangerous.model
 
     case "${snap_branch}" in
         edge)
@@ -170,7 +170,8 @@ download_core26_snaps() {
     esac
 
     # download neccessary images
-    snap download pc-kernel --channel=26/"${kernel_branch}" --basename=upstream-pc-kernel
+    # TODO reeplace with 26 track when available
+    snap download pc-kernel --channel=25.10/"${kernel_branch}" --basename=upstream-pc-kernel
     snap download pc --channel=26/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }

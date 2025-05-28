@@ -1,12 +1,12 @@
-project: core24
+project: core26
 
 environment:
-  SETUPDIR: /home/core24
+  SETUPDIR: /home/core26
   PROJECT_PATH: $SETUPDIR
   PATH: $PATH:$PROJECT_PATH/tests/bin:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
   TESTSLIB: $PROJECT_PATH/tests/lib
   SNAP_BRANCH: "edge" # stable/edge/beta
-  UC_VERSION: 24
+  UC_VERSION: 26
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"
   LANGUAGE: "en"
@@ -52,12 +52,12 @@ backends:
 
   lxd-nested:
     type: lxd
-    container-profiles: core24
+    container-profiles: core26
     systems:
       - ubuntu-24.04:
-          image: ucspread24
+          image: ucspread26
 
-path: /home/core24
+path: /home/core26
 
 exclude:
   - .git

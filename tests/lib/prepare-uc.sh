@@ -115,12 +115,12 @@ rm upstream-snapd.snap
 snap pack --filename=upstream-snapd.snap "$snapddir"
 rm -r $snapddir
 
-# build the core24 snap if it has not been provided to us by CI
+# build the base snap if it has not been provided to us by CI
 uc_snap="$(get_core_snap_name)"
 if [ ! -f "$PROJECT_PATH/core${UC_VERSION}.artifact" ]; then
     build_base_snap "$PROJECT_PATH"
 else
-    # use provided core24 snap
+    # use provided base snap
     cp "$PROJECT_PATH/core${UC_VERSION}.artifact" "$uc_snap"
 fi
 
