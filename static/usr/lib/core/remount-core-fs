@@ -10,6 +10,7 @@ FILESYSTEMS=(
     /run/mnt/ubuntu-save
     /run/mnt/ubuntu-seed
     /writable
+    /run/mnt/tee-data
 )
 
 for fs in "${FILESYSTEMS[@]}"; do
