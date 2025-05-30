@@ -1,11 +1,8 @@
 #!/bin/bash
 
 FILESYSTEMS=(
-    /run/mnt/base
     /run/mnt/data
     /run/mnt/gadget
-    /run/mnt/kernel
-    /run/mnt/snapd
     /run/mnt/ubuntu-boot
     /run/mnt/ubuntu-save
     /run/mnt/ubuntu-seed
