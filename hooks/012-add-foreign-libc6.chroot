@@ -2,6 +2,8 @@
 
 echo "I: Checking if we are amd64 and libc6:i386 should be installed"
 
+export DEBIAN_FRONTEND=noninteractive
+
 if [ "$(dpkg --print-architecture)" = "amd64" ]; then
     echo "I: Enabling i386 multiarch support on amd64"
     dpkg --add-architecture i386
