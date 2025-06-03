@@ -30,17 +30,17 @@ jobs:
       - name: x86 build
         run: |
           spread -artifacts=./artifacts google-nested:tests/spread/build/
-          find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
+          find ./artifacts -type f -name core26_amd64.artifact -exec cp {} "${{ github.workspace }}" \;
       
       - name: arm64 build
         run: |
           spread-arm -artifacts=./artifacts google-nested-arm:tests/spread/build/
-          find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
+          find ./artifacts -type f -name core26_arm64.artifact -exec cp {} "${{ github.workspace }}" \;
 
       - uses: actions/upload-artifact@v4
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core26.artifact"
+          path: "${{ github.workspace }}/*.artifact"
 
       - name: Discard spread workers
         if: always()
@@ -63,7 +63,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: core-snap
-          path: "${{ github.workspace }}/core26.artifact"
 
       - name: Run x86 tests
         uses: ./.github/actions/run-spread-tests
@@ -125,7 +124,7 @@ jobs:
 
           echo "************* BUILDING CORE26 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
-          mv core26.artifact "$uc_snap"
+          mv core26_"$(get_arch)".artifact "$uc_snap"
           build_base_image
 
           echo "************* STARTING CORE26 VM *************"
@@ -135,7 +134,8 @@ jobs:
         uses: ./core-base/.github/actions/run-spread-tests
         with:
           working-directory: snapd
-          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-26-64:tests/smoke/
+          # TODO change to 26 when available (not a lot of a difference as it is external)
+          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-24-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()

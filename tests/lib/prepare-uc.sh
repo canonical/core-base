@@ -117,11 +117,12 @@ rm -r $snapddir
 
 # build the base snap if it has not been provided to us by CI
 uc_snap="$(get_core_snap_name)"
-if [ ! -f "$PROJECT_PATH/core${UC_VERSION}.artifact" ]; then
+artifact="$PROJECT_PATH/core${UC_VERSION}_$(get_arch).artifact"
+if [ ! -f "$artifact" ]; then
     build_base_snap "$PROJECT_PATH"
 else
     # use provided base snap
-    cp "$PROJECT_PATH/core${UC_VERSION}.artifact" "$uc_snap"
+    cp "$artifact" "$uc_snap"
 fi
 
 # finally build the uc image
