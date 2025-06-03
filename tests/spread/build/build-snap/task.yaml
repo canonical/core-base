@@ -2,7 +2,8 @@ summary: Builds the core snap
 manual: true
 
 artifacts:
-  - core26.artifact
+  - core26_amd64.artifact
+  - core26_arm64.artifact
 
 prepare: |
   # for various utilities
@@ -18,4 +19,4 @@ execute: |
   build_base_snap "$PROJECT_PATH"
   
   SNAP_NAME="$(get_core_snap_name)"
-  cp "$PROJECT_PATH/$SNAP_NAME" "core26.artifact"
+  cp "$PROJECT_PATH/$SNAP_NAME" core26_"$(get_arch)".artifact
