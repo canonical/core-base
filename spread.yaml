@@ -22,6 +22,7 @@ backends:
     plan: n2-standard-4
     halt-timeout: 2h
     systems:
+      # TODO switch to 26 when available
       - ubuntu-24.04-64:
           workers: 4
           image: ubuntu-24.04-64
@@ -34,18 +35,17 @@ backends:
     plan: t2a-standard-4
     halt-timeout: 2h
     systems:
-      - ubuntu-22.04-arm-64:
+      # TODO switch to 26 when available
+      - ubuntu-24.04-arm-64:
           workers: 4
-          image: ubuntu-2204-arm-64-virt-enabled
+          image: ubuntu-2404-arm-64-virt-enabled
           storage: 25G
 
   qemu-nested:
     type: qemu
-    # TODO:UC22: uc22 needs 2G or grub will not loopback the kernel snap
-    #            we use nested VM's, so use 4G for the host until we can boot
-    #            uc22 with less RAM
     memory: 4G
     systems:
+      # TODO switch to 26 when available
       - ubuntu-24.04-64:
           username: ubuntu
           password: ubuntu
@@ -54,6 +54,7 @@ backends:
     type: lxd
     container-profiles: core26
     systems:
+      # TODO switch to 26 when available
       - ubuntu-24.04:
           image: ucspread26
 
