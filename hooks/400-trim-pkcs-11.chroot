@@ -28,6 +28,7 @@ rm -rf \
     /usr/bin/cryptoflex-tool \
     /usr/bin/danetool \
     /usr/bin/dnie-tool \
+    /usr/bin/dtrust-tool \
     /usr/bin/egk-tool \
     /usr/bin/eidenv \
     /usr/bin/gids-tool \
@@ -66,6 +67,7 @@ rm -rf \
     /usr/share/bash-completion/completions/cardos-tool \
     /usr/share/bash-completion/completions/cryptoflex-tool \
     /usr/share/bash-completion/completions/dnie-tool \
+    /usr/share/bash-completion/completions/dtrust-tool \
     /usr/share/bash-completion/completions/egk-tool \
     /usr/share/bash-completion/completions/eidenv \
     /usr/share/bash-completion/completions/gids-tool \
