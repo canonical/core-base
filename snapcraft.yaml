@@ -61,13 +61,16 @@ parts:
       - python3-yaml
     override-pull: |
       craftctl default
+
+      date_tag=$(./get-version.sh)
+
       # detect whether we are doing a fips build on LP
       if git remote get-url origin | grep "fips"; then
-        craftctl set version="$(/bin/date +%Y%m%d)+fips"
+        craftctl set version="$date_tag"+fips
         echo "SNAP_FIPS_BUILD=1" > ./.fips-env
         echo "SNAP_BUILD_NAME=core24-fips" >> ./.fips-env
       else
-        craftctl set version="$(/bin/date +%Y%m%d)"
+        craftctl set version=$date_tag
         rm -f ./.fips-env
       fi
     override-prime: |
