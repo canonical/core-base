@@ -62,7 +62,7 @@ parts:
     override-pull: |
       craftctl default
 
-      date_tag=$(./get-tag.sh)
+      date_tag=$(./get-version.sh)
 
       # detect whether we are doing a fips build on LP
       if git remote get-url origin | grep "fips"; then
