@@ -248,6 +248,13 @@ def main():
         changes += pkg_changes
     else:
         changes += 'No changes for primed packages\n\n'
+
+    # append the old changelog changes
+    if old_changelog != "" and os.path.exists(old_changelog):
+        with open(old_changelog, "r") as f:
+            changes += f.read()
+
+    # write the changelog
     with open(new_changelog, "w") as f:
         f.write(changes)
     return 0
