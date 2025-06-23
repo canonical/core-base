@@ -63,8 +63,9 @@ spread qemu-nested
 ```
 
 ## LXD backend
-The LXD backend is the preferred way of testing locally as it uses virtualization and thus runs a lot quicker than
-the qemu backend. This is because the container can use all the resources of the host, and we can support
+The LXD backend is the preferred way of testing locally as it uses
+virtualization and thus runs a lot quicker than the qemu backend. This is
+because the container can use all the resources of the host, and we can support
 qemu-kvm acceleration in the container for the nested instance.
 
 This backend requires that your host machine supports KVM.
