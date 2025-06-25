@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: [self-hosted, spread-enabled]
     steps:
       - name: Cleanup job workspace
         id: cleanup-job-workspace
@@ -51,7 +51,7 @@ jobs:
           done
 
   tests-main:
-    runs-on: self-hosted
+    runs-on: [self-hosted, spread-enabled]
     needs: build
     steps:
       - name: Cleanup job workspace
