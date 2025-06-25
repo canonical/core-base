@@ -1,6 +1,9 @@
 name: Release snap
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  schedulue:
+    - cron: "0 3 * * *"
 
 jobs:
   build_release:
