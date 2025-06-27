@@ -2,7 +2,7 @@ name: Release snap
 
 on:
   workflow_dispatch:
-  schedulue:
+  schedule:
     - cron: "0 3 * * *"
 
 jobs:
