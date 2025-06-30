@@ -1,14 +1,18 @@
 name: Release snap
 
-on: workflow_dispatch
+on:
+  schedule:
+    - cron: "0 3 * * *"
 
 jobs:
   build_release:
     runs-on: ubuntu-latest
     environment: store
     steps:
-      - name: Build and release to beta channel
+      - name: Build and release core24 to beta channel
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        with:
+          base: 24
