@@ -3,9 +3,9 @@ Description=Auto import assertions from a specific block device
 After=snapd.service snapd.socket snapd.seeded.service
 # snapd.autoimport.service might try to mount the same disks so run after
 After=snapd.autoimport.service
-ConditionKernelCommandLine=snapd_recovery_mode=run
 
 [Service]
 Type=oneshot
+ExecCondition=sh -c 'test $(/usr/libexec/core/get-mode mode) = run'
 ExecStart=/usr/bin/snap auto-import --mount=/dev/%i
 PrivateMounts=yes
