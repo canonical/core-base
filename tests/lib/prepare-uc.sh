@@ -63,8 +63,14 @@ print_system()
         tee -a /dev/kmsg /dev/console /run/mnt/ubuntu-seed/spread-tests-run-mode-tweaks-log.txt || true
 }
 # ensure we don't enable ssh in install mode or spread will get confused
-if ! grep 'snapd_recovery_mode=run' /proc/cmdline; then
-    print_system "not in run mode - script not running"
+# We look at modeenv as that is authoritative if installing from the initramfs.
+if [ -f /var/lib/snapd/modeenv ]; then
+    if ! grep -E '^mode=(run|recover)$' /var/lib/snapd/modeenv; then
+        echo "not in run or recovery mode - script not running"
+        exit 0
+    fi
+elif ! grep -E 'snapd_recovery_mode=(run|recover)' /proc/cmdline; then
+    echo "not in run or recovery mode - script not running"
     exit 0
 fi
 if [ -e /root/spread-setup-done ]; then
