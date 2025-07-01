@@ -34,7 +34,7 @@ jobs:
       
       - name: arm64 build
         run: |
-          spread-arm -artifacts=./artifacts google-nested-arm:tests/spread/build/
+          spread -artifacts=./artifacts google-nested-arm:tests/spread/build/
           find ./artifacts -type f -name core26_arm64.artifact -exec cp {} "${{ github.workspace }}" \;
 
       - uses: actions/upload-artifact@v4
@@ -72,7 +72,7 @@ jobs:
       - name: Run arm64 tests
         uses: ./.github/actions/run-spread-tests
         with:
-          spread-command: spread-arm google-nested-arm:tests/spread/main/
+          spread-command: spread google-nested-arm:tests/spread/main/
 
       - name: Discard spread workers
         if: always()
