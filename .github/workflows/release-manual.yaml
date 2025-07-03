@@ -1,4 +1,4 @@
-name: Release snap
+name: Release manually snap
 
 on:
   workflow_dispatch:
