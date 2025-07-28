@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: store
     steps:
-      - name: Build and release core24 to beta channel
+      - name: Build and release base to edge channel
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
