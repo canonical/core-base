@@ -217,6 +217,7 @@ sgx:x:119:
 _ssh:x:118:
 polkitd:x:120:
 systemd-coredump:x:999:
+clock:x:998:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
