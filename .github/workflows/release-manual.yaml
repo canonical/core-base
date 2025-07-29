@@ -1,0 +1,15 @@
+name: Release manually snap
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    environment: store
+    steps:
+      - name: Build and release to edge channel
+        env:
+          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
