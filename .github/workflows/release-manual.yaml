@@ -2,15 +2,13 @@ name: Release manually snap
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 3 * * *"
 
 jobs:
   build_release:
     runs-on: ubuntu-latest
     environment: store
     steps:
-      - name: Build and release to beta channel
+      - name: Build and release to edge channel
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
