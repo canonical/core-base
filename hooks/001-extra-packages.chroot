@@ -203,6 +203,7 @@ PACKAGES=(
     libpam-modules
     libpam-systemd
     libpam-pwquality
+    libtirpc3t64
     netcat-openbsd
     netplan.io
     opensc
