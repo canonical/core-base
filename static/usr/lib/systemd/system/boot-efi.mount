@@ -1,0 +1,10 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-seed
+ConditionPathExists=/run/mnt/ubuntu-boot/EFI/ubuntu/grub.cfg
+ConditionKernelCommandLine=snapd_recovery_mode=run
+
+[Mount]
+Where=/boot/efi
+What=/run/mnt/ubuntu-seed
+Type=none
+Options=bind
