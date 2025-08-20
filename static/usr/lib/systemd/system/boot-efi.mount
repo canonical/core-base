@@ -1,0 +1,8 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-seed
+
+[Mount]
+Where=/boot/efi
+What=/run/mnt/ubuntu-seed
+Type=none
+Options=bind

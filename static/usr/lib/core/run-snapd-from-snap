@@ -10,6 +10,8 @@ set -eux
 # have been created by the initramfs.
 run_on_unseeded() {
     SNAPD_BASE_DIR="/snap/snapd/current"
+    ls -l /snap/snapd || true
+    findmnt
     if ! mountpoint -q "$SNAPD_BASE_DIR"; then
         # Compatibility with old way where we had a duplicated mount in /run
         # and "current" link was not created by initramfs.

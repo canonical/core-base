@@ -1,0 +1,8 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-seed
+
+[Mount]
+Where=/boot/piboot
+What=/run/mnt/ubuntu-seed/piboot/ubuntu
+Type=none
+Options=bind
