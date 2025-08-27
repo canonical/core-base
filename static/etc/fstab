@@ -1,5 +1,6 @@
-/run/mnt/base / none bind,x-initrd.mount,ro 0 0
-/writable /writable none bind,x-initrd.mount 0 0
+# These mounts for firmware and modules are not always mounted from
+# /run/mnt, only if they were not mounted by snap-boostrap in the
+# first place.
 /run/mnt/kernel/firmware /usr/lib/firmware none bind,x-initrd.mount,ro 0 0
 /run/mnt/kernel/modules /usr/lib/modules none bind,x-initrd.mount,ro 0 0
 
