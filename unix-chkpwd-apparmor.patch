@@ -1,0 +1,11 @@
+diff -ur old/etc/apparmor.d/unix-chkpwd new/etc/apparmor.d/unix-chkpwd
+--- old/etc/apparmor.d/unix-chkpwd	2025-09-02 12:49:31.284365109 +0200
++++ new/etc/apparmor.d/unix-chkpwd	2025-09-02 12:49:35.079397745 +0200
+@@ -25,6 +25,7 @@
+   @{exec_path} mr,
+ 
+   /etc/shadow r,
++  /var/lib/extrausers/shadow r,
+ 
+   # systemd userdb, used in nspawn
+   /run/host/userdb/*.user r,
