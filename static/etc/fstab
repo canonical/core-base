@@ -1,0 +1,55 @@
+# These mounts for firmware and modules are not always mounted from
+# /run/mnt, only if they were not mounted by snap-boostrap in the
+# first place.
+/run/mnt/kernel/firmware /usr/lib/firmware none bind,x-initrd.mount,ro 0 0
+/run/mnt/kernel/modules /usr/lib/modules none bind,x-initrd.mount,ro 0 0
+
+/writable/system-data/etc/cloud /etc/cloud none bind,x-initrd.mount 0 0
+/writable/system-data/etc/dbus-1 /etc/dbus-1 none bind,x-initrd.mount 0 0
+/writable/system-data/etc/default/swapfile /etc/default/swapfile none bind,x-initrd.mount 0 0
+/writable/system-data/etc/environment /etc/environment none bind,x-initrd.mount 0 0
+/writable/system-data/etc/hosts /etc/hosts none bind,x-initrd.mount 0 0
+/writable/system-data/etc/iproute2 /etc/iproute2 none bind,x-initrd.mount 0 0
+/writable/system-data/etc/machine-id /etc/machine-id none bind,x-initrd.mount 0 0
+/writable/system-data/etc/modprobe.d /etc/modprobe.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/modules-load.d /etc/modules-load.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/netplan /etc/netplan none bind,x-initrd.mount 0 0
+/writable/system-data/etc/network/if-up.d /etc/network/if-up.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/ssh /etc/ssh none bind,x-initrd.mount 0 0
+/writable/system-data/etc/sudoers.d /etc/sudoers.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/sysctl.d /etc/sysctl.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/systemd /etc/systemd none bind,x-initrd.mount 0 0
+/writable/system-data/etc/udev/rules.d /etc/udev/rules.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/update-motd.d /etc/update-motd.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/writable /etc/writable none bind,x-initrd.mount 0 0
+/writable/system-data/etc/security/pwquality.conf /etc/security/pwquality.conf none bind,x-initrd.mount 0 0
+/writable/system-data/etc/polkit-1/rules.d /etc/polkit-1/rules.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/polkit-1/actions /etc/polkit-1/actions none bind,x-initrd.mount 0 0
+/writable/system-data/etc/motd.d /etc/motd.d none bind,x-initrd.mount 0 0
+/run/mnt/ubuntu-seed /var/lib/snapd/seed none bind,ro 0 0
+
+/writable/user-data /home none bind 0 0
+/writable/system-data/root /root none bind 0 0
+/writable/system-data/snap /snap none bind,x-initrd.mount 0 0
+
+/writable/system-data/var/cache/apparmor /var/cache/apparmor none bind 0 0
+/writable/system-data/var/cache/snapd /var/cache/snapd none bind 0 0
+/writable/system-data/var/lib/cloud /var/lib/cloud none bind 0 0
+/writable/system-data/var/lib/console-conf /var/lib/console-conf none bind 0 0
+/writable/system-data/var/lib/dbus /var/lib/dbus none bind 0 0
+/writable/system-data/var/lib/dhcp /var/lib/dhcp none bind 0 0
+/writable/system-data/var/lib/dhcpcd /var/lib/dhcpcd none bind 0 0
+/writable/system-data/var/lib/extrausers /var/lib/extrausers none bind 0 0
+/writable/system-data/var/lib/misc /var/lib/misc none bind 0 0
+/writable/system-data/var/lib/private/systemd /var/lib/private/systemd none bind 0 0
+/writable/system-data/var/lib/snapd /var/lib/snapd none bind,x-initrd.mount 0 0
+/writable/system-data/var/lib/systemd /var/lib/systemd none bind 0 0
+/writable/system-data/var/lib/waagent /var/lib/waagent none bind 0 0
+/writable/system-data/var/log /var/log none bind 0 0
+/writable/system-data/var/snap /var/snap none bind,x-initrd.mount 0 0
+/writable/system-data/var/tmp /var/tmp none bind 0 0
+
+tmpfs /media tmpfs defaults,mode=0755 0 0
+tmpfs /mnt tmpfs defaults,mode=0755 0 0
+tmpfs /tmp tmpfs mode=1777,nodev,nosuid 0 0
+tmpfs /var/lib/sudo tmpfs defaults,mode=0700 0 0

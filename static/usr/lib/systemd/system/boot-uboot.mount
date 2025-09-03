@@ -1,0 +1,8 @@
+[Unit]
+RequiresMountsFor=/run/mnt/ubuntu-boot
+
+[Mount]
+Where=/boot/uboot
+What=/run/mnt/ubuntu-boot/uboot/ubuntu
+Type=none
+Options=bind
