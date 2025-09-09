@@ -60,6 +60,6 @@ dirs=(
 
 for dir in "${dirs[@]}"; do
   parent="$(dirname "${dir}")"
-  mkdir -p "/usr/share/factory/writable/system-data/${parent}"
-  cp -aT "${dir}" "/usr/share/factory/writable/system-data/${dir}"
+  mkdir -p "/usr/share/factory/writable/system-data${parent}"
+  cp -a "${dir}" "/usr/share/factory/writable/system-data${parent}"
 done
