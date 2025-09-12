@@ -26,7 +26,7 @@ install:
 		exit 1; \
 	fi
 	rm -rf $(DESTDIR)
-	cp -aT $(CRAFT_STAGE)/base $(DESTDIR)
+	cp -a $(CRAFT_STAGE)/base $(DESTDIR)
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
