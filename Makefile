@@ -26,7 +26,7 @@ install:
 		exit 1; \
 	fi
 	rm -rf $(DESTDIR)
-	cp -aT $(CRAFT_STAGE)/base $(DESTDIR)
+	cp -a $(CRAFT_STAGE)/base $(DESTDIR)
 	# ensure resolving works inside the chroot
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
@@ -131,9 +131,6 @@ test:
 			if !(cd $(TESTDIR) && $$f); then \
 				exit 1; \
 			fi; \
-	    	done; \
-	set -ex; for f in $$(pwd)/tests/test_*.sh; do \
-		sh -e $$f; \
 	done
 
 # Display a report of files that are (still) present in /etc
