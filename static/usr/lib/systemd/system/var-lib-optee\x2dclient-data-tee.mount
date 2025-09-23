@@ -1,0 +1,9 @@
+[Unit]
+ConditionPathIsMountPoint=/run/mnt/tee-data
+DefaultDependencies=no
+
+[Mount]
+What=/run/mnt/tee-data
+Where=/var/lib/optee-client/data/tee
+Options=bind
+Type=none
