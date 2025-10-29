@@ -5,25 +5,20 @@ on:
     - cron: "0 3 * * *"
 
 jobs:
-  build_release_24:
+  build_releases:
+    strategy:
+      fail-fast: false
+      matrix:
+        base: [core22, core24]
+        variant: [normal, fips]
     runs-on: ubuntu-latest
     environment: store
     steps:
-      - name: Build and release core24 to edge channel
+      - name: Build and release ${{ matrix.base }} to edge channel
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
-          branch: core24
-  build_release_22:
-    runs-on: ubuntu-latest
-    environment: store
-    steps:
-      - name: Build and release core22 to edge channel
-        env:
-          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
-        with:
-          branch: core22
+          branch: ${{ matrix.base }}
+          fips: ${{ matrix.variant == 'fips' }}
