@@ -40,6 +40,13 @@ mkdir -p /var/lib/waagent
 echo "console-conf directories"
 mkdir -p /var/lib/console-conf
 
+case "$(dpkg --print-architecture)" in
+    arm64|armhf)
+        echo "op-tee secure storage dir"
+	mkdir -p /var/lib/optee-client/data/tee
+        ;;
+esac
+
 echo "ensure snapctl is available"
 ln -s ../lib/snapd/snapctl /usr/bin/snapctl
 
