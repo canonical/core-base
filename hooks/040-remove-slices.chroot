@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+
+echo "I: Remove unneeded files"
+
+# Remove file which got pulled in by cracklib-runtime. We are discarding
+# cracklib-runtime binary programs in later hooks (601-clean-cracklib.chroot).
+
+# remove file slices
+rm /usr/bin/file
+
+# remove libmagic1
+rm /etc/magic /etc/magic.mime
+rm /usr/lib/*-linux-*/libmagic.so.1*
+rm /usr/share/misc/magic
+
+# remove libmagic-mgc
+rm /usr/lib/file/magic.mgc
+rm /usr/share/file/magic.mgc
+rm /usr/share/misc/magic.mgc

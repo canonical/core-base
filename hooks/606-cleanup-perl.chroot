@@ -11,6 +11,7 @@ rm usr/sbin/luksformat
 rm usr/sbin/pam-auth-update
 rm usr/sbin/pam_getenv
 rm usr/sbin/install-sgmlcatalog
+rm usr/sbin/update-xmlcatalog
 rm usr/sbin/update-catalog
 rm usr/sbin/update-rc.d
 

@@ -1,0 +1,76 @@
+#!/bin/sh
+
+set -ex
+
+# ensure we have /proc or systemd will fail
+mkdir -p /proc
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# enable some services by default
+systemctl enable getty@tty1.service || true
+systemctl enable remote-fs.target || true
+systemctl enable systemd-resolved.service || true
+systemctl enable systemd-pstore.service || true
+
+# Use stub resolve.conf by default
+mkdir -p /run/systemd/resolve
+if [ -e /etc/resolv.conf ]; then
+        cp /etc/resolv.conf /run/systemd/resolve/stub-resolv.conf
+fi
+
+# If /etc/resolv.conf is a bind-mount, moving or replacing
+# /etc/resolv.conf may fail
+ln -snf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || true
+
+# Enable persistent journal, in auto-mode, by default
+mkdir -p /var/log/journal
+# create tmpfiles only when running systemd, otherwise %b substitution fails
+if [ -d /run/systemd/system ]; then
+    systemd-tmpfiles --create --prefix /var/log/journal
+fi
+
+# Initial update of the Message Catalogs database
+journalctl --update-catalog || true
+
+# Setup tmpfiles
+systemd-tmpfiles --create
+
+# Clean up removed ondemand service
+rm -f /etc/systemd/system/multi-user.target.wants/ondemand.service
+
+# Move some .wants around
+echo "ensure the systemd target.wants are in /lib instead of /etc"
+for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
+    if [ -d etc/systemd/system/"$d"/ ]; then
+        mv etc/systemd/system/"$d"/* lib/systemd/system/"$d"
+    fi
+done
+
+add_maybe_symlink() {
+  if [ -e "lib/systemd/system/$1" ]; then
+    ln -s "lib/systemd/system/$1" "lib/systemd/system/$2/$1"
+  fi
+}
+
+remove_maybe_symlink() {
+    if [ -e "lib/systemd/system/$2/$1" ]; then
+        rm "lib/systemd/system/$2/$1"
+    fi
+}
+
+# Add some additional .wants that are otherwise generated
+add_maybe_symlink e2scrub_reap.service multi-user.target.wants
+add_maybe_symlink secureboot-db.service multi-user.target.wants
+add_maybe_symlink wpa_supplicant.service multi-user.target.wants
+add_maybe_symlink apparmor.service sysinit.target.wants
+add_maybe_symlink finalrd.service sysinit.target.wants
+add_maybe_symlink systemd-timesyncd.service sysinit.target.wants
+add_maybe_symlink e2scrub_all.timer timers.target.wants
+add_maybe_symlink fstrim.timer timers.target.wants
+
+# Reset all unit files
+systemctl preset-all
+
+# Generate the hwdb
+systemd-hwdb --usr update || true

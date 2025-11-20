@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 mkdir -p /etc/writable/default
 
@@ -22,3 +24,18 @@ done
 # Work-around for tzdata still adding /etc/timezone. But:
 # https://git.launchpad.net/ubuntu/+source/systemd/commit/?h=ubuntu/noble&id=28efd34bc095a7bae923f13e23198610b5fe253d
 rm -f /etc/timezone
+
+# setup default console configuration, make them symlinks
+# into writable so they can be changed
+mv /etc/locale.conf /etc/writable/locale.conf
+rm /etc/default/locale
+ln -s ../writable/locale.conf /etc/default/locale
+ln -s writable/locale.conf /etc/locale.conf
+
+# setup default vconsole/keyboard configuration, make it a
+# symlink as well so it can change, and remove the default
+# symlink (/etc/vconsole.conf => default/keyboard)
+rm /etc/vconsole.conf
+printf 'KEYMAP=us\n' > /etc/writable/vconsole.conf
+ln -s ../writable/vconsole.conf /etc/default/keyboard
+ln -s writable/vconsole.conf /etc/vconsole.conf
