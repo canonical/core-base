@@ -55,17 +55,18 @@ for locale in "${!locale_to_encoding[@]}"; do
     fi
 done
 
-# Create /etc/locale.conf with the default locale
-printf 'LANG=%s\n' "$DEFAULT_ENVIRONMENT" > /etc/locale.conf
-
-# Create /etc/default/locale as a symlink to /etc/locale.conf
 mkdir -p /etc/default
+
+# Create /etc/locale.conf with the default locale, will be replaced in 011-etc-writable.chroot
+# /etc/default/locale will be recreated as a symlink to /etc/writable/locale.conf
+# in 011-etc-writable.chroot
+printf 'LANG=%s\n' "$DEFAULT_ENVIRONMENT" > /etc/locale.conf
 ln -sf ../locale.conf /etc/default/locale
 
-# Cleanup locale files that came from chisel and the local packages
+# Cleanup locale files
 rm -f /etc/locale.alias
 rm -f /lib/locale/locale-archive
+rm -rf /usr/share/i18n
 
 # Remove locale generation tools (no longer needed)
 rm -f /usr/sbin/locale-gen /usr/sbin/update-locale /usr/sbin/validlocale
-rm -rf /usr/share/i18n

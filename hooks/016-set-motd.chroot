@@ -1,0 +1,11 @@
+#!/bin/bash -ex
+
+# The default motd message is in static/usr/lib/motd.d/50-default
+
+# For overrides / additional messages
+mkdir -p /etc/motd.d
+
+# remove update-motd bits which clash with /etc/motd content
+# in particular the 'help' and the 'welcome' messages.
+rm /etc/update-motd.d/00-header
+rm /etc/update-motd.d/10-help-text

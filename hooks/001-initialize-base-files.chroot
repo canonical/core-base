@@ -101,3 +101,8 @@ chmod 660 /var/log/btmp
 #     install_from_default info.dir /usr/share/info/dir
 #     chmod 644 /usr/share/info/dir
 # fi
+
+# Add PATH to /etc/environment
+echo "putting a PATH in place that contains /snap/bin"
+echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"' >/etc/environment
+chmod 644 /etc/environment

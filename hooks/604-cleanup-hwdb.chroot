@@ -4,6 +4,9 @@
 
 set -ex
 
+echo "I: Ensuring hwdb up to date before cleanup"
+systemd-hwdb --usr update
+
 echo "I: Removing hwdb input files"
 
 find usr/lib/udev/hwdb.d/ -name "*.hwdb" -print -delete

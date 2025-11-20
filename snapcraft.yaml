@@ -28,6 +28,7 @@ parts:
         bash_bins
         bzip2_bins
         coreutils-from-gnu_bins
+        diffutils_bins
         dosfstools_bins
         grep_bins
         gzip_bins
@@ -40,6 +41,7 @@ parts:
 
       # Define the system libraries and services that we want to include in the base
       SLICES=(
+        base-files_motd
         bash-completion_bins
         bash-completion_completions
         cracklib-runtime_bins
@@ -48,6 +50,7 @@ parts:
         dbus-user-session_config
         distro-info-data_data
         dmsetup_bins
+        e2fsprogs_services
         fonts-ubuntu_all
         finalrd_bins
         gnutls-bin_bins

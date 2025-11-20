@@ -27,7 +27,8 @@ rm -f /etc/timezone
 
 # setup default console configuration, make them symlinks
 # into writable so they can be changed
-printf 'LANG=C.UTF-8\n' > /etc/writable/locale.conf
+mv /etc/locale.conf /etc/writable/locale.conf
+rm /etc/default/locale
 ln -s ../writable/locale.conf /etc/default/locale
 ln -s writable/locale.conf /etc/locale.conf
 
