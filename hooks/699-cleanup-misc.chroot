@@ -108,7 +108,7 @@ pushd /usr/share/bash-completion/completions/
 compl_to_rm=()
 for f in *; do
     # keep python as existing commands symlink to it
-    if [ -a  /usr/bin/"$f" ] || [ -a  /usr/sbin/"$f" ] || [ "$f" = python ]
+    if [ -e /usr/bin/"$f" ] || [ -e /usr/sbin/"$f" ] || [ "$f" = python ]
     then continue
     fi
     compl_to_rm+=("$f")
