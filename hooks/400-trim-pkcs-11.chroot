@@ -19,7 +19,7 @@ echo "module: p11-kit-client.so" > \
 #   /usr/share/p11-kit
 
 echo "Cleaning excess pkcs#11 library"
-dpkg -r --force-depends libgnutls-dane0 libunbound8 libevent-2.1-7
+dpkg -r --force-depends libgnutls-dane0t64 libunbound8 libevent-2.1-7t64
 
 rm -rf \
     /etc/opensc \
