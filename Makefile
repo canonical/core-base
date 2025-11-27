@@ -51,12 +51,15 @@ hooks:
 		exit 1; \
 	fi
 
-	# create a symlink from /usr/bin to /bin
+	# create a symlink from /usr/bin to /bin, this was not done by
+	# chisel
 	if ! [ -e $(DESTDIR)/bin ]; then \
 		ln -sf usr/bin $(DESTDIR)/bin; \
 	fi
 
-	# symlink bash to sh if not already present
+	# symlink bash to sh if not already present, otherwise we wont be able
+	# to run the hooks, this has not been done for us by the chisel slices
+	# as you may choose your own /bin/sh implementation
 	if ! [ -e $(DESTDIR)/bin/sh ]; then \
 		ln -sf bash $(DESTDIR)/bin/sh; \
 	fi

@@ -23,6 +23,8 @@ parts:
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
+      # These are the ones where we can probably slim down the number of binaries
+      # later on, but for now we include them all to ensure maximum compatibility.
       UTILS=(
         apparmor_bins
         bash_bins
@@ -30,14 +32,18 @@ parts:
         coreutils-from-gnu_bins
         diffutils_bins
         dosfstools_bins
+        gnutls-bin_bins
         grep_bins
         gzip_bins
         iptables_bins
         iputils-ping_bins
         less_bins
+        login_bins
+        mawk_bins
         sed_bins
         sudo_bins
         squashfs-tools_bins
+        util-linux_bins
         vim-tiny_bins
       )
 
@@ -47,6 +53,7 @@ parts:
         base-files_motd
         bash-completion_config
         bash-completion_completions
+        ca-certificates_data
         cloud-init_bins
         cracklib-runtime_bins
         cryptsetup_bins
@@ -56,12 +63,15 @@ parts:
         e2fsprogs_services
         fonts-ubuntu_all
         finalrd_bins
-        gnutls-bin_bins
         kmod_bins
 
+        libc6_config
+        libc6_gconv
         libc-bin_nsswitch
         libc-bin_ldconfig
         libc-bin_locale
+        libc-bin_getconf
+        libc-bin_getent
 
         libpam-systemd_libs
         libengine-pkcs11-openssl_libs
@@ -77,19 +87,19 @@ parts:
         openssh-server_services
         opensc_bins
         p11-kit_bins
-        polkitd_bins
+        polkitd_services
         plymouth_bins
         plymouth-label-ft_libs
         procps_config
         rfkill_bins
 
         udev_services
-        systemd_bins
-        systemd-sysv_bins
+        systemd_standard
         systemd-coredump_bins
         systemd-cryptsetup_bins
-        systemd-timesyncd_bins
         systemd-resolved_bins
+        systemd-sysv_bins
+        systemd-timesyncd_services
         systemd-zram-generator_services
         
         tzdata_zoneinfo

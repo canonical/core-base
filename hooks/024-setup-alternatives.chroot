@@ -11,3 +11,6 @@ ln -s /usr/bin/vim.tiny /usr/bin/ex
 ln -s /usr/bin/vim.tiny /usr/bin/vi
 ln -s /usr/bin/vim.tiny /usr/bin/rview
 ln -s /usr/bin/vim.tiny /usr/bin/view
+
+# alternatives for mawk
+ln -s /usr/bin/mawk /usr/bin/awk

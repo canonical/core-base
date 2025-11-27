@@ -34,33 +34,29 @@ migrate_directory() {
   fi
 }
 
-update_to_current_default() {
-  if [ -f "$2" ]; then
-    md5=$(md5sum "$2" | cut -f 1 -d " ")
-    if grep -q "$md5" "/usr/share/base-files/$1.md5sums"; then
-      if ! cmp -s "/usr/share/base-files/$1" "$2"; then
-        cp -p "/usr/share/base-files/$1" "$2"
-        echo "Updating $2 to current default."
-      fi
-    fi
-  fi
-}
-
 # install_from_default dot.profile   /root/.profile
 # install_from_default dot.bashrc    /root/.bashrc
 # install_from_default profile       /etc/profile
 # install_from_default networks      /etc/networks
-install_directory mnt          755 root
-install_directory srv          755 root
-install_directory sys          755 root
-install_directory opt          755 root
-install_directory run          755 root
-install_directory etc/opt      755 root
-install_directory var/opt      755 root
-install_directory media        755 root
-install_directory var/spool    755 root
-install_directory var/mail     2775 mail
-install_directory var/lib/misc 755 root
+install_directory mnt            755 root
+install_directory srv            755 root
+install_directory sys            755 root
+install_directory opt            755 root
+install_directory run            755 root
+install_directory etc/opt        755 root
+install_directory var/opt        755 root
+install_directory media          755 root
+install_directory var/backups    755 root
+install_directory var/cache      755 root
+install_directory var/cache/man  755 root
+install_directory var/list       755 root
+install_directory var/spool      755 root
+install_directory var/spool/lpd  755 root
+install_directory var/spool/news 755 root
+install_directory var/spool/uucp 755 root
+install_directory var/mail       2775 mail
+install_directory var/lib/misc   755 root
+install_directory var/www        755 root
 
 if [ ! -L /var/spool/mail ]; then
     ln -s ../mail /var/spool/mail
@@ -83,7 +79,9 @@ install_local_dir /usr/local/include
 install_local_dir /usr/local/sbin
 install_local_dir /usr/local/src
 install_local_dir /usr/local/etc
+
 ln -sf share/man /usr/local/man
+ln -sf share/games /usr/local/games
 
 if [ ! -f /var/log/wtmp ]; then
     echo "">/var/log/wtmp
