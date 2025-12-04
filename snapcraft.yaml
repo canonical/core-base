@@ -18,7 +18,7 @@ parts:
       - file
     source: https://github.com/Meulengracht/chisel-releases.git
     source-type: git
-    source-branch: ubuntu-core-25.10
+    source-branch: ubuntu-core-26.04
     override-build: |
       go install github.com/canonical/chisel/cmd/chisel@latest
       
@@ -48,6 +48,7 @@ parts:
         sudo_bins
         squashfs-tools_bins
         util-linux_bins
+        util-linux-extra_bins
         vim-tiny_bins
       )
 
@@ -159,15 +160,15 @@ parts:
 
       mkdir -p "${CRAFT_STAGE}"/base
 
-      XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}"
+      XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}"
 
       # Install foreign libraries
       case "$(dpkg --print-architecture)" in
           amd64)
-              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
           arm64)
-              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
       
