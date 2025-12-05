@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eu
+
+# TODO: remove this hook when we have core-initrd for 24
+sed -i 's/,orphan_file//' /etc/mke2fs.conf

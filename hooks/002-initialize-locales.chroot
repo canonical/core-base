@@ -1,0 +1,72 @@
+#!/bin/bash
+
+set -eux
+
+# Paths for files
+SUPPORTED_LOCALES_PATH=/usr/share/i18n/SUPPORTED
+DEFAULT_ENVIRONMENT="C.UTF-8"
+
+mkdir -p "/usr/lib/locale"
+
+declare -A found_encodings
+declare -A locale_to_encoding
+
+# Read all supported locales and collect encodings
+while read -r locale encoding; do
+    encoding_canonical="$(echo "${encoding}" | sed 's/[A-Z]/\l&/g;s/[^a-z0-9]//g')"
+    case "${locale}" in
+        C|C.*)
+            # Skip C locale entries
+        ;;
+        *)
+            locale_to_encoding["${locale}"]="${encoding_canonical}"
+        ;;
+    esac
+    found_encodings["${encoding}"]="${encoding_canonical}"
+done <"$SUPPORTED_LOCALES_PATH"
+
+# Generate the C.<encoding> locales for each unique encoding
+for encoding in "${!found_encodings[@]}"; do
+    encoding_canonical="${found_encodings[${encoding}]}"
+    # Check if charmap exists before trying to generate
+    if [ -f "/usr/share/i18n/charmaps/${encoding}.gz" ] || [ -f "/usr/share/i18n/charmaps/${encoding}" ]; then
+        localedef --no-archive -f "${encoding}" -i C "C.${encoding_canonical}" 2>/dev/null || \
+            echo "Warning: Failed to generate C.${encoding_canonical}" >&2
+    else
+        echo "Warning: Charmap ${encoding} not found, skipping C.${encoding_canonical}" >&2
+    fi
+done
+
+# ensure C.UTF-8/C.utf-8 exists
+if [ ! -d "/usr/lib/locale/C.UTF-8" ]; then
+    if [ -d "/usr/lib/locale/C.utf8" ]; then
+        ln -sf C.utf8 /usr/lib/locale/C.UTF-8
+    else
+        localedef --no-archive -f UTF-8 -i C C.UTF-8
+    fi
+fi
+
+# Now create symlinks from all locales to their C.<encoding> equivalents
+for locale in "${!locale_to_encoding[@]}"; do
+    encoding_canonical="${locale_to_encoding[${locale}]}"
+    # Only create symlink if the target locale was successfully generated
+    if [ -d "/usr/lib/locale/C.${encoding_canonical}" ]; then
+        ln -sf "C.${encoding_canonical}" "/usr/lib/locale/${locale}"
+    fi
+done
+
+mkdir -p /etc/default
+
+# Create /etc/locale.conf with the default locale, will be replaced in 011-etc-writable.chroot
+# /etc/default/locale will be recreated as a symlink to /etc/writable/locale.conf
+# in 011-etc-writable.chroot
+printf 'LANG=%s\n' "$DEFAULT_ENVIRONMENT" > /etc/locale.conf
+ln -sf ../locale.conf /etc/default/locale
+
+# Cleanup locale files
+rm -f /etc/locale.alias
+rm -f /lib/locale/locale-archive
+rm -rf /usr/share/i18n
+
+# Remove locale generation tools (no longer needed)
+rm -f /usr/sbin/locale-gen /usr/sbin/update-locale /usr/sbin/validlocale
