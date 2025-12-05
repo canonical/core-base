@@ -50,6 +50,7 @@ parts:
         mawk_bins
         ncurses-bin_bins
         polkitd_bins
+        rfkill_bins
         sed_bins
         sudo_bins
         squashfs-tools_bins
@@ -125,7 +126,6 @@ parts:
         plymouth_bins
         plymouth-label-ft_libs
         procps_config
-        rfkill_bins
 
         udev_services
         util-linux_services
@@ -145,7 +145,8 @@ parts:
         wpasupplicant_services
       )
 
-      # eh not sure about FIPS yet, this will have to come 
+      # TODO: not sure about FIPS yet, this will have to come later, chisel has builtin
+      # support for ESM, meaning it's something we can request chisel to do for us.
       # if [[ ${SNAP_FIPS_BUILD+x} ]]; then
       #   # Ensure vital crypt packages are refreshed / downgraded and downloaded
       #   # from the FIPS ppa. This should also contain openssh-server, but we already
@@ -166,19 +167,23 @@ parts:
 
       mkdir -p "${CRAFT_STAGE}"/base
 
-      XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}"
+      chisel cut --ignore=unstable --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}" base-files_chisel
 
       # Install foreign libraries
       case "$(dpkg --print-architecture)" in
           amd64)
-              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              chisel cut --ignore=unstable --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
           arm64)
-              XDG_CACHE_HOME="$CHISEL_CACHE_DIR" chisel cut --ignore=unstable --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              chisel cut --ignore=unstable --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
       
-      "${CRAFT_PROJECT_DIR}/generate-manifest.sh" "$CHISEL_CACHE_DIR/chisel/sha256" "${CRAFT_STAGE}"/base
+      # https://documentation.ubuntu.com/chisel/en/latest/reference/manifest/
+      # chisel automatically generates a manifest for the cut slices here:
+      # $rootfs/var/lib/chisel/manifest.wall
+      # this is zstd compressed, and must therefor be uncompressed
+      # unzstd ./manifest.wall -o manifest.json
 
   snapd-generator:
     plugin: nil
