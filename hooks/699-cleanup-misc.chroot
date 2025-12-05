@@ -50,6 +50,8 @@ popd
 bin=(bashbug
      captoinfo
      cvtsudoers
+     deb-systemd-helper
+     deb-systemd-invoke
      dpkg-deb
      dpkg-realpath
      gzexe

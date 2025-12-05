@@ -28,12 +28,16 @@ parts:
       UTILS=(
         apparmor_bins
         bash_bins
-        bzip2_bins
+        bzip2_scripts
         coreutils-from-uutils_bins
         diffutils_bins
         dosfstools_bins
+        debianutils_which
+        debianutils_ischroot
+        debianutils_run-parts
         file_bins
         gdbserver_bins
+        gnu-coreutils_bins
         gnutls-bin_bins
         gpgv_bins
         grep_bins
@@ -44,6 +48,8 @@ parts:
         less_bins
         login_bins
         mawk_bins
+        ncurses-bin_bins
+        polkitd_bins
         sed_bins
         sudo_bins
         squashfs-tools_bins
