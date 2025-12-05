@@ -11,6 +11,8 @@ grade: devel
 assumes: [snapd2.55.5]
 
 parts:
+  # TODO: rewrite this once all slices are upstreamed to use chisel slices
+  # directly from canonical, instead of our own chisel-releases repo.
   chisel-libs:
     plugin: nil
     build-packages:
@@ -131,6 +133,7 @@ parts:
         util-linux_services
         systemd_extras
         systemd_kernel-parameters
+        systemd_tpm2
         systemd_standard
         systemd_user-services
         systemd-bootchart_services
@@ -154,6 +157,7 @@ parts:
       #   SLICES+=(libgcrypt20 libgnutls30t64 openssl-fips-module-3 ssh)
       # fi
       
+      # add architecture specific slices
       case "$(dpkg --print-architecture)" in
           amd64|i386)
               SLICES+=(secureboot-db_services)
@@ -163,19 +167,33 @@ parts:
               ;;
       esac
 
-      CHISEL_CACHE_DIR="$(mktemp -d)"
-
+      # create the rootfs directory we install slices into
       mkdir -p "${CRAFT_STAGE}"/base
 
-      chisel cut --ignore=unstable --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base "${SLICES[@]}" "${UTILS[@]}" base-files_chisel
+      # Cut the initial slices into the rootfs
+      # TODO: remove --ignore=unstable when chisel 26.04 is stable
+      chisel cut --ignore=unstable \
+        --release="${CRAFT_PART_SRC}" \
+        --root "${CRAFT_STAGE}"/base \
+        "${SLICES[@]}" "${UTILS[@]}" \
+        base-files_chisel
 
-      # Install foreign libraries
+      # Cut foreign libraries we also need
+      # TODO: remove --ignore=unstable when chisel 26.04 is stable
       case "$(dpkg --print-architecture)" in
           amd64)
-              chisel cut --ignore=unstable --arch=i386 --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              chisel cut --ignore=unstable \
+                --arch=i386 \
+                --release="${CRAFT_PART_SRC}" \
+                --root "${CRAFT_STAGE}"/base \
+                libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
           arm64)
-              chisel cut --ignore=unstable --arch=armhf --release="${CRAFT_PART_SRC}" --root "${CRAFT_STAGE}"/base libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
+              chisel cut --ignore=unstable \
+                --arch=armhf \
+                --release="${CRAFT_PART_SRC}" \
+                --root "${CRAFT_STAGE}"/base \
+                libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
       

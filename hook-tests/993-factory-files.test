@@ -72,6 +72,10 @@ while read line; do
               ;;
               /writable/system-data/var/lib/snapd)
               ;;
+              # https://www.freedesktop.org/software/systemd/man/256/systemd-pcrlock.html#
+              # writes into /var/lib/pcrlock.d
+              /writable/system-data/var/lib/pcrlock.d)
+              ;;
               /writable/system-data/var/snap)
               ;;
               *)
