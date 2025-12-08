@@ -204,7 +204,7 @@ parts:
       # this is zstd compressed, and must therefor be uncompressed
       # unzstd ./manifest.wall -o manifest.json
 
-  snapd-generator:
+  snapd-files:
     plugin: nil
     source: .
     build-packages:
@@ -212,9 +212,11 @@ parts:
     after:
       - chisel-libs
     override-build: |
-      # copy /usr/lib/systemd/system-generators/snapd-generator into CRAFT_STAGE
       mkdir -p "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators
       cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
+
+      mkdir -p "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d
+      cp /usr/lib/tmpfiles.d/snapd.conf "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d/snapd.conf
 
   nvidia-deps:
     plugin: nil
@@ -250,7 +252,7 @@ parts:
   bootstrap:
     after:
       - chisel-libs
-      - snapd-generator
+      - snapd-files
       - nvidia-deps
     plugin: make
     source: .
