@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -eux
+
+# emulate alternatives installed by post install scripts
+# for packages we have
+
+# alternatives for vim-tiny
+ln -sf /usr/bin/vim.tiny usr/bin/editor
+ln -sf /usr/bin/vim.tiny usr/bin/ex
+ln -sf /usr/bin/vim.tiny usr/bin/vi
+ln -sf /usr/bin/vim.tiny usr/bin/rview
+ln -sf /usr/bin/vim.tiny usr/bin/view
+
+# alternatives for mawk
+ln -sf /usr/bin/mawk usr/bin/awk
+
+# alternatives for netcat-openbsd
+ln -sf /usr/bin/nc.openbsd usr/bin/nc
