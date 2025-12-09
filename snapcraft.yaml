@@ -215,9 +215,6 @@ parts:
       mkdir -p "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators
       cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
 
-      mkdir -p "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d
-      cp /usr/lib/tmpfiles.d/snapd.conf "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d/snapd.conf
-
   nvidia-deps:
     plugin: nil
     source: .
