@@ -67,8 +67,6 @@ endif
 	done
 	rm -rf $(DESTDIR)/install-data
 
-	(cd $(DESTDIR); patch -p1) <unix-chkpwd-apparmor.patch
-
 	# remove the auth file again
 	rm -f $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf
 
