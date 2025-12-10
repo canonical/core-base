@@ -218,6 +218,7 @@ _ssh:x:118:
 polkitd:x:120:
 systemd-coredump:x:999:
 clock:x:998:
+dhcpcd:x:997:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
@@ -281,5 +282,6 @@ sgx:!::
 _ssh:!::
 polkitd:!*::
 systemd-coredump:!*::
+dhcpcd:!*::
 EOF
 cp /etc/gshadow /etc/gshadow.orig # We make a copy for a later sanity-compare
