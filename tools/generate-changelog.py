@@ -22,10 +22,13 @@
 # obtained from the debian changelog for the different packages.
 
 import argparse
+from datetime import datetime
 import debian.changelog
 import debian.debian_support
 import gzip
 import os
+import subprocess
+import re
 import requests
 import sys
 import yaml
@@ -37,9 +40,19 @@ from collections import namedtuple
 # keep the list short to not increase the time it takes
 # to generate changelogs
 pkg_allowed_list = [
-    'dpkg',   # is removed during hook
-    'openssl' # contains a symlink which is broken currently
+    'dpkg',    # is removed during hook
+    'openssl'  # contains a symlink which is broken currently
 ]
+
+# List of packages with no valid changelog. We only have gnutls-bin for the
+# moment. It does not have a valid changelog as
+# /usr/share/doc/gnutls-bin/changelog.Debian.gz is a symlink to
+# ../libgnutls-dane0/changelog.Debian.gz which is in turn a symlink to
+# ../libgnutls30/changelog.Debian.gz. However, libgnutls-dane0 is not in the
+# base (removed by 400-trim-pkcs-11.chroot) so the chain is broken. This is ok
+# as anyway we will get the changes from libgnutls30.
+pkg_no_changelog = ['gnutls-bin']
+
 
 # Returns a dictionary from package name to version, using
 # the packages section.
@@ -55,9 +68,11 @@ def packages_from_manifest(manifest_p):
             pkg_dict[pkg_data[0]] = pkg_data[1]
         return pkg_dict
 
+
 def package_name(pkg):
     t = pkg.split(':')
     return t[0]
+
 
 def get_changelog_from_file(docs_d, pkg):
     chl_deb_path = docs_d + '/' + package_name(pkg) + '/changelog.Debian.gz'
@@ -71,14 +86,15 @@ def get_changelog_from_file(docs_d, pkg):
     else:
         raise FileNotFoundError("no supported changelog found for package " + pkg)
 
+
 def get_changelog_from_url(pkg, new_v, on_lp):
     url = 'https://changelogs.ubuntu.com/changelogs/binary/'
-    
+
     print(f"failed to resolve changelog for {pkg} locally, downloading from official repo")
     safe_name = package_name(pkg)
     if not on_lp and safe_name not in pkg_allowed_list:
         raise Exception(f"{pkg} has not been whitelisted for changelog retrieval")
-    
+
     if safe_name.startswith('lib'):
         url += safe_name[0:4]
     else:
@@ -92,6 +108,11 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     return changelog_r.text
 
 
+# Exception thrown for packages with no local or remote changelog
+class PackageNoChangelog(Exception):
+    pass
+
+
 # Gets difference in changelog between old and new versions
 # Returns source package and the differences
 def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
@@ -101,6 +122,8 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
     try:
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
+        if re.match(r'.*\+esm[0-9]*$', new_v) or package_name(pkg) in pkg_no_changelog:
+            raise PackageNoChangelog('package ' + pkg + ' does not have changelog')
         changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
@@ -146,12 +169,15 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
         try:
             old_v = old_packages[pkg]
             if old_v != new_v:
-                src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
-                                                          new_v, '  ', on_lp)
-                if src not in src_pkgs:
-                    src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
-                else:
-                    src_pkgs[src].debs.append(pkg)
+                try:
+                    src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
+                                                              new_v, '  ', on_lp)
+                    if src not in src_pkgs:
+                        src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
+                    else:
+                        src_pkgs[src].debs.append(pkg)
+                except PackageNoChangelog as e:
+                    print(e)
         except KeyError:
             changes += pkg + ' (' + new_v + '): new primed package\n\n'
 
@@ -168,6 +194,49 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
     return changes
 
 
+def find_commit_in_changelog(clog_p) -> str:
+    if clog_p == "" or not os.path.exists(clog_p):
+        print(f"No previous changelog existed at {clog_p}, skipping changelog generation for local repo")
+        return ""
+
+    # expect commit in the first line
+    with open(clog_p, "r") as f:
+        line = f.readline().strip()
+        if "commit" in line:
+            tokens = line.split("/")
+            return tokens[-1]
+        return ""
+
+
+def read_commit_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
+
+
+def read_remote_git_url() -> str:
+    remote_url = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('ascii').strip()
+    if remote_url.startswith("git@github.com:"):
+        remote_url = remote_url.replace("git@github.com:", "https://github.com/")
+    return remove_suffix(remote_url, ".git")
+
+
+def log_between_commits(name, start, end):
+    try:
+        return subprocess.check_output(['git', 'shortlog', '--pretty=short', f'{start}..{end}']).decode()
+    except Exception:
+        # if there is no path from start..end then this might fail, however this
+        # should only happen if the branch has diverged so much that the previous
+        # release commit does not exist in the current fork. In this case let us
+        # notify that we could not generate the changelog
+        print(f"Failed to run 'git log' for the current repo starting at commit {start}, has branch diverged to much?")
+        return f'No detected changes for the {name} snap\n\n'
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manifest changelog generator")
 
@@ -177,9 +246,11 @@ def main():
     parser.add_argument("--launchpad", action="store_true", help='Indicate we are building on LP, ignoring the whitelist')
     args = parser.parse_args()
 
-    old_manifest = args.old
-    new_manifest = args.new
-    docs_dir = args.docs
+    old_changelog = os.path.join(args.old, "usr", "share", "doc", "ChangeLog")
+    new_changelog = os.path.join(args.new, "usr", "share", "doc", "ChangeLog")
+    old_manifest = os.path.join(args.old, "usr", "share", "snappy", "dpkg.yaml")
+    new_manifest = os.path.join(args.new, "usr", "share", "snappy", "dpkg.yaml")
+    docs_dir = os.path.join(args.new, "usr", "share", "doc")
 
     # get previous commit for the base, however important to note here that
     # the previous changelog might not exist (i.e before this was introduced)
@@ -212,7 +283,7 @@ def main():
         with open(old_changelog, "r") as f:
             changes += f.read()
 
-    with open(args.out, "w") as f:
+    with open(new_changelog, "w") as f:
         f.write(changes)
     return 0
 
