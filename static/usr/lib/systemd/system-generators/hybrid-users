@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -eu
+
+if ! [ -d /run/snapd/hybrid-users ]; then
+  exit 0
+fi
+
+normal="${1}"
+
+sysroot=
+sysroot_unit=
+target="local-fs.target"
+if [ -e /etc/initrd-released ]; then
+  sysroot=/sysroot
+  sysroot_unit=sysroot-
+  target=initrd-fs.target
+fi
+
+gen_mount() {
+  unit="${1}"
+  file="${2}"
+  cat <<EOF >"${normal}/${unit}"
+[Unit]
+ConditionPathExists=!${sysroot}/etc/system-image/writable-paths
+DefaultDependencies=no
+Before=${target}
+Before=umount.target
+Conflicts=umount.target
+
+[Mount]
+What=${sysroot}/etc/${file}
+Where=/run/snapd/hybrid-users/${file}
+Type=none
+Options=bind
+EOF
+  mkdir -p "${normal}/${target}.d"
+  ln -s "../${unit}" "${normal}/${target}.d/${unit}"
+}
+
+gen_mount "${sysroot_unit}etc-passwd.mount" passwd
+gen_mount "${sysroot_unit}etc-shadow.mount" shadow
+gen_mount "${sysroot_unit}etc-group.mount" group
+gen_mount "${sysroot_unit}etc-gshadow.mount" gshadow
