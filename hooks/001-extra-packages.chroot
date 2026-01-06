@@ -4,12 +4,24 @@ set -eux
 
 export DEBIAN_FRONTEND=noninteractive
 
-# TODO: work with foundation to not have PROPOSED=1 when building the
-#       bionic-base tarfiles. Right now we still get some packages from
-#       proposed presumably if they are part of the initial debootstrap.
-#
-# ensure we don't use proposed for new installs
-rm -f /etc/apt/sources.list.d/proposed.list
+# shellcheck disable=SC1091
+CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
+
+# When building with Chisel, it uses -proposed for packages, let us do the same for now
+# until the switch happens to simplify package changes between the two build systems.
+
+# enable -proposed
+cat >/etc/apt/sources.list.d/proposed.list <<EOF
+deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-proposed main restricted universe multiverse
+deb [arch=arm64,ppc64el,s390x,riscv64] http://ports.ubuntu.com ${CODENAME}-proposed main restricted universe multiverse
+EOF
+
+# set APT preferences to prefer -proposed packages
+cat >/etc/apt/preferences.d/proposed.pref <<EOF
+Package: *
+Pin: release a=${CODENAME}-proposed
+Pin-Priority: 900
+EOF
 
 # ensure we have /proc or systemd will fail
 mount -t proc proc /proc
@@ -21,9 +33,6 @@ mkdir -p /var/log/journal
 # We need to install first the certificates as apt will need them for https to lp
 apt-get update
 apt-get install --no-install-recommends -y ca-certificates
-
-# shellcheck disable=SC1091
-CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
 
 # TODO: There is no PPA for noble yet.
 if false; then
