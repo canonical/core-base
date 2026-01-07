@@ -11,7 +11,7 @@ CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
 # until the switch happens to simplify package changes between the two build systems.
 
 # enable -proposed
-cat >/etc/apt/sources.list.d/proposed.list <<EOF
+cat >/etc/apt/sources.list.d/proposed.sources <<EOF
 Types: deb
 URIs: http://archive.ubuntu.com/ubuntu/
 Suites: resolute-proposed
