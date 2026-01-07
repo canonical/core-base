@@ -12,8 +12,19 @@ CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
 
 # enable -proposed
 cat >/etc/apt/sources.list.d/proposed.list <<EOF
-deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${CODENAME}-proposed main restricted universe multiverse
-deb [arch=arm64,ppc64el,s390x,riscv64] http://ports.ubuntu.com ${CODENAME}-proposed main restricted universe multiverse
+Types: deb
+URIs: http://archive.ubuntu.com/ubuntu/
+Suites: resolute-proposed
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+Architectures: amd64
+
+Types: deb
+URIs: http://ports.ubuntu.com/ubuntu/
+Suites: resolute-proposed
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+Architectures: arm64 ppc64el s390x riscv64
 EOF
 
 # set APT preferences to prefer -proposed packages
