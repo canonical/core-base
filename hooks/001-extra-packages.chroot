@@ -20,7 +20,7 @@ Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 Architectures: amd64
 
 Types: deb
-URIs: http://ports.ubuntu.com/ubuntu/
+URIs: http://ports.ubuntu.com/ubuntu-ports
 Suites: ${CODENAME}-proposed
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
