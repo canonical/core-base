@@ -17,7 +17,7 @@ URIs: http://archive.ubuntu.com/ubuntu/
 Suites: ${CODENAME}-proposed
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-Architectures: amd64
+Architectures: amd64 i386
 
 Types: deb
 URIs: http://ports.ubuntu.com/ubuntu-ports
