@@ -14,17 +14,17 @@ CODENAME=$(. /etc/os-release; echo "$UBUNTU_CODENAME")
 cat >/etc/apt/sources.list.d/proposed.sources <<EOF
 Types: deb
 URIs: http://archive.ubuntu.com/ubuntu/
-Suites: resolute-proposed
+Suites: ${CODENAME}-proposed
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 Architectures: amd64
 
 Types: deb
 URIs: http://ports.ubuntu.com/ubuntu/
-Suites: resolute-proposed
+Suites: ${CODENAME}-proposed
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-Architectures: arm64 ppc64el s390x riscv64
+Architectures: armhf arm64 ppc64el s390x riscv64
 EOF
 
 # set APT preferences to prefer -proposed packages
