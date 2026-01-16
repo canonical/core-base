@@ -145,7 +145,7 @@ install_base_deps() {
         echo "FIXME: snapcraft install failed, retrying"
         sudo snap install snapcraft --channel="${SNAPCRAFT_CHANNEL:-latest/stable}" --classic
     fi
-    sudo snap install lxd
+    sudo snap install lxd --channel=latest/stable
     sudo lxd init --auto
     sudo snap install ubuntu-image --classic --channel=latest/edge
 }
