@@ -7,7 +7,7 @@ mode="$(/usr/libexec/core/get-mode mode)" || mode="$(/usr/libexec/core/get-arg s
 WANTS="${1}/local-fs.target.wants"
 
 enable() {
-    ln -s "/usr/lib/systemd/systemd/${1}" "${WANTS}/"
+    ln -s "/usr/lib/systemd/system/${1}" "${WANTS}/"
 }
 
 if [ "${mode}" = "run" ]; then
