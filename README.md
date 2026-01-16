@@ -72,7 +72,7 @@ This backend requires that your host machine supports KVM.
 1. Setup any prerequisites and build the LXD image needed for testing. The following commands will install LXD,
 download the newest image and import it into LXD.
 ```
-sudo snap install lxd
+sudo snap install lxd --channel=latest/stable
 curl -o lxd-core26-img.tar.gz https://storage.googleapis.com/snapd-spread-core/lxd/lxd-spread-core26-img.tar.gz
 lxc image import lxd-core26-img.tar.gz --alias ucspread26
 lxc image set-property ucspread26 aliases ucspread26,amd64
