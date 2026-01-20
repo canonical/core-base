@@ -26,6 +26,7 @@
 /writable/system-data/etc/polkit-1/rules.d /etc/polkit-1/rules.d none bind,x-initrd.mount 0 0
 /writable/system-data/etc/polkit-1/actions /etc/polkit-1/actions none bind,x-initrd.mount 0 0
 /writable/system-data/etc/motd.d /etc/motd.d none bind,x-initrd.mount 0 0
+/writable/system-data/etc/chrony /etc/chrony none bind,x-initrd.mount 0 0
 /run/mnt/ubuntu-seed /var/lib/snapd/seed none bind,ro 0 0
 
 /writable/user-data /home none bind 0 0
