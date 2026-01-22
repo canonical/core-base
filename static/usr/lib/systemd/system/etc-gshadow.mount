@@ -1,0 +1,5 @@
+[Mount]
+Where=/etc/gshadow
+What=/run/snapd/hybrid-users/gshadow
+Type=none
+Options=bind

@@ -1,0 +1,5 @@
+[Mount]
+Where=/etc/group
+What=/run/snapd/hybrid-users/group
+Type=none
+Options=bind
