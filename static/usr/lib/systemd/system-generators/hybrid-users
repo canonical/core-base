@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -eu
+
+mode="$(/usr/libexec/core/get-mode mode)" || mode="$(/usr/libexec/core/get-arg snapd_recovery_mode)" || mode="unknown"
+
+WANTS="${1}/local-fs.target.wants"
+
+enable() {
+    ln -s "/usr/lib/systemd/system/${1}" "${WANTS}/"
+}
+
+USERS_P=/run/snapd/hybrid-users
+
+# Only for hybrid in recover mode
+if [ -f "$USERS_P"/passwd ] && [ "${mode}" = "recover" ]; then
+    mkdir -p "${WANTS}"
+    enable etc-passwd.mount
+    enable etc-shadow.mount
+    enable etc-group.mount
+    enable etc-gshadow.mount
+fi
