@@ -265,6 +265,12 @@ case "$(dpkg --print-architecture)" in
         ;;
 esac
 
+case "$(dpkg --print-architecture)" in
+    arm64|armhf)
+        PACKAGES+=(tee-supplicant)
+        ;;
+esac
+
 if [[ ${SNAP_FIPS_BUILD+x} ]]; then
     # Ensure vital crypt packages are refreshed / downgraded and downloaded
     # from the FIPS ppa. This should also contain openssh-server, but we already
