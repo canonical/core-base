@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -eux
+
+# TODO: remove that when sudo-common is fixed.
+
+misplaced=(
+    /etc/pam.d/sudo
+    /etc/pam.d/sudo-i
+    /etc/sudoers
+    /etc/sudoers.d/README
+)
+
+for f in "${misplaced[@]}"; do
+  if [ -f "/etc${f}" ]; then
+    mv -n "/etc${f}" "${f}"
+  fi
+done
+
+if [ -d /etc/etc/pam.d ]; then
+  rmdir /etc/etc/pam.d
+fi
+if [ -d /etc/etc/sudoers.d ]; then
+  rmdir /etc/etc/sudoers.d
+fi
+if [ -d /etc/etc ]; then
+  rmdir /etc/etc
+fi
