@@ -1,59 +1,29 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 # Many things in the generated /etc directory are not really needed and are
 # clouding the view towards the work of eventually shipping with empty /etc
 echo "Cleaning up unneeded files in /etc"
 
-# package manager related stuff
-rm -rvf /etc/apt
-rm -rvf /etc/dpkg
-
 # misc
-rm -rvf /etc/kernel
-rm -rvf /etc/opt
-rm -rvf /etc/selinux
-rm -rvf /etc/binfmt.d
-rm /etc/gai.conf
-rm /etc/debian_version
 rm /etc/pam.conf
+rm -rvf /etc/opt
+rm -rvf /etc/tmpfiles.d
 
 # cloud-init adds stuff here
 rm -rvf /etc/profile.d/Z99-cloud*
 
-# remove cloud-init file which allows all datasources, eventually we should add
-# a cloud-init configuration which specifies all allowed/known to work/good 
-# datasources, but since snapd will do this automatically after seeding, it's 
-# not critical
-rm /etc/cloud/cloud.cfg.d/90_dpkg.cfg
-
-rm /etc/rmt
-
-rm -rf /etc/terminfo
-rm -rf /etc/tmpfiles.d
-
 # python3 sets byte-compile default for debian
-rm -rf /etc/python3
-# python3.6 imports apport
-rm -rf /etc/python3.6
+rm -rf /etc/python3*
 
 # only provides a symbolic name for "link-local"
 rm /etc/networks
 
-# no need for old style init, we cannot delete /etc/init.d: apparmor needs it
-rm -rf /etc/rc[0-6S].d
-
-# remove alternatives for manual pages (easier)
-rm -f /etc/alternatives/*.gz
-
 # python deb install leftovers
 rm -rf /usr/local/lib/python*
 
-# we have no cron daily jobs
-rmdir /etc/cron.daily
-
-# no permanet journal
+# no permanent journal
 rm -rf /var/log/journal
 
 # systemd-tmpfiles creates this new dir now
@@ -65,11 +35,9 @@ rm /var/log/*
 # no "local" on core
 # shellcheck disable=SC2114
 rm -rf -- /var/local /usr/local
+
 # we need this for the core base snap when using with classic snaps
 # for the "interfaces-desktop-host-fonts"
 mkdir -p /usr/local/share/fonts
-
-# no debconf
-rm -rf /var/cache/debconf
 
 # FIXME: make /etc/lsb-release point to ../usr/lib/lsb-release

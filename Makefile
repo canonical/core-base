@@ -20,45 +20,48 @@ all: check
 
 .PHONY: install
 install:
-	# install base
 	set -ex; if [ -z "$(DESTDIR)" ]; then \
 		echo "no DESTDIR set"; \
 		exit 1; \
 	fi
 	rm -rf $(DESTDIR)
 	cp -a $(CRAFT_STAGE)/base $(DESTDIR)
-	# ensure resolving works inside the chroot
-	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
-	# copy-in launchpad's build archive
-	if grep -q ftpmaster.internal /etc/apt/sources.list.d/lp-buildd.sources; then \
-		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list || true; \
-		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources || true; \
-		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
-	fi
+	
+	# copy static files verbatim
+	/bin/cp -a static/* $(DESTDIR)
 
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
+	mkdir -p $(DESTDIR)/dev
 	[ -e $(DESTDIR)/dev/null ] || mknod -m 666 $(DESTDIR)/dev/null c 1 3
 	[ -e $(DESTDIR)/dev/zero ] || mknod -m 666 $(DESTDIR)/dev/zero c 1 5
 	[ -e $(DESTDIR)/dev/random ] || mknod -m 666 $(DESTDIR)/dev/random c 1 8
 	[ -e $(DESTDIR)/dev/urandom ] || \
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
-	# copy static files verbatim
-	/bin/cp -a static/* $(DESTDIR)
-ifdef SNAP_FIPS_BUILD
-	# copy the FIPS PPA config file in if it exists and if
-	# the current build is a FIPS build
-	if [ -e ./fips.conf ]; then \
-		mkdir -p $(DESTDIR)/etc/apt/auth.conf.d/; \
-		cp ./fips.conf $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf; \
+	
+	# create a symlink from /usr/bin to /bin, we need
+	# this for the hooks to work properly
+	if ! [ -e $(DESTDIR)/bin ]; then \
+		ln -sf usr/bin $(DESTDIR)/bin; \
 	fi
 
-	# If we are doing a fips build, make sure updates are enabled
-	# and we export that to the hooks
-	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
-endif
+	# symlink bash to sh if not already present, otherwise we wont be able
+	# to run the hooks, this has not been done for us by the chisel slices
+	# as you may choose your own /bin/sh implementation
+	if ! [ -e $(DESTDIR)/bin/sh ]; then \
+		ln -sf bash $(DESTDIR)/bin/sh; \
+	fi
+
+	# create install-data for hooks
 	mkdir -p $(DESTDIR)/install-data
-	# customize
+
+.PHONY: hooks
+hooks:
+	set -ex; if [ -z "$(DESTDIR)" ]; then \
+		echo "no DESTDIR set"; \
+		exit 1; \
+	fi
+
 	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
 		base="$$(basename "$${f}")";			\
 		cp -a "$${f}" $(DESTDIR)/install-data/;		\
@@ -106,11 +109,6 @@ endif
 			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
 	fi;
-
-	# after generating changelogs we can cleanup those bits
-	# from the base
-	find "$(DESTDIR)/usr/share/doc/" -name 'changelog.Debian.gz' -print -delete
-	find "$(DESTDIR)/usr/share/doc/" -name 'changelog.gz' -print -delete
 
 .PHONY: check
 check:

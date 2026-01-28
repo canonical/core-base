@@ -1,4 +1,6 @@
-#! /bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 # Note that we have overrides for plymouth services in:
 # static/usr/lib/systemd/system/plymouth-start.service.d/core-override.conf
@@ -37,15 +39,11 @@ cp '/usr/share/fonts/truetype/ubuntu/Ubuntu[wdth,wght].ttf' /usr/share/fonts/Ply
 rm -rf /usr/share/fonts/truetype/ubuntu/
 
 # We pull by "Wants" instead, so these units are not run unless plymouth-start is
-rm /lib/systemd/system/multi-user.target.wants/plymouth-quit-wait.service
-rm /lib/systemd/system/multi-user.target.wants/plymouth-quit.service
-rm /lib/systemd/system/sysinit.target.wants/plymouth-read-write.service
+rm /usr/lib/systemd/system/multi-user.target.wants/plymouth-quit-wait.service
+rm /usr/lib/systemd/system/multi-user.target.wants/plymouth-quit.service
+rm /usr/lib/systemd/system/sysinit.target.wants/plymouth-read-write.service
 # Remove some additional unneeded plymouth stuff that comes from the deb
-rm /usr/libexec/plymouth/plymouth-*-initrd \
-   /usr/share/initramfs-tools/hooks/plymouth \
-   /usr/share/initramfs-tools/scripts/panic/plymouth \
-   /usr/share/initramfs-tools/scripts/init-premount/plymouth \
-   /usr/share/initramfs-tools/scripts/init-bottom/plymouth
+rm /usr/libexec/plymouth/plymouth-*-initrd
 
 # Set UC as the default plymouth theme
 ln -sf /usr/share/plymouth/themes/ubuntu-core/ubuntu-core.plymouth \
