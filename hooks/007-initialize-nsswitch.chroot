@@ -1,0 +1,41 @@
+#!/bin/bash -e
+
+# insert mdns4_minimal into hosts (libnss-mdns)
+tmpfile=$(mktemp)
+while IFS= read -r line; do
+    if [[ "$line" =~ ^hosts:[[:space:]]+(.*) ]]; then
+        # Extract the hosts line content
+        hosts_content="${BASH_REMATCH[1]}"
+        
+        # Check if mdns is already configured
+        if [[ "$hosts_content" =~ mdns4_minimal|mdns4|mdns_minimal|mdns6_minimal|mdns6|mdns ]]; then
+            # Already has mdns configured, keep as is
+            echo "$line"
+        else
+            # Need to insert mdns4_minimal before dns or resolve
+            new_content=""
+            found=0
+            for word in $hosts_content; do
+                if [ "$found" -eq 0 ] && { [ "$word" = "dns" ] || [ "$word" = "resolve" ]; }; then
+                    new_content="${new_content}mdns4_minimal [NOTFOUND=return] $word "
+                    found=1
+                else
+                    new_content="${new_content}$word "
+                fi
+            done
+            # Trim trailing space
+            new_content="${new_content% }"
+            echo "hosts: $new_content"
+        fi
+    else
+        # Not the hosts line, keep as is
+        echo "$line"
+    fi
+done < /etc/nsswitch.conf > "$tmpfile"
+
+# Replace the original file
+mv "$tmpfile" /etc/nsswitch.conf
+
+# Set proper permissions
+chmod 644 /etc/nsswitch.conf
+chown root:root /etc/nsswitch.conf
