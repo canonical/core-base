@@ -7,37 +7,6 @@ mkdir -p /proc
 mount -t proc proc /proc
 trap 'umount /proc' EXIT
 
-# Move some .wants around
-echo "ensure the systemd target.wants are in /lib instead of /etc"
-for d in multi-user.target.wants sysinit.target.wants timers.target.wants; do
-    if ! [ -d etc/systemd/system/"$d" ]; then
-        continue
-    fi
-
-    for unit in etc/systemd/system/"$d"/*; do
-        unit_name=${unit##*/}
-        
-        # Create symlink in /usr/lib
-        ln -s ../"$unit_name" usr/lib/systemd/system/"$d"/"$unit_name"
-
-        # To make "systemclt is-enabled" successful while having symlinks in
-        # /usr/lib, the unit needs to be considered static. To achieve this,
-        # the unit [Install] section needs to be removed. If there is an Alias
-        # we move it to /usr/lib too.
-        aliases=$(sed -n 's/^Alias=//p' "$unit")
-        if [ -n "$aliases" ]; then
-            while read -r alias; do
-                rm etc/systemd/system/"$alias"
-                ln -s "$unit_name" usr/lib/systemd/system/"$alias"
-            done <<< "$aliases"
-        fi
-        sed -i --quiet --follow-symlinks '/\[Install\]/q;p' "$unit"
-    done
-
-    # Remove all symlinks in etc
-    rm etc/systemd/system/"$d"/*
-done
-
 # Reset all unit files
 systemctl preset-all
 
@@ -69,12 +38,6 @@ add_maybe_wants() {
   fi
 }
 
-remove_maybe_symlink() {
-    if [ -e "usr/lib/systemd/system/$2/$1" ]; then
-        rm "usr/lib/systemd/system/$2/$1"
-    fi
-}
-
 # Add some additional .wants that are otherwise generated
 add_maybe_wants wpa_supplicant.service multi-user.target.wants
 add_maybe_wants apparmor.service sysinit.target.wants
@@ -86,3 +49,81 @@ ln -sf ../run/systemd/resolve/stub-resolv.conf etc/resolv.conf
 
 # Generate the hwdb
 systemd-hwdb --usr update || true
+
+# Let us move everything from /etc/systemd/system/*.wants to /usr/lib/systemd/system
+# except for the units related to ssh, getty and cloud-init which we want to
+# keep in /etc to allow configuration by snapd.
+# When doing this, we also remove the [Install] section from the unit files to 
+# make them static and ensure "systemctl is-enabled" works as expected.
+echo "ensure the systemd target.wants are in /usr/lib instead of /etc"
+for wants_dir in /etc/systemd/system/*.wants; do
+    [ -d "$wants_dir" ] || continue
+    target_name=$(basename "$wants_dir")
+    
+    for unit_link in "$wants_dir"/*; do
+        [ -e "$unit_link" ] || continue
+        unit_name=$(basename "$unit_link")
+        
+        # Skip ssh, getty, and cloud-init related units (keep in /etc for snapd)
+        case "$unit_name" in
+            ssh*|*ssh*|getty*|*getty*|cloud-init*)
+                echo "Keeping $unit_name in /etc for snapd configuration"
+                continue
+                ;;
+        esac
+        
+        # Create target directory in /usr/lib if needed
+        mkdir -p "/usr/lib/systemd/system/$target_name"
+        
+        # Move the unit link/file to /usr/lib/systemd/system
+        mv "$unit_link" "/usr/lib/systemd/system/$target_name/"
+        
+        # Find and modify the actual unit file to remove [Install] section
+        for unit_path in "/lib/systemd/system/$unit_name" "/usr/lib/systemd/system/$unit_name" "/etc/systemd/system/$unit_name"; do
+            if [ -f "$unit_path" ]; then
+                # If there is an Alias we move it to /usr/lib too.
+                aliases=$(sed -n 's/^Alias=//p' "$unit_path")
+                if [ -n "$aliases" ]; then
+                    while read -r alias; do
+                        rm etc/systemd/system/"$alias"
+                        ln -s "$unit_name" usr/lib/systemd/system/"$alias"
+                    done <<< "$aliases"
+                fi
+                
+                # Remove [Install] section to make unit static
+                sed -i --quiet --follow-symlinks '/\[Install\]/q;p' "$unit_path"
+                break
+            fi
+        done
+    done
+    
+    # Remove the .wants directory from /etc if now empty
+    rmdir "$wants_dir" 2>/dev/null || true
+done
+
+# move some aliases too, if they already exist in /usr/lib/systemd/system,
+# then we remove them from /etc and patch out the Alias= section 
+# from the unit file to avoid confusion.
+for unit in dbus.service sshd.service ctrl-alt-del.target; do
+    # Check if the unit exists in /usr/lib/systemd/system
+    if [ -e "usr/lib/systemd/system/$unit" ]; then
+        echo "Unit $unit already exists in /usr/lib/systemd/system, removing from /etc if it exists and patching out Alias= lines."
+
+        # Remove from /etc if it exists there
+        rm -f "etc/systemd/system/$unit"
+        
+        # Remove Alias= lines from the unit file
+        if [ -f "usr/lib/systemd/system/$unit" ]; then
+            sed -i '/^Alias=/d' "usr/lib/systemd/system/$unit"
+        fi
+    else
+        echo "Unit $unit not found in usr/lib/systemd/system, migrating it."
+
+        # get the target of the unit in /etc
+        target_unit_link=$(readlink -f "etc/systemd/system/$unit")
+
+        # remake the link in /usr/lib/systemd/system
+        rm -f "etc/systemd/system/$unit"
+        ln -s "$target_unit_link" "/usr/lib/systemd/system/$unit"
+    fi
+done
