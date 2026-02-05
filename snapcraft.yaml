@@ -54,7 +54,7 @@ parts:
         polkitd_bins
         rfkill_bins
         sed_bins
-        sudo_bins
+        sudo-rs_bins
         squashfs-tools_bins
         tar_bins
         util-linux_bins
@@ -68,9 +68,10 @@ parts:
         apparmor_extras
         base-files_motd
         base-files_release-info
+        base-files_root-defaults
         bash-completion_config
         bash-completion_completions
-        ca-certificates_data
+        ca-certificates_data-with-certs
         cloud-init_bins
         cracklib-runtime_bins
         cryptsetup_bins
@@ -132,8 +133,11 @@ parts:
 
         udev_services
         util-linux_services
+        systemd_bash-completions
         systemd_extras
+        systemd_run0
         systemd_kernel-parameters
+        systemd_udev-rules
         systemd_tpm2
         systemd_standard
         systemd_user-services

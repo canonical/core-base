@@ -42,7 +42,6 @@
 /writable/system-data/var/lib/dhcpcd /var/lib/dhcpcd none bind 0 0
 /writable/system-data/var/lib/extrausers /var/lib/extrausers none bind 0 0
 /writable/system-data/var/lib/misc /var/lib/misc none bind 0 0
-/writable/system-data/var/lib/pcrlock.d /var/lib/pcrlock.d none bind,x-initrd.mount 0 0
 /writable/system-data/var/lib/private/systemd /var/lib/private/systemd none bind 0 0
 /writable/system-data/var/lib/snapd /var/lib/snapd none bind,x-initrd.mount 0 0
 /writable/system-data/var/lib/systemd /var/lib/systemd none bind 0 0
