@@ -87,28 +87,23 @@ hooks:
 	# When building through spread there is no .git, which means we cannot
 	# generate the changelog in this case, ensure that the current folder is
 	# a git repository
-	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
-		CHG_PARAMS=; \
-		if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
-			CHG_PARAMS=--launchpad; \
-		fi; \
-		./tools/generate-changelog.py \
-			"/snap/$(SNAP_NAME)/current" \
-			"$(DESTDIR)" \
-			"$(SNAP_NAME)" \
-			$$CHG_PARAMS; \
-	else \
-		echo "WARNING: changelog will not be generated for this build"; \
-	fi
+	# TODO: Update the changelog generation to support chisel builds.
+	# if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
+	# 	CHG_PARAMS=; \
+	# 	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
+	# 		CHG_PARAMS=--launchpad; \
+	# 	fi; \
+	# 	./tools/generate-changelog.py \
+	# 		"/snap/$(SNAP_NAME)/current" \
+	# 		"$(DESTDIR)" \
+	# 		"$(SNAP_NAME)" \
+	# 		$$CHG_PARAMS; \
+	# else \
+	# 	echo "WARNING: changelog will not be generated for this build"; \
+	# fi
 
-	# only generate manifest and dpkg.yaml files for lp build
-	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.list /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest; \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
-		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
-			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
-		fi \
-	fi;
+	# TODO: Coordinate with the LP team that we now produce chisel artifacts
+	
 
 .PHONY: check
 check:

@@ -12,8 +12,12 @@ ln -sf /usr/bin/vim.tiny usr/bin/vi
 ln -sf /usr/bin/vim.tiny usr/bin/rview
 ln -sf /usr/bin/vim.tiny usr/bin/view
 
+# alternatives for less
+ln -sf /usr/bin/less usr/bin/pager
+
 # alternatives for mawk
 ln -sf /usr/bin/mawk usr/bin/awk
 
 # alternatives for netcat-openbsd
 ln -sf /usr/bin/nc.openbsd usr/bin/nc
+ln -sf /usr/bin/nc.openbsd usr/bin/netcat
