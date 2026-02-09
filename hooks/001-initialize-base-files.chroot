@@ -36,10 +36,6 @@ migrate_directory() {
 
 ln -sf usr/lib32 /lib32
 
-# install_from_default dot.profile   /root/.profile
-# install_from_default dot.bashrc    /root/.bashrc
-# install_from_default profile       /etc/profile
-# install_from_default networks      /etc/networks
 install_directory mnt            755 root
 install_directory srv            755 root
 install_directory sys            755 root
@@ -97,11 +93,6 @@ fi
 chown root:utmp /var/log/wtmp /var/log/btmp /var/log/lastlog
 chmod 664 /var/log/wtmp /var/log/lastlog
 chmod 660 /var/log/btmp
-
-# if [ -d /usr/share/info ] && [ ! -f /usr/info/dir ] && [ ! -f /usr/share/info/dir ]; then
-#     install_from_default info.dir /usr/share/info/dir
-#     chmod 644 /usr/share/info/dir
-# fi
 
 # Add PATH to /etc/environment
 echo "putting a PATH in place that contains /snap/bin"

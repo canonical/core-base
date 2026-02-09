@@ -27,3 +27,7 @@ done
 sed -i 's/^passwd:.*files/\0 extrausers/' /etc/nsswitch.conf
 sed -i 's/^group:.*files/\0 extrausers/' /etc/nsswitch.conf
 sed -i 's/^shadow:.*files/\0 extrausers/' /etc/nsswitch.conf
+
+# verify pam_extrausers.so is available
+grep pam_extrausers.so /etc/pam.d/common-password
+grep pam_extrausers.so /etc/pam.d/common-auth

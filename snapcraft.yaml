@@ -116,6 +116,8 @@ parts:
         locales_standard
 
         ncurses-base_terminfo
+        nvidia-kernel-common-590_bins
+        nvidia-kernel-common-590_modprobe-d-kms
 
         openssh-client_config
         openssh-client_services
@@ -193,13 +195,6 @@ parts:
                 --root "${CRAFT_STAGE}"/base \
                 libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
-          arm64)
-              chisel cut --ignore=unstable \
-                --arch=armhf \
-                --release="${CRAFT_PART_SRC}" \
-                --root "${CRAFT_STAGE}"/base \
-                libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
-              ;;
       esac
       
       # https://documentation.ubuntu.com/chisel/en/latest/reference/manifest/
@@ -219,42 +214,20 @@ parts:
       mkdir -p "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators
       cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
 
-  nvidia-deps:
-    plugin: nil
-    source: .
-    build-packages:
-      - nvidia-kernel-common-570
-    after:
-      - chisel-libs
-    override-build: |
-      case "$(dpkg --print-architecture)" in
-          amd64|arm64)
-              # Copy nvidia config files and dependencies (sources for this come from
-              # Canonical, not from Nvidia, see
-              # https://github.com/canonical/nvidia-graphics-drivers).
-              mkdir -m 755 -p "${CRAFT_STAGE}"/base/usr/sbin
-              cp /sbin/ub-device-create "${CRAFT_STAGE}"/base/usr/sbin/ub-device-create
-              
-              mkdir -m 755 -p "${CRAFT_STAGE}"/base/usr/lib/udev/rules.d
-              cp /lib/udev/rules.d/71-nvidia.rules "${CRAFT_STAGE}"/base/usr/lib/udev/rules.d/71-nvidia.rules
-              
-              mkdir -m 755 -p "${CRAFT_STAGE}"/base/etc/modprobe.d
-              cp /etc/modprobe.d/nvidia-graphics-drivers-kms.conf "${CRAFT_STAGE}"/base/etc/modprobe.d/nvidia-graphics-drivers-kms.conf
-              ;;
-      esac
-
   splash-theme:
     plugin: dump
     source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
     source-type: git
     organize:
       ubuntu-core: usr/share/plymouth/themes/ubuntu-core
-  
+      copyright: usr/share/doc/plymouth-theme-ubuntu-core/copyright
+    stage:
+      - -README.md
+
   bootstrap:
     after:
       - chisel-libs
       - snapd-files
-      - nvidia-deps
     plugin: make
     source: .
     build-packages:

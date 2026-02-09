@@ -4,16 +4,6 @@ SNAP_NAME=core26
 SNAP_BUILD_NAME=core26
 CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
-# include any fips environmental setup if the file exists.
-# Variables:
-# - SNAP_FIPS_BUILD
-# - SNAP_BUILD_NAME
--include .fips-env
-ifdef SNAP_FIPS_BUILD
-    export SNAP_FIPS_BUILD
-    export SNAP_BUILD_NAME
-endif
-
 .PHONY: all
 all: check
 	# nothing
@@ -76,31 +66,7 @@ hooks:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
-	# FIXME: change channel to beta when core26 is there
-
-	if ! snap list "$(SNAP_NAME)" | grep "$(SNAP_NAME)"; then \
-		snap install "$(SNAP_NAME)" --edge; \
-	else \
-		snap refresh "$(SNAP_NAME)" --edge; \
-	fi
-
-	# When building through spread there is no .git, which means we cannot
-	# generate the changelog in this case, ensure that the current folder is
-	# a git repository
 	# TODO: Update the changelog generation to support chisel builds.
-	# if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
-	# 	CHG_PARAMS=; \
-	# 	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
-	# 		CHG_PARAMS=--launchpad; \
-	# 	fi; \
-	# 	./tools/generate-changelog.py \
-	# 		"/snap/$(SNAP_NAME)/current" \
-	# 		"$(DESTDIR)" \
-	# 		"$(SNAP_NAME)" \
-	# 		$$CHG_PARAMS; \
-	# else \
-	# 	echo "WARNING: changelog will not be generated for this build"; \
-	# fi
 
 	# TODO: Coordinate with the LP team that we now produce chisel artifacts
 	
