@@ -113,6 +113,11 @@ class PackageNoChangelog(Exception):
     pass
 
 
+# Exception thrown for packages for which we do not find a previous change
+class NoOldChange(Exception):
+    pass
+
+
 # Gets difference in changelog between old and new versions
 # Returns source package and the differences
 def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
@@ -149,7 +154,10 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
             change_chunk += indent + line + '\n'
 
     if not found_version:
-        raise EOFError(f"{old_change_start} was not found in the changelog, aborting")
+        # It can happen if a binary package changes the source package it came
+        # from, for instance this has been seen for libatomic1 that was built
+        # from gcc-15 to gcc-16.
+        raise NoOldChange(f"{old_change_start} for {pkg} was not found in the changelog")
 
     return source_pkg, change_chunk
 
@@ -178,6 +186,9 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
                         src_pkgs[src].debs.append(pkg)
                 except PackageNoChangelog as e:
                     print(e)
+                except NoOldChange as e:
+                    print(e)
+                    changes += pkg + ' (' + new_v + '): new primed package\n\n'
         except KeyError:
             changes += pkg + ' (' + new_v + '): new primed package\n\n'
 
