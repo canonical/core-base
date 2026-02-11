@@ -7,7 +7,7 @@ set -ex
 echo "I: Removing the debian legacy"
 
 # dpkg-deb and dpkg purposefully left behind
-dpkg --purge --force-depends apt libapt-pkg6.0t64 debconf
+dpkg --purge --force-depends apt libapt-pkg7.0 debconf python3-debconf
 
 # store manifest of all installed packages
 install -m755 -d usr/share/snappy
