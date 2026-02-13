@@ -1,8 +1,0 @@
-#!/bin/sh -x
-
-set -e
-
-# Enable pam configuration for pwquality
-pam-auth-update --enable pwquality
-# and verify it is available
-grep pam_pwquality.so /etc/pam.d/common-password

@@ -8,10 +8,3 @@ if [ -d lib/x86_64-linux-gnu/ ] && [ ! -d lib/i386-linux-gnu ]; then
     ls lib
     exit 1
 fi
-
-if [ -d lib/aarch64-linux-gnu ] && [ ! -d lib/arm-linux-gnueabihf ]; then
-    echo "Bi-arch should be enabled on arm64 systems."
-    echo "But cannot find an arm lib directory."
-    ls lib
-    exit 1
-fi

@@ -1,4 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
+
+set -ex
 
 echo "Create the boot mount points"
 mkdir -p /boot/androidboot
