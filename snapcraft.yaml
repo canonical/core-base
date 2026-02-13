@@ -18,9 +18,9 @@ parts:
     build-packages:
       - golang
       - file
-    source: https://github.com/Meulengracht/chisel-releases.git
+    source: https://github.com/canonical/chisel-ubuntu-core.git
     source-type: git
-    source-branch: ubuntu-core-26.04
+    source-branch: '26.04'
     override-build: |
       go install github.com/canonical/chisel/cmd/chisel@latest
       
