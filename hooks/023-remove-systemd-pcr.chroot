@@ -12,3 +12,11 @@ rm -f /usr/lib/systemd/system/*/systemd-pcrphase*.service
 rm -f /usr/lib/systemd/system/systemd-pcrphase*.service
 rm -f /usr/lib/systemd/system/*/systemd-pcrmachine.service
 rm -f /usr/lib/systemd/system/systemd-pcrmachine.service
+
+# Remove systemd-pcrlock and units
+rm -f /usr/lib/systemd/systemd-pcrlock
+rm -f /usr/lib/systemd/system/*/systemd-pcrlock*.socket
+rm -f /usr/lib/systemd/system/*/systemd-pcrlock*.service
+rm -f /usr/lib/systemd/system/systemd-pcrlock*.service
+rm -f /usr/lib/systemd/system/systemd-pcrlock*.socket
+rm -rf /usr/lib/pcrlock.d
