@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -eu
+
+# Because /etc/fstab is read-only now, we should not let cloud-init
+# try to modify it.
+sed -i '/^ *- mounts$/d' /etc/cloud/cloud.cfg
