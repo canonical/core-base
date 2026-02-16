@@ -60,6 +60,14 @@ for wants_dir in /etc/systemd/system/*.wants; do
     [ -d "$wants_dir" ] || continue
     target_name=$(basename "$wants_dir")
     
+    # Skip cloud-init related .wants (keep in /etc for snapd)
+    case "$target_name" in
+        cloud-init*)
+            echo "Keeping $target_name in /etc for snapd configuration"
+            continue
+            ;;
+    esac
+    
     for unit_link in "$wants_dir"/*; do
         [ -e "$unit_link" ] || continue
         unit_name=$(basename "$unit_link")

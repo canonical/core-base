@@ -58,7 +58,11 @@ parts:
         squashfs-tools_bins
         tar_bins
         util-linux_bins
-        util-linux-extra_bins
+        util-linux-extra_file-system
+        util-linux-extra_hardware
+        util-linux-extra_process
+        util-linux-extra_login
+        util-linux-extra_tty
         vim-tiny_bins
       )
 

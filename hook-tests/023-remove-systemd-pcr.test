@@ -13,3 +13,15 @@ do
   ! [ -f "${f}" ]
   ! [ -L "${f}" ]
 done
+
+! [ -f usr/lib/systemd/systemd-pcrlock ]
+for f in \
+  usr/lib/systemd/systemd-pcrlock \
+  usr/lib/systemd/system/*/systemd-pcrlock*.service \
+  usr/lib/systemd/system/*/systemd-pcrlock*.socket \
+  usr/lib/systemd/system/systemd-pcrlock*.service \
+  usr/lib/systemd/system/systemd-pcrlock*.socket
+do
+  ! [ -f "${f}" ]
+  ! [ -L "${f}" ]
+done
