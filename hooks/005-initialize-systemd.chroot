@@ -16,6 +16,16 @@ systemctl enable remote-fs.target || true
 systemctl enable systemd-resolved.service || true
 systemctl enable systemd-pstore.service || true
 
+# disable some services by default
+systemctl disable systemd-sysext.service systemd-sysext.socket || true
+systemctl disable systemd-confext.service || true
+systemctl disable systemd-bootchart.service || true
+systemctl disable remote-veritysetup.target || true
+systemctl disable remote-cryptsetup.target || true
+systemctl disable systemd-network-generator.service || true
+systemctl disable systemd-udev-load-credentials.service || true
+systemctl disable systemd-journald-audit.socket || true
+
 # Enable persistent journal, in auto-mode, by default
 mkdir -p /var/log/journal
 # create tmpfiles only when running systemd, otherwise %b substitution fails
@@ -74,7 +84,7 @@ for wants_dir in /etc/systemd/system/*.wants; do
         
         # Skip ssh, getty, and cloud-init related units (keep in /etc for snapd)
         case "$unit_name" in
-            ssh*|*ssh*|getty*|*getty*|cloud-init*)
+            systemd-networkd*|systemd-socket*|ssh*|*ssh*|getty*|*getty*|cloud-init*)
                 echo "Keeping $unit_name in /etc for snapd configuration"
                 continue
                 ;;

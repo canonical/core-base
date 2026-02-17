@@ -96,5 +96,5 @@ chmod 660 /var/log/btmp
 
 # Add PATH to /etc/environment
 echo "putting a PATH in place that contains /snap/bin"
-echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"' >/etc/environment
+echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/cargo/bin:/snap/bin"' >/etc/environment
 chmod 644 /etc/environment
