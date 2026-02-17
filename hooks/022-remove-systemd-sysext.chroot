@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -eux
-
-# disable sysext units
-systemctl disable systemd-sysext.service systemd-sysext.socket || true
-
-# disable confext units
-systemctl disable systemd-confext.service || true
