@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -eu
+
+echo "generating ldconfig cache"
+ldconfig

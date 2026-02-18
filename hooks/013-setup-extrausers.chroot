@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -ex
+
+# There is no default user anymore, console-conf is responsible
+# for creating one
+
+# setup the required files for extrausers
+for name in group gshadow passwd shadow subuid subgid; do
+    touch /var/lib/extrausers/$name
+done
+
+cat > /var/lib/extrausers/group <<EOF
+users:x:100:
+EOF
+
+cat > /var/lib/extrausers/gshadow <<EOF
+users:*::
+EOF
+
+for name in gshadow shadow; do
+    chmod 640 /var/lib/extrausers/$name
+    chown root:shadow /var/lib/extrausers/$name
+done
+
+# Enable libnss-extrusers
+sed -i 's/^passwd:.*files/\0 extrausers/' /etc/nsswitch.conf
+sed -i 's/^group:.*files/\0 extrausers/' /etc/nsswitch.conf
+sed -i 's/^shadow:.*files/\0 extrausers/' /etc/nsswitch.conf
+
+# verify pam_extrausers.so is available
+grep pam_extrausers.so /etc/pam.d/common-password
+grep pam_extrausers.so /etc/pam.d/common-auth

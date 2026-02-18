@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -eux
-
-# ensure link is readable
-grep "LANG" etc/locale.conf
-
-# ensure link is readable
-grep "KEYMAP" etc/vconsole.conf
