@@ -20,3 +20,6 @@ rm -f /usr/lib/systemd/system/*/systemd-pcrlock*.service
 rm -f /usr/lib/systemd/system/systemd-pcrlock*.service
 rm -f /usr/lib/systemd/system/systemd-pcrlock*.socket
 rm -rf /usr/lib/pcrlock.d
+
+# Remove systemd-pcrextend bits
+rm -f /usr/lib/systemd/system/systemd-pcrextend*.socket

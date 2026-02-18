@@ -7,24 +7,24 @@ mkdir -p /proc
 mount -t proc proc /proc
 trap 'umount /proc' EXIT
 
+# Avoid enabling too many services, so add a preset file that disables everything by default, and then we can enable the ones we want.
+mkdir -p /etc/systemd/system-preset/
+cat > /etc/systemd/system-preset/50-default.preset <<EOF
+# default to disable
+disable *
+
+# enable some services by default
+enable getty@tty1.service
+enable remote-fs.target
+enable systemd-resolved.service
+enable systemd-pstore.service
+EOF
+
 # Reset all unit files
 systemctl preset-all
 
-# enable some services by default
-systemctl enable getty@tty1.service || true
-systemctl enable remote-fs.target || true
-systemctl enable systemd-resolved.service || true
-systemctl enable systemd-pstore.service || true
-
-# disable some services by default
-systemctl disable systemd-sysext.service systemd-sysext.socket || true
-systemctl disable systemd-confext.service || true
-systemctl disable systemd-bootchart.service || true
-systemctl disable remote-veritysetup.target || true
-systemctl disable remote-cryptsetup.target || true
-systemctl disable systemd-network-generator.service || true
-systemctl disable systemd-udev-load-credentials.service || true
-systemctl disable systemd-journald-audit.socket || true
+# Remove the preset file again
+rm /etc/systemd/system-preset/50-default.preset
 
 # Enable persistent journal, in auto-mode, by default
 mkdir -p /var/log/journal
@@ -41,18 +41,6 @@ systemd-tmpfiles --create
 
 # Clean up removed ondemand service
 rm -f /etc/systemd/system/multi-user.target.wants/ondemand.service
-
-add_maybe_wants() {
-  if [ -e "usr/lib/systemd/system/$1" ]; then
-    ln -s "usr/lib/systemd/system/$1" "usr/lib/systemd/system/$2/$1"
-  fi
-}
-
-# Add some additional .wants that are otherwise generated
-add_maybe_wants wpa_supplicant.service multi-user.target.wants
-add_maybe_wants apparmor.service sysinit.target.wants
-add_maybe_wants finalrd.service sysinit.target.wants
-add_maybe_wants fstrim.timer timers.target.wants
 
 # Setup resolv.conf to use systemd-resolved's stub resolver
 ln -sf ../run/systemd/resolve/stub-resolv.conf etc/resolv.conf
