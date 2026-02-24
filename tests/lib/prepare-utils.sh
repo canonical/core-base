@@ -135,7 +135,12 @@ install_base_deps() {
 
     # these should already be installed in GCE and LXD images with the google/lxd-nested 
     # backend, but in qemu local images from qemu-nested, we might not have them
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install psmisc fdisk snapd mtools ovmf qemu-system-x86 sshpass whois -yqq
+    arch_pkgs=(qemu-system-x86)
+    if os.query is-arm64; then
+        arch_pkgs=(qemu-efi-aarch64)
+    fi
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install \
+         ipxe-qemu psmisc fdisk snapd mtools ovmf "${arch_pkgs[@]}" sshpass whois -yqq
 
     # TODO: https://bugs.launchpad.net/snapd/+bug/1712808
     # There is a bug in snapd that prevents udev rules from reloading in privileged containers
