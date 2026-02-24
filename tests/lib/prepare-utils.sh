@@ -170,8 +170,7 @@ download_core26_snaps() {
     esac
 
     # download neccessary images
-    # TODO replace with 26 track when available
-    snap download pc-kernel --channel=25.10/"${kernel_branch}" --basename=upstream-pc-kernel
+    snap download pc-kernel --channel=26/"${kernel_branch}" --basename=upstream-pc-kernel
     snap download pc --channel=26/${snap_branch} --basename=upstream-pc-gadget
     snap download snapd --channel=${snap_branch} --basename=upstream-snapd
 }
