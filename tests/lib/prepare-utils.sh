@@ -239,9 +239,16 @@ build_base_image() {
     local core_snap_name="$(get_core_snap_name)"
     ubuntu-image snap \
         -i 8G \
-        --snap $core_snap_name \
+        --snap "$core_snap_name" \
         --snap upstream-snapd.snap \
         --snap upstream-pc-kernel.snap \
         --snap upstream-pc-gadget.snap \
         ubuntu-core-dangerous.model
+    # virtio requires 4KiB alignment on arm64, ensure that
+    img_f=pc.img
+    align=4096
+    current_sz=$(stat --format=%s "$img_f")
+    modulo=$((current_sz % align))
+    new_sz=$((current_sz + align - modulo))
+    truncate -s "$new_sz" "$img_f"
 }
