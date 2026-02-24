@@ -97,7 +97,7 @@ start_nested_core_vm_unit(){
     PARAM_CPU=""
     PARAM_TRACE="-d cpu_reset"
     PARAM_LOG="-D ${WORK_DIR}/qemu.log"
-    PARAM_SERIAL="-serial file:${WORK_DIR}/serial.log"
+    PARAM_SERIAL="-chardev socket,telnet=on,host=localhost,server=on,port=7777,wait=off,id=char0,logfile=${WORK_DIR}/serial.log,logappend=on -serial chardev:char0"
     PARAM_TPM=""
 
     # TODO: enable ms key booting for i.e. nightly edge jobs ?
