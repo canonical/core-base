@@ -81,24 +81,6 @@ print_system "in run mode, not run yet, extracting overlay data"
 # extract data from previous stage
 (cd / && tar xf /run/mnt/ubuntu-seed/run-mode-overlay-data.tar.gz)
 cp -r /root/test-var/lib/extrausers /var/lib
-# user db - it's complicated
-for f in group gshadow passwd shadow; do
-    # now bind mount read-only those passwd files on boot
-    cat >/etc/systemd/system/etc-"$f".mount <<EOF2
-[Unit]
-Description=Mount root/test-etc/$f over system etc/$f
-Before=ssh.service
-[Mount]
-What=/root/test-etc/$f
-Where=/etc/$f
-Type=none
-Options=bind,ro
-[Install]
-WantedBy=multi-user.target
-EOF2
-    systemctl enable etc-"$f".mount
-    systemctl start etc-"$f".mount
-done
 mkdir -p /home/test
 chown 12345:12345 /home/test
 mkdir -p /home/ubuntu
@@ -138,23 +120,8 @@ build_base_image
 # setup some data we will inject into ubuntu-seed partition of the image above
 # that snapd.spread-tests-run-mode-tweaks.service will ingest
 
-# We get the base user data from the boot base
-base_d=base
-unsquashfs -d "$base_d" "$uc_snap"
-
-# this sets up some /etc/passwd and group magic that ensures the test and ubuntu
-# users are working, mostly copied from snapd spread magic
-mkdir -p /root/test-etc
 mkdir -p /root/test-var/lib/extrausers
 touch /root/test-var/lib/extrausers/sub{uid,gid}
-for f in group gshadow passwd shadow; do
-    # We bind mount this directory when we run
-    cp "$base_d"/etc/"$f" /root/test-etc/
-    # These files are copied when we run
-    cp "$base_d"/var/lib/extrausers/"$f" /root/test-var/lib/extrausers/
-done
-
-rm -rf "$base_d"
 
 # TODO: could we just do this in the script above with adduser --extrausers and
 # echo ubuntu:ubuntu | chpasswd ?
@@ -168,10 +135,9 @@ echo "ubuntu:x:1000:1001:Ubuntu:/home/ubuntu:/bin/bash" >> /root/test-var/lib/ex
 echo "ubuntu:x:1001:" >> /root/test-var/lib/extrausers/group
 
 # tar the runmode tweaks and copy them to the image
-tar -c -z -f run-mode-overlay-data.tar.gz \
-    /root/test-etc /root/test-var/lib/extrausers
+tar -c -z -f run-mode-overlay-data.tar.gz /root/test-var/lib/extrausers
 partoffset=$(fdisk -lu pc.img | awk '/EFI System$/ {print $2}')
-mcopy -i pc.img@@$(($partoffset * 512)) run-mode-overlay-data.tar.gz ::run-mode-overlay-data.tar.gz
+mcopy -i pc.img@@$((partoffset * 512)) run-mode-overlay-data.tar.gz ::run-mode-overlay-data.tar.gz
 
 # the image is now ready to be booted
 mv pc.img "$PROJECT_PATH/pc.img"
