@@ -22,10 +22,9 @@ backends:
     plan: n2-standard-4
     halt-timeout: 2h
     systems:
-      # TODO switch to 26 when available
-      - ubuntu-24.04-64:
+      - ubuntu-26.04-64:
           workers: 4
-          image: ubuntu-24.04-64
+          image: ubuntu-2604-64-virt-enabled
           storage: 20G
 
   google-nested-arm:
@@ -35,18 +34,16 @@ backends:
     plan: t2a-standard-4
     halt-timeout: 2h
     systems:
-      # TODO switch to 26 when available
-      - ubuntu-24.04-arm-64:
+      - ubuntu-26.04-arm-64:
           workers: 4
-          image: ubuntu-2404-arm-64-virt-enabled
+          image: ubuntu-2604-arm-64-virt-enabled
           storage: 25G
 
   qemu-nested:
     type: qemu
     memory: 4G
     systems:
-      # TODO switch to 26 when available
-      - ubuntu-24.04-64:
+      - ubuntu-26.04-64:
           username: ubuntu
           password: ubuntu
 
@@ -54,8 +51,7 @@ backends:
     type: lxd
     container-profiles: core26
     systems:
-      # TODO switch to 26 when available
-      - ubuntu-24.04:
+      - ubuntu-26.04:
           image: ucspread26
 
 path: /home/core26
