@@ -3,9 +3,10 @@
 # insert mdns4_minimal into hosts (libnss-mdns)
 tmpfile=$(mktemp)
 while IFS= read -r line; do
-    if [[ "$line" =~ ^hosts:[[:space:]]+(.*) ]]; then
-        # Extract the hosts line content
-        hosts_content="${BASH_REMATCH[1]}"
+    if [[ "$line" =~ ^([[:space:]]*hosts:[[:space:]]+)(.*)$ ]]; then
+        # Extract the original hosts prefix (with spacing) and content
+        hosts_prefix="${BASH_REMATCH[1]}"
+        hosts_content="${BASH_REMATCH[2]}"
         
         # Check if mdns is already configured
         if [[ "$hosts_content" =~ mdns4_minimal|mdns4|mdns_minimal|mdns6_minimal|mdns6|mdns ]]; then
@@ -25,7 +26,7 @@ while IFS= read -r line; do
             done
             # Trim trailing space
             new_content="${new_content% }"
-            echo "hosts: $new_content"
+            echo "${hosts_prefix}${new_content}"
         fi
     else
         # Not the hosts line, keep as is

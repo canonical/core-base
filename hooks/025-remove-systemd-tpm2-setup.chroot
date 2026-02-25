@@ -5,3 +5,6 @@ set -eux
 rm -f /usr/lib/systemd/systemd-tpm2-setup
 rm -f /usr/lib/systemd/system/*/systemd-tpm2-setup*.service
 rm -f /usr/lib/systemd/system/systemd-tpm2-setup*.service
+
+rm -f /usr/lib/systemd/system/*/systemd-tpm2-clear*.service
+rm -f /usr/lib/systemd/system/systemd-tpm2-clear*.service

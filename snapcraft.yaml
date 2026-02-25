@@ -148,6 +148,7 @@ parts:
         systemd-bootchart_services
         systemd-coredump_bins
         systemd-cryptsetup_bins
+        systemd-cryptsetup_services
         systemd-resolved_bins
         systemd-sysv_bins
         systemd-timesyncd_services

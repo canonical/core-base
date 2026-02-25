@@ -17,6 +17,9 @@ rm -rvf /etc/profile.d/Z99-cloud*
 # python3 sets byte-compile default for debian
 rm -rf /etc/python3*
 
+# no need for old style init, we cannot delete /etc/init.d: apparmor needs it
+rm -rf /etc/rc[0-6S].d
+
 # only provides a symbolic name for "link-local"
 rm /etc/networks
 

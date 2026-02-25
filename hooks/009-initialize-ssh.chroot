@@ -16,3 +16,12 @@ if [ "$password_authentication" != true ]; then
 fi
 mkdir -pZ /etc/ssh
 mv "$new_config" /etc/ssh/sshd_config
+
+# Ensure RuntimeDirectoryPreserve=yes is set for sshd.service to preserve /run/sshd
+mkdir -p /usr/lib/systemd/system/sshd.service.d
+cat > /usr/lib/systemd/system/sshd.service.d/preserve.conf <<EOF
+[Service]
+RuntimeDirectory=sshd
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0755
+EOF
