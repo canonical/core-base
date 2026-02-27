@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# Remove gdb related files, since the base does not ship gdb the files the
-# auto-load plugins are not useful
-
-set -ex
-
-rm -rv usr/share/gdb
-rm -rv usr/share/gcc/python

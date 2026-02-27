@@ -8,4 +8,4 @@ set -e
 # breaks existing snaps (like mysql).
 #
 # This fixes LP: #1779416
-sed -i -e '/\[ -e \/etc\/lsb-base-logging.sh \]/d' /lib/lsb/init-functions
+sed -i -e '/\[ -e \/etc\/lsb-base-logging.sh \]/d' /usr/lib/lsb/init-functions

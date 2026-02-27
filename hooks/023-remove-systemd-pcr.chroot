@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -eux
+
+# systemd-pcrphase depends on tpm2-tss which we do not provide
+# systemd-pcrphase measures the phase of the boot in PCR 11.  PCR 11
+# is meant to measure signed kernel sections (see systemd-measure)
+# We are not yet using that PCR.
+
+rm -f /usr/lib/systemd/systemd-pcrphase
+rm -f /usr/lib/systemd/system/*/systemd-pcrphase*.service
+rm -f /usr/lib/systemd/system/systemd-pcrphase*.service
+rm -f /usr/lib/systemd/system/*/systemd-pcrmachine.service
+rm -f /usr/lib/systemd/system/systemd-pcrmachine.service
+
+# Remove systemd-pcrlock and units
+rm -f /usr/lib/systemd/systemd-pcrlock
+rm -f /usr/lib/systemd/system/*/systemd-pcrlock*.socket
+rm -f /usr/lib/systemd/system/*/systemd-pcrlock*.service
+rm -f /usr/lib/systemd/system/systemd-pcrlock*.service
+rm -f /usr/lib/systemd/system/systemd-pcrlock*.socket
+rm -rf /usr/lib/pcrlock.d
+
+# Remove systemd-pcrextend bits
+rm -f /usr/lib/systemd/system/*/systemd-pcrextend*.socket
+rm -f /usr/lib/systemd/system/systemd-pcrextend*.socket

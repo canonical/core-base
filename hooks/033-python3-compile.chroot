@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -eu
+
+echo "compiling python modules"
+for f in /lib/python3.13/ /usr/lib/python3/dist-packages /usr/share/subiquity/; do
+    python3 -m compileall "$f"
+done

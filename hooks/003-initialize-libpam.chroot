@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+# libpam-modules initialization
+if ! [ -f /etc/security/opasswd ]; then
+    umask 066
+    touch /etc/security/opasswd
+    umask 022
+fi
