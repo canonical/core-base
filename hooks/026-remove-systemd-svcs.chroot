@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eux
+
+# remove sysext and confext
+rm -f /usr/lib/systemd/system/*/systemd-confext*.service
+rm -f /usr/lib/systemd/system/*/systemd-sysext*.service
+rm -f /usr/lib/systemd/system/systemd-confext*.service
+rm -f /usr/lib/systemd/system/systemd-sysext*.service

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+if [ -d lib/x86_64-linux-gnu/ ] && [ ! -d lib/i386-linux-gnu ]; then
+    echo "Bi-arch should be enabled on amd64 systems."
+    echo "But cannot find an i386 lib directory."
+    ls lib
+    exit 1
+fi

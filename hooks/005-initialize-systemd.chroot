@@ -1,0 +1,179 @@
+#!/bin/bash
+
+set -ex
+
+# ensure we have /proc or systemd will fail
+mkdir -p /proc
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# Avoid enabling too many services, so add a preset file that 
+# disables everything by default, and then we can enable the ones we want.
+mkdir -p /etc/systemd/system-preset/
+cat > /etc/systemd/system-preset/99-default.preset <<EOF
+# We disable everything by default
+disable *
+EOF
+
+# Reset all unit files
+systemctl preset-all
+
+# Remove the preset file again
+rm /etc/systemd/system-preset/99-default.preset
+
+# Enable persistent journal, in auto-mode, by default
+mkdir -p /var/log/journal
+# create tmpfiles only when running systemd, otherwise %b substitution fails
+if [ -d /run/systemd/system ]; then
+    systemd-tmpfiles --create --prefix /var/log/journal
+fi
+
+# Initial update of the Message Catalogs database
+journalctl --update-catalog || true
+
+# Setup tmpfiles
+systemd-tmpfiles --create
+
+# Clean up removed ondemand service
+rm -f /etc/systemd/system/multi-user.target.wants/ondemand.service
+
+# Setup resolv.conf to use systemd-resolved's stub resolver
+ln -sf ../run/systemd/resolve/stub-resolv.conf etc/resolv.conf
+
+# Generate the hwdb
+systemd-hwdb --usr update || true
+
+case "$(uname -m)" in
+    x86_64) ARCH="amd64" ;;
+    i386|i486|i586|i686) ARCH="i386" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+    armv7l|armv7|armhf) ARCH="armhf" ;;
+    riscv64) ARCH="riscv64" ;;
+    ppc64le) ARCH="ppc64el" ;;
+    s390x) ARCH="s390x" ;;
+    *) ARCH="unknown" ;;
+esac
+
+# Ensure selected base units are enabled
+for unit in \
+    cloud-init-local.service \
+    cloud-init-main.service \
+    cloud-init-network.service \
+    cloud-config.service \
+    cloud-final.service \
+    cloud-init-hotplugd.service \
+    cloud-init-hotplugd.socket \
+    e2scrub_reap.service \
+    secureboot-db.service \
+    wpa_supplicant.service \
+    apparmor.service \
+    finalrd.service \
+    netplan-configure.service \
+    sshd-keygen.service \
+    e2scrub_all.timer \
+    fstrim.timer
+do
+    if [ "$unit" = "secureboot-db.service" ] && [ "$ARCH" != "amd64" ] && [ "$ARCH" != "i386" ]; then
+        continue
+    fi
+    systemctl enable "$unit"
+done
+
+# Ensure user units are enabled globally
+systemctl --global enable ssh-agent.socket
+
+# Ensure imports.target is pulled in by sysinit.target
+ln -sf ../imports.target /usr/lib/systemd/system/sysinit.target.wants/imports.target
+
+# Let us move everything from /etc/systemd/system/*.wants to /usr/lib/systemd/system
+# except for the units related to ssh, getty and cloud-init which we want to
+# keep in /etc to allow configuration by snapd.
+# When doing this, we also remove the [Install] section from the unit files to 
+# make them static and ensure "systemctl is-enabled" works as expected.
+echo "ensure the systemd target.wants are in /usr/lib instead of /etc"
+for wants_dir in /etc/systemd/system/*.wants; do
+    [ -d "$wants_dir" ] || continue
+    target_name=$(basename "$wants_dir")
+    
+    # Skip cloud-init related .wants (keep in /etc for snapd)
+    case "$target_name" in
+        cloud-*)
+            echo "Keeping $target_name in /etc for snapd configuration"
+            continue
+            ;;
+    esac
+    
+    for unit_link in "$wants_dir"/*; do
+        [ -e "$unit_link" ] || continue
+        unit_name=$(basename "$unit_link")
+        
+        # Skip ssh, getty, and cloud-init related units (keep in /etc for snapd)
+        case "$unit_name" in
+            systemd-networkd*|systemd-socket*|ssh*|*ssh*|getty*|*getty*|cloud-*)
+                echo "Keeping $unit_name in /etc for snapd configuration"
+                continue
+                ;;
+        esac
+        
+        # Create target directory in /usr/lib if needed
+        mkdir -p "/usr/lib/systemd/system/$target_name"
+        
+        # Move the unit link/file to /usr/lib/systemd/system
+        mv "$unit_link" "/usr/lib/systemd/system/$target_name/"
+        
+        # Find and modify the actual unit file to remove [Install] section
+        for unit_path in "/lib/systemd/system/$unit_name" "/usr/lib/systemd/system/$unit_name" "/etc/systemd/system/$unit_name"; do
+            if [ -f "$unit_path" ]; then
+                # If there is an Alias we move it to /usr/lib too.
+                aliases=$(sed -n 's/^Alias=//p' "$unit_path")
+                if [ -n "$aliases" ]; then
+                    while read -r alias; do
+                        rm etc/systemd/system/"$alias"
+                        ln -s "$unit_name" usr/lib/systemd/system/"$alias"
+                    done <<< "$aliases"
+                fi
+                
+                # Remove [Install] section to make unit static
+                sed -i --quiet --follow-symlinks '/\[Install\]/q;p' "$unit_path"
+                break
+            fi
+        done
+    done
+    
+    # Remove the .wants directory from /etc if now empty
+    case "$target_name" in
+        cloud-*|getty*|ssh*)
+            echo "Keeping $target_name /etc folder for snapd configuration"
+            ;;
+        *)
+            rmdir "$wants_dir" 2>/dev/null || true
+            ;;
+    esac
+done
+
+# move some aliases too, if they already exist in /usr/lib/systemd/system,
+# then we remove them from /etc and patch out the Alias= section 
+# from the unit file to avoid confusion.
+for unit in dbus.service sshd.service ctrl-alt-del.target; do
+    # Check if the unit exists in /usr/lib/systemd/system
+    if [ -e "usr/lib/systemd/system/$unit" ]; then
+        echo "Unit $unit already exists in /usr/lib/systemd/system, removing from /etc if it exists and patching out Alias= lines."
+
+        # Remove from /etc if it exists there
+        rm -f "etc/systemd/system/$unit"
+        
+        # Remove Alias= lines from the unit file
+        if [ -f "usr/lib/systemd/system/$unit" ]; then
+            sed -i '/^Alias=/d' "usr/lib/systemd/system/$unit"
+        fi
+    else
+        echo "Unit $unit not found in usr/lib/systemd/system, migrating it."
+
+        # get the target of the unit in /etc
+        target_unit_link=$(readlink -f "etc/systemd/system/$unit")
+
+        # remake the link in /usr/lib/systemd/system
+        rm -f "etc/systemd/system/$unit"
+        ln -s "$target_unit_link" "/usr/lib/systemd/system/$unit"
+    fi
+done

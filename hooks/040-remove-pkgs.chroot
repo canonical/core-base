@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -e
-
-echo "Remove uneeded packages"
-
-# Remove file which got pulled in by cracklib-runtime. We are discarding
-# cracklib-runtime binary programs in later hooks (601-clean-cracklib.chroot).
-dpkg --purge --force-depends file libmagic1t64 libmagic-mgc

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -eux
+
+permit_root_login=true
+password_authentication=true
+new_config="$(mktemp)"
+cp -aZ /usr/share/openssh/sshd_config "$new_config"
+if [ "$permit_root_login" != true ]; then
+    sed -i 's/^#*PermitRootLogin .*/PermitRootLogin yes/' \
+        "$new_config"
+fi
+if [ "$password_authentication" != true ]; then
+    sed -i 's/^#PasswordAuthentication .*/PasswordAuthentication no/' \
+        "$new_config"
+fi
+mkdir -pZ /etc/ssh
+mv "$new_config" /etc/ssh/sshd_config
+
+# Ensure RuntimeDirectoryPreserve=yes is set for sshd.service to preserve /run/sshd
+mkdir -p /usr/lib/systemd/system/sshd.service.d
+cat > /usr/lib/systemd/system/sshd.service.d/preserve.conf <<EOF
+[Service]
+RuntimeDirectory=sshd
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0755
+EOF

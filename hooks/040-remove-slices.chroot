@@ -1,0 +1,50 @@
+#!/bin/sh
+
+set -e
+
+echo "I: Remove unneeded files"
+
+# Remove file which got pulled in by cracklib-runtime. We are discarding
+# cracklib-runtime binary programs in later hooks (601-clean-cracklib.chroot).
+
+# remove file slices
+rm /usr/bin/file
+
+# remove libmagic1
+rm /etc/magic /etc/magic.mime
+rm /usr/lib/*-linux-*/libmagic.so.1*
+rm /usr/share/misc/magic
+
+# remove libmagic-mgc
+rm /usr/lib/file/magic.mgc
+rm /usr/share/file/magic.mgc
+rm /usr/share/misc/magic.mgc
+
+# remove libsemanage-common
+rm /etc/selinux/semanage.conf
+
+# remove util-linux-extra_hardware
+# exclude it if we dont need wdctl/hwclock
+rm /usr/bin/chcpu
+rm /usr/bin/chmem
+rm /usr/bin/lsclocks
+rm /usr/bin/lsirq
+rm /usr/bin/lsmem
+# rm /usr/bin/wdctl
+# /usr/sbin/hwclock
+
+# remove util-linux-extra_process bits
+rm /usr/bin/bits
+rm /usr/bin/coresched
+rm /usr/bin/exch
+rm /usr/bin/fadvise
+rm /usr/bin/fincore
+rm /usr/bin/lsfd
+rm /usr/bin/pipesz
+#rm /usr/bin/sg
+#rm /usr/bin/waitpid
+
+# remove util-linux-extra_login bits
+rm /usr/bin/lslogins
+rm /usr/bin/newgrp
+#rm /usr/sbin/ctrlaltdel

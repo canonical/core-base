@@ -18,8 +18,8 @@ ln -s ../ssh.socket "$distro_sysd_d"/sockets.target.wants/ssh.socket
 ln -s ../ssh.socket "$distro_sysd_d"/ssh.service.requires/ssh.socket
 
 admin_sysd_d=/etc/systemd/system
-rm "$admin_sysd_d"/sockets.target.wants/ssh.socket
-rm -r "$admin_sysd_d"/ssh.service.requires
+rm "$admin_sysd_d"/sockets.target.wants/ssh.socket || true
+rm -r "$admin_sysd_d"/ssh.service.requires || true
 
 # For the ssh.socket to be considered enabled but using symlinks in /usr/lib,
 # the unit needs to be considered "static". To achieve this, the unit [Install]
