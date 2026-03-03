@@ -7,5 +7,7 @@ set -xe
 
 echo "I: Removing xkb data"
 
-rm -rv /usr/share/X11/xkb
+# Remove /usr/share/xkeyboard-config-2 and the symlink to it (/usr/share/X11/xkb)
+rm -rv /usr/share/xkeyboard-config-2
+rm -v /usr/share/X11/xkb
 rmdir /usr/share/X11
