@@ -167,14 +167,11 @@ parts:
       
       # add architecture specific slices
       case "$(dpkg --print-architecture)" in
-          amd64)
+          amd64|arm64)
               SLICES+=(secureboot-db_services nvidia-kernel-common-590_bins nvidia-kernel-common-590_modprobe-d-kms)
               ;;
           i386)
               SLICES+=(secureboot-db_services)
-              ;;
-          arm64)
-              SLICES+=(nvidia-kernel-common-590_bins nvidia-kernel-common-590_modprobe-d-kms)
               ;;
           riscv64)
               SLICES+=(gdbserver_bins systemd-bootchart_services)
