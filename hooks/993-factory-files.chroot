@@ -50,7 +50,6 @@ dirs=(
     /var/lib/dhcpcd
     /var/lib/extrausers
     /var/lib/misc
-    /var/lib/pcrlock.d
     /var/lib/private/systemd
     /var/lib/snapd
     /var/lib/systemd
