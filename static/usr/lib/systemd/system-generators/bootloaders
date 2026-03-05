@@ -16,7 +16,8 @@ if [ "${mode}" = "run" ]; then
         enable boot-grub.mount
         # ensure ESP efi dir is available for fwupdate (LP: 1892392)
         enable boot-efi.mount
-    elif [ -f /run/mnt/ubuntu-boot/uboot/ubuntu/boot.sel ]; then
+    elif [ -d /run/mnt/ubuntu-boot/uboot/ubuntu ]; then
+        # uboot and ubootpart bootloaders
         enable boot-uboot.mount
     elif [ -f /run/mnt/ubuntu-seed/piboot/ubuntu/piboot.conf ]; then
         enable boot-piboot.mount
