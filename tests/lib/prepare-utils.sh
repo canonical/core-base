@@ -226,7 +226,7 @@ build_base_snap() {
     # run snapcraft
     (
         cd "$project_dir"
-        snapcraft --verbosity verbose
+        snapcraft pack --verbosity verbose
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then
