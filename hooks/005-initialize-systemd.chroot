@@ -160,20 +160,13 @@ for unit in dbus.service sshd.service ctrl-alt-del.target; do
         echo "Unit $unit already exists in /usr/lib/systemd/system, removing from /etc if it exists and patching out Alias= lines."
 
         # Remove from /etc if it exists there
-        rm -f "etc/systemd/system/$unit"
-        
-        # Remove Alias= lines from the unit file
-        if [ -f "usr/lib/systemd/system/$unit" ]; then
-            sed -i '/^Alias=/d' "usr/lib/systemd/system/$unit"
+        if [ -e "etc/systemd/system/$unit" ]; then
+            rm -f "etc/systemd/system/$unit"
+            
+            # Remove Alias= lines from the unit file
+            if [ -f "usr/lib/systemd/system/$unit" ]; then
+                sed -i '/^Alias=/d' "usr/lib/systemd/system/$unit"
+            fi
         fi
-    else
-        echo "Unit $unit not found in usr/lib/systemd/system, migrating it."
-
-        # get the target of the unit in /etc
-        target_unit_link=$(readlink -f "etc/systemd/system/$unit")
-
-        # remake the link in /usr/lib/systemd/system
-        rm -f "etc/systemd/system/$unit"
-        ln -s "$target_unit_link" "/usr/lib/systemd/system/$unit"
     fi
 done
