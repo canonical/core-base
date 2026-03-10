@@ -154,7 +154,7 @@ done
 # move some aliases too, if they already exist in /usr/lib/systemd/system,
 # then we remove them from /etc and patch out the Alias= section 
 # from the unit file to avoid confusion.
-for unit in dbus.service sshd.service ctrl-alt-del.target; do
+for unit in dbus.service sshd.service; do
     # Check if the unit exists in /usr/lib/systemd/system
     if [ -e "usr/lib/systemd/system/$unit" ]; then
         echo "Unit $unit already exists in /usr/lib/systemd/system, removing from /etc if it exists and patching out Alias= lines."
