@@ -85,6 +85,10 @@ systemctl --global enable ssh-agent.socket
 # Ensure imports.target is pulled in by sysinit.target
 ln -sf ../imports.target /usr/lib/systemd/system/sysinit.target.wants/imports.target
 
+# Disable ctrl-alt-del.target by default, it is enabled
+# by preset.
+systemctl disable ctrl-alt-del.target
+
 # Let us move everything from /etc/systemd/system/*.wants to /usr/lib/systemd/system
 # except for the units related to ssh, getty and cloud-init which we want to
 # keep in /etc to allow configuration by snapd.
