@@ -2,4 +2,4 @@
 
 set -eux
 
-chmod 4755 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+chmod 4754 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
