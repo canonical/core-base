@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+# Verify that the permissions of dbus-daemon-launch-helper are correct
+PERMISSIONS="$(stat -c "%a %G %U" /usr/lib/dbus-1.0/dbus-daemon-launch-helper)"
+if [ "$PERMISSIONS" != "4754 messagebus root" ]; then
+    echo "The permissions of /usr/lib/dbus-1.0/dbus-daemon-launch-helper are incorrect."
+    echo "Expected: 4754 messagebus root"
+    echo "Actual: $PERMISSIONS"
+    exit 1
+fi
