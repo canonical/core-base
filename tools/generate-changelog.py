@@ -84,7 +84,7 @@ def get_changelog_from_file(docs_d, pkg):
         with gzip.open(chl_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     else:
-        raise FileNotFoundError("no supported changelog found for package " + pkg)
+        raise FileNotFoundError(f"no supported changelog found for package {pkg}")
 
 
 def get_changelog_from_url(pkg, new_v, on_lp):
