@@ -102,8 +102,7 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     url += '/' + safe_name + '/' + new_v + '/changelog'
     changelog_r = requests.get(url)
     if changelog_r.status_code != requests.codes.ok:
-        raise Exception('No changelog found in ' + url + ' - status:' +
-                        str(changelog_r.status_code))
+        raise Exception(f'No changelog found in {url} - status: {changelog_r.status_code}')
 
     return changelog_r.text
 
@@ -128,7 +127,7 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
         if re.match(r'.*\+esm[0-9]*$', new_v) or package_name(pkg) in pkg_no_changelog:
-            raise PackageNoChangelog('package ' + pkg + ' does not have changelog')
+            raise PackageNoChangelog(f'package {pkg} does not have changelog')
         changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
@@ -188,19 +187,19 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
                     print(e)
                 except NoOldChange as e:
                     print(e)
-                    changes += pkg + ' (' + new_v + '): new primed package\n\n'
+                    changes += f'{pkg} ({new_v}): new primed package\n\n'
         except KeyError:
-            changes += pkg + ' (' + new_v + '): new primed package\n\n'
+            changes += f'{pkg} ({new_v}): new primed package\n\n'
 
     for src_pkg, pkg_data in sorted(src_pkgs.items()):
         changes += ', '.join(pkg_data.debs)
-        changes += ' (built from ' + src_pkg + ') updated from '
-        changes += pkg_data.old_v + ' to ' + pkg_data.new_v + ':\n\n'
+        changes += f' (built from {src_pkg}) updated from '
+        changes += f'{pkg_data.old_v} to {pkg_data.new_v}:\n\n'
         changes += pkg_data.changes
 
     for pkg, old_v in sorted(old_packages.items()):
         if pkg not in new_packages:
-            changes += pkg + ': not primed anymore\n\n'
+            changes += f'{pkg}: not primed anymore\n\n'
 
     return changes
 
@@ -223,17 +222,11 @@ def read_commit_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
 
-def remove_suffix(input_string, suffix):
-    if suffix and input_string.endswith(suffix):
-        return input_string[:-len(suffix)]
-    return input_string
-
-
 def read_remote_git_url() -> str:
     remote_url = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('ascii').strip()
     if remote_url.startswith("git@github.com:"):
         remote_url = remote_url.replace("git@github.com:", "https://github.com/")
-    return remove_suffix(remote_url, ".git")
+    return remote_url.removesuffix(".git")
 
 
 def log_between_commits(name, start, end):
@@ -244,7 +237,7 @@ def log_between_commits(name, start, end):
         # should only happen if the branch has diverged so much that the previous
         # release commit does not exist in the current fork. In this case let us
         # notify that we could not generate the changelog
-        print(f"Failed to run 'git log' for the current repo starting at commit {start}, has branch diverged to much?")
+        print(f"Failed to run 'git log' for the current repo starting at commit {start}, has branch diverged too much?")
         return f'No detected changes for the {name} snap\n\n'
 
 
