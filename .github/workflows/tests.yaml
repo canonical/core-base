@@ -17,53 +17,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: [self-hosted, spread-enabled]
+  build_release:
+    runs-on: ubuntu-latest
+    environment: store
     steps:
-      - name: Cleanup job workspace
-        id: cleanup-job-workspace
-        run: |
-          rm -rf "${{ github.workspace }}"
-          mkdir "${{ github.workspace }}"
-      - uses: actions/checkout@v4
-
-      - name: Build snap
-        run: |
-          spread -artifacts=./artifacts google-nested:tests/spread/build/
-          find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
-
-      - uses: actions/upload-artifact@v4
+      - name: Build and release to edge channel
+        env:
+          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          SNAP_NAME: core22
+          SNAP_ARTIFACT: core22
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+  build_fips_release:
+    runs-on: ubuntu-latest
+    environment: store
+    steps:
+      - name: Build and release to edge channel
+        env:
+          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          SNAP_NAME: core22
+          SNAP_ARTIFACT: core22-fips
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
-          name: core-snap
-          path: "${{ github.workspace }}/core22.artifact"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: core-fips-snap
-          path: "${{ github.workspace }}/core22-fips.artifact"
-
-      - name: Discard spread workers
-        if: always()
-        run: |
-          shopt -s nullglob
-          for r in .spread-reuse.*.yaml; do
-            spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
-          done
+          fips: true
 
   tests-main:
     runs-on: [self-hosted, spread-enabled]
-    needs: build
+    needs: [build_release, build_fips_release]
     strategy:
       fail-fast: false
       matrix:
         include:
           - variant: standard
-            artifact_name: core-snap
+            artifact_name: core22-snaps
             artifact_file: core22.artifact
+            core_variant: ''
           - variant: fips
-            artifact_name: core-fips-snap
+            artifact_name: core22-fips-snaps
             artifact_file: core22-fips.artifact
+            core_variant: fips
     name: tests-main (${{ matrix.variant }})
+    env:
+      CORE_VARIANT: ${{ matrix.core_variant }}
     steps:
       - name: Cleanup job workspace
         id: cleanup-job-workspace
@@ -88,18 +84,19 @@ jobs:
           for r in .spread-reuse.*.yaml; do
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
+
   tests-snapd:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build_release, build_fips_release]
     strategy:
       fail-fast: false
       matrix:
         include:
           - variant: standard
-            artifact_name: core-snap
+            artifact_name: core22-snaps
             artifact_file: core22.artifact
           - variant: fips
-            artifact_name: core-fips-snap
+            artifact_name: core22-fips-snaps
             artifact_file: core22-fips.artifact
     name: tests-snapd (${{ matrix.variant }})
     steps:
