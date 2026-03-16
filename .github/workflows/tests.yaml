@@ -19,7 +19,6 @@ concurrency:
 jobs:
   build_release:
     runs-on: ubuntu-latest
-    environment: store
     outputs:
       snap_name: ${{ steps.release.outputs.snap_name }}
       snap_artifact: ${{ steps.release.outputs.snap_artifact }}
@@ -34,7 +33,6 @@ jobs:
           publish: false
   build_fips_release:
     runs-on: ubuntu-latest
-    environment: store
     outputs:
       snap_name: ${{ steps.release.outputs.snap_name }}
       snap_artifact: ${{ steps.release.outputs.snap_artifact }}
