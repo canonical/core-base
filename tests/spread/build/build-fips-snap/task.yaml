@@ -1,0 +1,24 @@
+summary: Builds the core snap
+manual: true
+
+artifacts:
+  - core22-fips.artifact
+
+prepare: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  # install dependencies
+  install_core22_deps
+
+execute: |
+  # for various utilities
+  . "$TESTSLIB/prepare-utils.sh"
+
+  # rename the git url of the origin to end on -fips to indicate a FIPS build
+  git remote set-url origin "$(git remote get-url origin | sed 's/$/-fips/')"
+
+  build_core22_snap "$PROJECT_PATH"
+  
+  SNAP_NAME="$(get_core_snap_name)"
+  cp "$PROJECT_PATH/$SNAP_NAME" "core22-fips.artifact"

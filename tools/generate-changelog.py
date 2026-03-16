@@ -27,9 +27,9 @@ import debian.changelog
 import debian.debian_support
 import gzip
 import os
-import requests
-import re
 import subprocess
+import re
+import requests
 import sys
 import yaml
 from collections import namedtuple
@@ -40,12 +40,19 @@ from collections import namedtuple
 # keep the list short to not increase the time it takes
 # to generate changelogs
 pkg_allowed_list = [
-    'apt', # is removed during hook
-    'libapt-pkg6.0', # is removed as well
-    'base-files', # unstable on local builds
-    'ca-certificates', # unstable on local builds
-    'distro-info-data' # unstable on local builds
+    'dpkg',    # is removed during hook
+    'openssl'  # contains a symlink which is broken currently
 ]
+
+# List of packages with no valid changelog. We only have gnutls-bin for the
+# moment. It does not have a valid changelog as
+# /usr/share/doc/gnutls-bin/changelog.Debian.gz is a symlink to
+# ../libgnutls-dane0/changelog.Debian.gz which is in turn a symlink to
+# ../libgnutls30/changelog.Debian.gz. However, libgnutls-dane0 is not in the
+# base (removed by 400-trim-pkcs-11.chroot) so the chain is broken. This is ok
+# as anyway we will get the changes from libgnutls30.
+pkg_no_changelog = ['gnutls-bin']
+
 
 # Returns a dictionary from package name to version, using
 # the packages section.
@@ -62,13 +69,6 @@ def packages_from_manifest(manifest_p):
         return pkg_dict
 
 
-def is_fips(s):
-    m = re.search("[+~][Ff]ips[1-2\.]{1,3}", s)
-    if m is None:
-        return False
-    return True
-
-
 def package_name(pkg):
     t = pkg.split(':')
     return t[0]
@@ -81,20 +81,20 @@ def get_changelog_from_file(docs_d, pkg):
         with gzip.open(chl_deb_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     elif os.path.exists(chl_path):
-        with gzip.open(chl_deb_path) as chl_fh:
+        with gzip.open(chl_path) as chl_fh:
             return chl_fh.read().decode('utf-8')
     else:
-        raise FileNotFoundError(f"no supported changelog found for package {pkg}")
+        raise FileNotFoundError("no supported changelog found for package " + pkg)
 
 
 def get_changelog_from_url(pkg, new_v, on_lp):
     url = 'https://changelogs.ubuntu.com/changelogs/binary/'
-    
+
     print(f"failed to resolve changelog for {pkg} locally, downloading from official repo")
     safe_name = package_name(pkg)
     if not on_lp and safe_name not in pkg_allowed_list:
         raise Exception(f"{pkg} has not been whitelisted for changelog retrieval")
-    
+
     if safe_name.startswith('lib'):
         url += safe_name[0:4]
     else:
@@ -108,6 +108,16 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     return changelog_r.text
 
 
+# Exception thrown for packages with no local or remote changelog
+class PackageNoChangelog(Exception):
+    pass
+
+
+# Exception thrown for packages for which we do not find a previous change
+class NoOldChange(Exception):
+    pass
+
+
 # Gets difference in changelog between old and new versions
 # Returns source package and the differences
 def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
@@ -117,11 +127,8 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
     try:
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
-        # If the package is coming from the fips PPA, do not attempt
-        # to download from regular archive.
-        if is_fips(new_v):
-            print(f"failed to resolve FIPS changelog for {pkg}/{new_v}")
-            raise KeyError
+        if re.match(r'.*\+esm[0-9]*$', new_v) or package_name(pkg) in pkg_no_changelog:
+            raise PackageNoChangelog('package ' + pkg + ' does not have changelog')
         changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
@@ -147,7 +154,10 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
             change_chunk += indent + line + '\n'
 
     if not found_version:
-        raise EOFError(f"{old_change_start} was not found in the changelog, aborting")
+        # It can happen if a binary package changes the source package it came
+        # from, for instance this has been seen for libatomic1 that was built
+        # from gcc-15 to gcc-16.
+        raise NoOldChange(f"{old_change_start} for {pkg} was not found in the changelog")
 
     return source_pkg, change_chunk
 
@@ -167,12 +177,18 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
         try:
             old_v = old_packages[pkg]
             if old_v != new_v:
-                src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
-                                                          new_v, '  ', on_lp)
-                if src not in src_pkgs:
-                    src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
-                else:
-                    src_pkgs[src].debs.append(pkg)
+                try:
+                    src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
+                                                              new_v, '  ', on_lp)
+                    if src not in src_pkgs:
+                        src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
+                    else:
+                        src_pkgs[src].debs.append(pkg)
+                except PackageNoChangelog as e:
+                    print(e)
+                except NoOldChange as e:
+                    print(e)
+                    changes += pkg + ' (' + new_v + '): new primed package\n\n'
         except KeyError:
             changes += pkg + ' (' + new_v + '): new primed package\n\n'
 
@@ -193,7 +209,7 @@ def find_commit_in_changelog(clog_p) -> str:
     if clog_p == "" or not os.path.exists(clog_p):
         print(f"No previous changelog existed at {clog_p}, skipping changelog generation for local repo")
         return ""
-    
+
     # expect commit in the first line
     with open(clog_p, "r") as f:
         line = f.readline().strip()
@@ -207,17 +223,23 @@ def read_commit_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
 
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
+
+
 def read_remote_git_url() -> str:
     remote_url = subprocess.check_output(['git', 'remote', 'get-url', 'origin']).decode('ascii').strip()
     if remote_url.startswith("git@github.com:"):
         remote_url = remote_url.replace("git@github.com:", "https://github.com/")
-    return remote_url.removesuffix(".git")
+    return remove_suffix(remote_url, ".git")
 
 
 def log_between_commits(name, start, end):
     try:
         return subprocess.check_output(['git', 'shortlog', '--pretty=short', f'{start}..{end}']).decode()
-    except:
+    except Exception:
         # if there is no path from start..end then this might fail, however this
         # should only happen if the branch has diverged so much that the previous
         # release commit does not exist in the current fork. In this case let us
@@ -250,7 +272,7 @@ def main():
     # add a header that helps us audit where the current build is
     # sourced from.
     now = datetime.now()
-    changes = f'{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n'
+    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
     changes += f'[ Changes in the {args.name} snap ]\n\n'
 
     # Is there a previous commit? Then we get a log between them
@@ -272,7 +294,6 @@ def main():
         with open(old_changelog, "r") as f:
             changes += f.read()
 
-    # write the changelog
     with open(new_changelog, "w") as f:
         f.write(changes)
     return 0
