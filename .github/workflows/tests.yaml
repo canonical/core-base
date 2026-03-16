@@ -129,6 +129,13 @@ jobs:
         run: |
           . "core-base/tests/lib/prepare-utils.sh"
 
+          # determine variant, but for standard builds we want to pass 
+          # an empty string to the utils functions
+          variant="${{ matrix.variant }}"
+          if [ "$variant" = "standard" ]; then
+              variant=""
+          fi
+
           echo "************* INSTALLING DEPS *************"
           install_core22_deps
 
@@ -139,9 +146,9 @@ jobs:
           prepare_core22_cloudinit
 
           echo "************* BUILDING CORE22 IMAGE *************"
-          uc_snap="$(get_core_snap_name)"
+          uc_snap="$(get_core_snap_name "$variant")"
           mv "${{ matrix.artifact_file }}" "$uc_snap"
-          build_core22_image
+          build_core22_image "$variant"
 
           echo "************* STARTING CORE22 VM *************"
           start_snapd_core_vm '${{ github.workspace }}'

@@ -17,5 +17,5 @@ execute: |
 
   build_core22_snap "$PROJECT_PATH" "fips"
   
-  SNAP_NAME="$(get_core_snap_name)"
+  SNAP_NAME="$(get_core_snap_name "fips")"
   cp "$PROJECT_PATH/$SNAP_NAME" "core22-fips.artifact"

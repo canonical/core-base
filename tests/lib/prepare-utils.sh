@@ -115,8 +115,14 @@ start_snapd_core_vm() {
 }
 
 get_core_snap_name() {
+    local variant="${2:-}"
+
     printf -v date '%(%Y%m%d)T' -1
-    echo "core22_${date}_amd64.snap"
+    if [ "$variant" = "fips" ]; then
+        echo "core22-fips_${date}_amd64.snap"
+    else
+        echo "core22_${date}_amd64.snap"
+    fi    
 }
 
 install_core22_deps() {
@@ -213,7 +219,8 @@ build_core22_snap() {
 }
 
 build_core22_image() {
-    local core_snap_name="$(get_core_snap_name)"
+    local variant="${1:-}"
+    local core_snap_name="$(get_core_snap_name "$variant")"
     ubuntu-image snap \
         -i 8G \
         --snap $core_snap_name \
