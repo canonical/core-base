@@ -2,11 +2,12 @@
 
 set -e
 
-# Verify that the permissions of dbus-daemon-launch-helper are correct
-PERMISSIONS="$(stat -c "%a %G %U" /usr/lib/dbus-1.0/dbus-daemon-launch-helper)"
-if [ "$PERMISSIONS" != "4754 messagebus root" ]; then
-    echo "The permissions of /usr/lib/dbus-1.0/dbus-daemon-launch-helper are incorrect."
-    echo "Expected: 4754 messagebus root"
+# Verify that the permissions of dbus-daemon-launch-helper are correct, we verify
+# with numeric output as we are not chrooted, and doing so ends with UNKNOWN. 
+PERMISSIONS="$(stat -c "%a %g %u" usr/lib/dbus-1.0/dbus-daemon-launch-helper)"
+if [ "$PERMISSIONS" != "4754 103 0" ]; then
+    echo "The permissions of usr/lib/dbus-1.0/dbus-daemon-launch-helper are incorrect."
+    echo "Expected: 4754 103 0"
     echo "Actual: $PERMISSIONS"
     exit 1
 fi
