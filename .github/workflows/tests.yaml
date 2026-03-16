@@ -27,7 +27,6 @@ jobs:
         id: release
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
           publish: false
@@ -41,7 +40,6 @@ jobs:
         id: release
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
           fips: true
