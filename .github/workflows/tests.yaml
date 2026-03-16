@@ -20,27 +20,34 @@ jobs:
   build_release:
     runs-on: ubuntu-latest
     environment: store
+    outputs:
+      snap_name: ${{ steps.release.outputs.snap_name }}
+      snap_artifact: ${{ steps.release.outputs.snap_artifact }}
     steps:
       - name: Build and release to edge channel
+        id: release
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          SNAP_NAME: core22
-          SNAP_ARTIFACT: core22
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        with:
+          publish: false
   build_fips_release:
     runs-on: ubuntu-latest
     environment: store
+    outputs:
+      snap_name: ${{ steps.release.outputs.snap_name }}
+      snap_artifact: ${{ steps.release.outputs.snap_artifact }}
     steps:
       - name: Build and release to edge channel
+        id: release
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          SNAP_NAME: core22
-          SNAP_ARTIFACT: core22-fips
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
           fips: true
+          publish: false
 
   tests-main:
     runs-on: [self-hosted, spread-enabled]
@@ -50,12 +57,10 @@ jobs:
       matrix:
         include:
           - variant: standard
-            artifact_name: core22-snaps
-            artifact_file: core22.artifact
+            artifact_name: ${{ needs.build_release.outputs.snap_artifact }}
             core_variant: ''
           - variant: fips
-            artifact_name: core22-fips-snaps
-            artifact_file: core22-fips.artifact
+            artifact_name: ${{ needs.build_fips_release.outputs.snap_artifact }}
             core_variant: fips
     name: tests-main (${{ matrix.variant }})
     env:
@@ -93,11 +98,11 @@ jobs:
       matrix:
         include:
           - variant: standard
-            artifact_name: core22-snaps
-            artifact_file: core22.artifact
+            artifact_name: ${{ needs.build_release.outputs.snap_artifact }}
+            snap_name: ${{ needs.build_release.outputs.snap_name }}
           - variant: fips
-            artifact_name: core22-fips-snaps
-            artifact_file: core22-fips.artifact
+            artifact_name: ${{ needs.build_fips_release.outputs.snap_artifact }}
+            snap_name: ${{ needs.build_fips_release.outputs.snap_name }}
     name: tests-snapd (${{ matrix.variant }})
     steps:
       - name: Cleanup job workspace
@@ -144,7 +149,7 @@ jobs:
 
           echo "************* BUILDING CORE22 IMAGE *************"
           uc_snap="$(get_core_snap_name "$variant")"
-          mv "${{ matrix.artifact_file }}" "$uc_snap"
+          mv "${{ matrix.snap_name }}" "$uc_snap"
           build_core22_image "$variant"
 
           echo "************* STARTING CORE22 VM *************"
