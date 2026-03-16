@@ -29,6 +29,7 @@ jobs:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
+          branch: ${{ github.event_name == 'pull_request' && github.ref || github.ref_name }}
           publish: false
   build_fips_release:
     runs-on: ubuntu-latest
@@ -42,6 +43,7 @@ jobs:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
         with:
+          branch: ${{ github.event_name == 'pull_request' && github.ref || github.ref_name }}
           fips: true
           publish: false
 
