@@ -191,10 +191,18 @@ prepare_core22_cloudinit() {
 build_core22_snap() {
     local project_dir="$1"
     local current_dir="$(pwd)"
+    local variant="${2:-}"
     
     # run snapcraft
     (
         cd "$project_dir"
+
+        # if it's the fips variant, rename the remote url to trigger
+        # the fips build
+        if [ "$variant" = "fips" ]; then
+            git remote set-url origin "$(git remote get-url origin | sed 's/$/-fips/')"
+        fi
+
         sudo snapcraft --destructive-mode --verbose
 
         # copy the snap to the calling directory if they are not the same
