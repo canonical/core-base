@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -eux
+
+echo "moving python to directory unaccessible to snaps"
+python_d=/usr/lib/python
+mkdir "$python_d"
+mv /usr/bin/python* "$python_d"
+ln -sf ../../share/python3/py3versions.py "$python_d"/py3versions
+
+# These are unnecessary
+rm /usr/bin/py3clean
+rm /usr/bin/py3compile
+rm /usr/bin/py3versions
+
+# replace in scripts
+scripts=(
+    /usr/bin/cloud-id
+    /usr/bin/cloud-init
+    /usr/bin/ec2metadata
+    /usr/lib/python*/*.py
+    /usr/lib/python*/encodings/*.py
+    /usr/share/netplan/netplan.script
+    /usr/share/netplan/netplan_cli/*.py
+    /usr/share/netplan/netplan_cli/cli/*.py
+    /usr/share/netplan/netplan_cli/cli/commands/*.py
+    /usr/share/python3/debpython/*.py
+    /usr/share/python3/py3versions.py
+)
+for p in "${scripts[@]}"; do
+    # Some files exist only for the cloud-init track
+    if [ -f "$p" ]; then
+        sed -i 's#/usr/bin/python#/usr/lib/python/python#g' "$p"
+    fi
+done
