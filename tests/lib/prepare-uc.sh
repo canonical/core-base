@@ -3,6 +3,8 @@
 set -e
 set -x
 
+BUILD_VARIANT="${1:-}"
+
 # include auxiliary functions from this script
 . "$TESTSLIB/prepare-utils.sh"
 
@@ -116,16 +118,16 @@ snap pack --filename=upstream-snapd.snap "$snapddir"
 rm -r $snapddir
 
 # build the core22 snap if it has not been provided to us by CI
-uc_snap="$(get_core_snap_name)"
+uc_snap="$(get_core_snap_name "$BUILD_VARIANT")"
 if [ ! -f "$PROJECT_PATH/core${UC_VERSION}.artifact" ]; then
-    build_core22_snap "$PROJECT_PATH"
+    build_core22_snap "$PROJECT_PATH" "$BUILD_VARIANT"
 else
     # use provided core22 snap
     cp "$PROJECT_PATH/core${UC_VERSION}.artifact" "$uc_snap"
 fi
 
 # finally build the uc image
-build_core22_image
+build_core22_image "$BUILD_VARIANT"
 
 # setup some data we will inject into ubuntu-seed partition of the image above
 # that snapd.spread-tests-run-mode-tweaks.service will ingest
