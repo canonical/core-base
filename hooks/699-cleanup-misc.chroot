@@ -106,3 +106,11 @@ for f in *; do
 done
 rm "${compl_to_rm[@]}"
 popd
+
+# Remove some tmpfiles entries that fail as they try to write in a read-only dir
+sed -i '/\/etc\/default\/locale/d' /usr/lib/tmpfiles.d/debian.conf
+sed -i '/\/etc\/vconsole.conf/d' /usr/lib/tmpfiles.d/debian.conf
+
+# /run/lock is already created by debian.conf, remove duplication
+# TODO this is deb package problem, report upstream
+sed -i '/d \/run\/lock 0755/d' /usr/lib/tmpfiles.d/legacy.conf
