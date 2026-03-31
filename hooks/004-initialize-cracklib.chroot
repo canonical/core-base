@@ -17,4 +17,3 @@ rm /usr/sbin/cracklib-unpacker
 rm /usr/sbin/create-cracklib-dict
 rm /usr/sbin/update-cracklib
 rm /usr/share/dict/cracklib-small
-rm /var/cache/cracklib/src-dicts
