@@ -16,7 +16,7 @@ install:
 	fi
 	rm -rf $(DESTDIR)
 	cp -a $(CRAFT_STAGE)/base $(DESTDIR)
-	
+
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
 
@@ -28,7 +28,7 @@ install:
 	[ -e $(DESTDIR)/dev/random ] || mknod -m 666 $(DESTDIR)/dev/random c 1 8
 	[ -e $(DESTDIR)/dev/urandom ] || \
 		mknod -m 666 $(DESTDIR)/dev/urandom c 1 9
-	
+
 	# create a symlink from /usr/bin to /bin, we need
 	# this for the hooks to work properly
 	if ! [ -e $(DESTDIR)/bin ]; then \
@@ -60,6 +60,10 @@ hooks:
 	done
 	rm -rf $(DESTDIR)/install-data
 
+	set -eux; for f in ./hooks-build/[0-9]*.build; do	\
+		"$$f" $(DESTDIR);				\
+	done
+
 	# remove the auth file again
 	rm -f $(DESTDIR)/etc/apt/auth.conf.d/01-fips.conf
 
@@ -69,7 +73,7 @@ hooks:
 	# TODO: Update the changelog generation to support chisel builds.
 
 	# TODO: Coordinate with the LP team that we now produce chisel artifacts
-	
+
 
 .PHONY: check
 check:
