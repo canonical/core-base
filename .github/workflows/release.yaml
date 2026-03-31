@@ -9,8 +9,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base: [core22, core24]
+        base: [core22, core24, core26]
         variant: [normal, fips]
+        exclude:
+          - base: core26
+            variant: fips
     runs-on: ubuntu-latest
     environment: store
     steps:
