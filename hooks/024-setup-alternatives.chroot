@@ -26,8 +26,3 @@ ln -sf /usr/bin/mawk usr/bin/awk
 # alternatives for netcat-openbsd
 ln -sf /usr/bin/nc.openbsd usr/bin/nc
 ln -sf /usr/bin/nc.openbsd usr/bin/netcat
-
-# WORKAROUND: chisel is behind on python3.14 support, so we
-# need to symlink the python3.13 binary to python3 for it to work
-rm -f usr/bin/python3
-ln -sf python3.13 usr/bin/python3
