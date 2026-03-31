@@ -11,14 +11,7 @@ echo "I: Remove unneeded files"
 rm /usr/bin/file
 
 # remove libmagic1
-rm /etc/magic /etc/magic.mime
 rm /usr/lib/*-linux-*/libmagic.so.1*
-rm /usr/share/misc/magic
-
-# remove libmagic-mgc
-rm /usr/lib/file/magic.mgc
-rm /usr/share/file/magic.mgc
-rm /usr/share/misc/magic.mgc
 
 # remove libsemanage-common
 rm /etc/selinux/semanage.conf
