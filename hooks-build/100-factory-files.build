@@ -7,18 +7,16 @@
 # /usr/lib/tmpfiles.d/core-writable.conf is the configuration file
 # that describes the copy of those files/directories.
 
-set -eu
+set -eux
 
-# cp -a requires /proc/self/fd in some cases
-mount -t proc proc /proc
-trap 'umount /proc' EXIT
+ROOTDIR=$1
 
 mkdir -p /usr/share/factory/writable/user-data
 
 export GLOBIGNORE=.:..
-for file in /home/*; do
+for file in "$ROOTDIR"/home/*; do
     if [ -e "${file}" ]; then
-        echo "/home is not empty" >&2
+        echo "${ROOTDIR}/home is not empty" >&2
         exit 1
     fi
 done
@@ -59,7 +57,7 @@ dirs=(
 )
 
 for dir in "${dirs[@]}"; do
-  parent="$(dirname "${dir}")"
-  mkdir -p "/usr/share/factory/writable/system-data${parent}"
-  cp -a "${dir}" "/usr/share/factory/writable/system-data${parent}"
+    parent="$(dirname "${dir}")"
+    mkdir -p "${ROOTDIR}/usr/share/factory/writable/system-data${parent}"
+    cp -a "${ROOTDIR}${dir}" "${ROOTDIR}/usr/share/factory/writable/system-data${parent}"
 done
