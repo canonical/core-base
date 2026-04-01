@@ -1,21 +1,21 @@
-# This file should be the same as in snapd/core-initrd
-
+# This file ensures that we keep the device units created by the file with the
+# same name in snapd/core-initrd.
 SUBSYSTEM!="block", GOTO="ubuntu_core_partitions_end"
 KERNEL=="loop*|mmcblk[0-9]boot[0-9]", GOTO="ubuntu_core_partitions_end"
 
-ENV{DEVTYPE}=="disk", IMPORT{program}="/usr/lib/snapd/snap-bootstrap scan-disk"
-ENV{DEVTYPE}=="partition", IMPORT{parent}="UBUNTU_DISK"
-ENV{UBUNTU_DISK}!="1", GOTO="ubuntu_core_partitions_end"
-
-ENV{DEVTYPE}=="disk", SYMLINK+="disk/snapd/disk"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-seed", SYMLINK+="disk/snapd/ubuntu-seed"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-boot", SYMLINK+="disk/snapd/ubuntu-boot"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-data", ENV{ID_FS_TYPE}=="crypto_LUKS", SYMLINK+="disk/snapd/ubuntu-data-luks"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-data", ENV{ID_FS_TYPE}!="crypto_LUKS", SYMLINK+="disk/snapd/ubuntu-data"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-save", ENV{ID_FS_TYPE}=="crypto_LUKS", SYMLINK+="disk/snapd/ubuntu-save-luks"
-ENV{DEVTYPE}=="partition", ENV{ID_PART_ENTRY_NAME}=="ubuntu-save", ENV{ID_FS_TYPE}!="crypto_LUKS", SYMLINK+="disk/snapd/ubuntu-save"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/disk ] && [ $$(readlink -f /dev/disk/snapd/disk) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/disk"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-seed ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-seed) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-seed"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-boot ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-boot) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-boot"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-data-luks ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-data-luks) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-data-luks"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-data ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-data) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-data"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-save-luks ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-save-luks) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-save-luks"
+PROGRAM=="/usr/bin/sh -c '[ -L /dev/disk/snapd/ubuntu-save ] && [ $$(readlink -f /dev/disk/snapd/ubuntu-save) = /dev/%k ]'", \
+    SYMLINK+="disk/snapd/ubuntu-save"
 
 LABEL="ubuntu_core_partitions_end"
-
-ENV{DM_UUID}=="CRYPT-*", ENV{DM_NAME}=="ubuntu-data-*", SYMLINK+="disk/snapd/ubuntu-data"
-ENV{DM_UUID}=="CRYPT-*", ENV{DM_NAME}=="ubuntu-save-*", SYMLINK+="disk/snapd/ubuntu-save"
