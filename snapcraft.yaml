@@ -22,6 +22,19 @@ parts:
     source-type: git
     source-branch: '26.04'
     override-build: |
+      # We use a marker file in $CRAFT_PROJECT_DIR to decide whether to include
+      # cloud-init or not. This file can be manually created for local builds,
+      # or automatically set if we are in a branch like 26-cloud-init. The
+      # latter is the case for Launchpad builds - note that this is not a
+      # branch forked from master, but a branch that is created by CI/CD in the
+      # same commit at master at build time, that is then imported by the LP
+      # recipe, and then removed.
+      (
+          cd "$CRAFT_PROJECT_DIR"
+          if git branch --show-current | grep '.*-cloud-init$'
+          then touch cloud-init-build
+          fi
+      )
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
