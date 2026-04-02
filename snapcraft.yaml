@@ -22,6 +22,25 @@ parts:
     source-type: git
     source-branch: '26.04'
     override-build: |
+      # We use a marker file in $CRAFT_PROJECT_DIR to decide whether to include
+      # cloud-init or not. This file can be manually created for local builds,
+      # or created here if we are running from a launchpad recipe with suffix
+      # -cloud-init. This is detected by looking at the SNAPCRAFT_IMAGE_INFO
+      # env var injected in LP, which tells us the build url and has a form like:
+      #
+      # {
+      #   "build-request-id": "lp-<id>",
+      #   "build-request-timestamp": "<time>",
+      #   "build_url": "https://launchpad.net/~ubuntu-core-service/+snap/core26-cloud-init/+build/<build_id>"
+      # }
+      #
+      # (although in one line).
+      (
+          cd "$CRAFT_PROJECT_DIR"
+          if printf "$SNAPCRAFT_IMAGE_INFO" | grep -q -- "-cloud-init/+build"
+          then touch cloud-init-build
+          fi
+      )
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
