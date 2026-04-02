@@ -97,11 +97,13 @@ jobs:
       - name: Run x86 tests
         uses: ./.github/actions/run-spread-tests
         with:
+          base-variant: ${{ matrix.variant }}
           spread-command: spread google-nested:tests/spread/main/
 
       - name: Run arm64 tests
         uses: ./.github/actions/run-spread-tests
         with:
+          base-variant: ${{ matrix.variant }}
           spread-command: spread google-nested-arm:tests/spread/main/
 
       - name: Discard spread workers
@@ -144,6 +146,7 @@ jobs:
       - name: Build image
         working-directory: '${{ github.workspace }}'
         run: |
+          export BUILD_VARIANT
           PROJECT_PATH=$PWD/core-base
           # For os.query and others
           PATH=$PATH:$PROJECT_PATH/tests/lib/external/snapd-testing-tools/tools/
@@ -154,9 +157,6 @@ jobs:
 
           echo "************* DOWNLOADING SNAPS *************"
           download_core26_snaps 'edge'
-
-          echo "************* WRITING CLOUD-INIT CONFIG *************"
-          prepare_base_cloudinit
 
           echo "************* BUILDING CORE26 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
@@ -170,8 +170,8 @@ jobs:
         uses: ./core-base/.github/actions/run-spread-tests
         with:
           working-directory: snapd
-          # TODO change to 26 when available (not a lot of a difference as it is external)
-          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-24-64:tests/smoke/
+          base-variant: ${{ matrix.variant }}
+          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-26-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()
