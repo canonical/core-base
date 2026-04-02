@@ -242,6 +242,7 @@ build_base_snap() {
         then touch cloud-init-build
         fi
         snapcraft pack --verbosity verbose
+        rm -f cloud-init-build
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then
