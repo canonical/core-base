@@ -19,11 +19,11 @@ execute: |
   # Now formally wait for seeding
   execute_remote sudo snap wait system seed.loaded
 
-  # We should be in run mode
-  execute_remote cat /proc/cmdline | MATCH snapd_recovery_mode=run
-
   # We should have a modeenv
   execute_remote test -f /var/lib/snapd/modeenv
+
+  # We should be in run mode
+  execute_remote cat /var/lib/snapd/modeenv | MATCH mode=run
 
   # Verify that the partitions we expect, are present
   execute_remote lsblk -f -m -l | awk '{ print $4 }' | grep ubuntu-seed
