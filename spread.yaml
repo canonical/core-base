@@ -13,6 +13,7 @@ environment:
   # XXX temporarily switch to edge to get the fix for
   # https://bugs.launchpad.net/snapcraft/+bug/2051567
   SNAPCRAFT_CHANNEL: latest/edge
+  BUILD_VARIANT: '$(HOST: echo "$BUILD_VARIANT")'
 
 backends:
   google-nested:
