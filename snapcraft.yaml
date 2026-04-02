@@ -268,9 +268,8 @@ parts:
     # obviously for new core bases this cannot be the case, and
     # we need to wait until the first release with introducing
     # changelogs.
-    # TODO change to core26 when available
     build-snaps:
-      - core24=latest/beta
+      - core26=latest/beta
     override-pull: |
       craftctl default
 
