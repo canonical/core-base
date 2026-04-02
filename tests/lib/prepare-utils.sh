@@ -7,7 +7,18 @@ SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
 
 execute_remote(){
-    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ServerAliveInterval=60 -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no test@localhost "$*"
+    ssh_args=(
+        -o ServerAliveInterval=60
+        -o ConnectTimeout=10
+        -o UserKnownHostsFile=/dev/null
+        -o StrictHostKeyChecking=no
+    )
+    if [ "$BUILD_VARIANT" = cloud-init ]; then
+        sshpass -p ubuntu ssh -p "$SSH_PORT" "${ssh_args[@]}" test@localhost "$*"
+    else
+        ssh -p "$SSH_PORT" -i "$PROJECT_PATH"/tests/lib/models/id_ed25519 \
+            "${ssh_args[@]}" ubuntu@localhost "$*"
+    fi
 }
 
 wait_for_ssh(){
@@ -66,7 +77,6 @@ start_snapd_core_vm() {
     PARAM_TRACE="-d cpu_reset"
     PARAM_LOG="-D ${work_dir}/qemu.log"
     PARAM_SERIAL="-serial file:${work_dir}/serial.log"
-    PARAM_TPM=""
 
     ATTR_KVM=""
     if [ "$ENABLE_KVM" = "true" ]; then
@@ -82,6 +92,7 @@ start_snapd_core_vm() {
     PARAM_IMAGE="-drive file=${work_dir}/pc.img,cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
     SVC_NAME="nested-vm"
+    # shellcheck disable=SC2086
     if ! sudo systemd-run --service-type=simple --unit="${SVC_NAME}" -- \
                 qemu-system-x86_64 \
                 ${PARAM_SMP} \
@@ -161,7 +172,7 @@ download_core26_snaps() {
     local snap_branch="$1"
 
     # get the model
-    cp "$PROJECT_PATH"/tests/lib/models/ubuntu-core-26-$(get_arch)-dangerous.model ubuntu-core-dangerous.model
+    cp "$PROJECT_PATH"/tests/lib/models/ubuntu-core-26-"$(get_arch)"-dangerous.model ubuntu-core-dangerous.model
 
     case "${snap_branch}" in
         edge)
@@ -176,8 +187,8 @@ download_core26_snaps() {
 
     # download neccessary images
     snap download pc-kernel --channel=26/"${kernel_branch}" --basename=upstream-pc-kernel
-    snap download pc --channel=26/${snap_branch} --basename=upstream-pc-gadget
-    snap download snapd --channel=${snap_branch} --basename=upstream-snapd
+    snap download pc --channel=26/"${snap_branch}" --basename=upstream-pc-gadget
+    snap download snapd --channel="${snap_branch}" --basename=upstream-snapd
 }
 
 # create two new users that used during testing when executing
@@ -240,14 +251,24 @@ build_base_snap() {
 }
 
 build_base_image() {
-    local core_snap_name="$(get_core_snap_name)"
-    ubuntu-image snap \
-        -i 8G \
-        --snap "$core_snap_name" \
-        --snap upstream-snapd.snap \
-        --snap upstream-pc-kernel.snap \
-        --snap upstream-pc-gadget.snap \
-        ubuntu-core-dangerous.model
+    local core_snap_name
+    core_snap_name=$(get_core_snap_name)
+    build_params=(
+        -i 8G
+        --snap "$core_snap_name"
+        --snap upstream-snapd.snap
+        --snap upstream-pc-kernel.snap
+        --snap upstream-pc-gadget.snap
+    )
+    if [ "$BUILD_VARIANT" = cloud-init ]; then
+        prepare_base_cloudinit
+    else
+        build_params+=(
+            --assertion "$PROJECT_PATH"/tests/lib/models/system-user.assert
+        )
+    fi
+    ubuntu-image snap "${build_params[@]}" ubuntu-core-dangerous.model
+
     # virtio requires 4KiB alignment on arm64, ensure that
     img_f=pc.img
     align=4096
