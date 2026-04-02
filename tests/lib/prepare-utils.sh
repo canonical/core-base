@@ -221,11 +221,15 @@ prepare_base_cloudinit() {
 
 build_base_snap() {
     local project_dir="$1"
-    local current_dir="$(pwd)"
-    
+    local current_dir
+    current_dir="$(pwd)"
+
     # run snapcraft
     (
         cd "$project_dir"
+        if [ "$BUILD_VARIANT" = cloud-init ]
+        then touch cloud-init-build
+        fi
         snapcraft pack --verbosity verbose
 
         # copy the snap to the calling directory if they are not the same
