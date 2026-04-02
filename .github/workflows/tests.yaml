@@ -161,7 +161,8 @@ jobs:
           echo "************* BUILDING CORE26 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
           mv core26_"$(get_arch)".artifact "$uc_snap"
-          build_base_image
+          insert_user=true
+          build_base_image "$insert_user"
 
           echo "************* STARTING CORE26 VM *************"
           start_snapd_core_vm '${{ github.workspace }}'

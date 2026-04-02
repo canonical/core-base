@@ -250,9 +250,12 @@ build_base_snap() {
     )
 }
 
+# Builds the image. $1 is true if we want to insert a user.
 build_base_image() {
+    local insert_user=$1
     local core_snap_name
     core_snap_name=$(get_core_snap_name)
+
     build_params=(
         -i 8G
         --snap "$core_snap_name"
@@ -260,12 +263,14 @@ build_base_image() {
         --snap upstream-pc-kernel.snap
         --snap upstream-pc-gadget.snap
     )
-    if [ "$BUILD_VARIANT" = cloud-init ]; then
-        prepare_base_cloudinit
-    else
-        build_params+=(
-            --assertion "$PROJECT_PATH"/tests/lib/models/system-user.assert
-        )
+    if [ "$insert_user" = true ]; then
+        if [ "$BUILD_VARIANT" = cloud-init ]; then
+            prepare_base_cloudinit
+        else
+            build_params+=(
+                --assertion "$PROJECT_PATH"/tests/lib/models/system-user.assert
+            )
+        fi
     fi
     ubuntu-image snap "${build_params[@]}" ubuntu-core-dangerous.model
 
