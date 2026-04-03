@@ -5,6 +5,7 @@ set -x
 
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
+SSH_PRIVATE_KEY="$PROJECT_PATH"/tests/lib/models/id_ed25519
 
 execute_remote(){
     ssh_args=(
@@ -16,7 +17,7 @@ execute_remote(){
     if [ "$BUILD_VARIANT" = cloud-init ]; then
         sshpass -p ubuntu ssh -p "$SSH_PORT" "${ssh_args[@]}" test@localhost "$*"
     else
-        ssh -p "$SSH_PORT" -i "$PROJECT_PATH"/tests/lib/models/id_ed25519 \
+        ssh -p "$SSH_PORT" -i "$SSH_PRIVATE_KEY" \
             "${ssh_args[@]}" ubuntu@localhost "$*"
     fi
 }
@@ -25,6 +26,8 @@ wait_for_ssh(){
     local service_name="$1"
     retry=400
     wait=1
+    # Repo permissions for this file are not respected when copied, fix that
+    chmod 0600 "$SSH_PRIVATE_KEY"
     while ! execute_remote true; do
         if ! systemctl is-active "$service_name"; then
             echo "Service no longer active"
