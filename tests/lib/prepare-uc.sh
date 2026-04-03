@@ -115,7 +115,8 @@ else
 fi
 
 # finally build the uc image
-build_base_image
+insert_user=false
+build_base_image "$insert_user"
 
 # setup some data we will inject into ubuntu-seed partition of the image above
 # that snapd.spread-tests-run-mode-tweaks.service will ingest

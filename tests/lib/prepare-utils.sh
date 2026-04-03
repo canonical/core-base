@@ -5,15 +5,29 @@ set -x
 
 SSH_PORT=${SSH_PORT:-8022}
 MON_PORT=${MON_PORT:-8888}
+SSH_PRIVATE_KEY="$PROJECT_PATH"/tests/lib/models/id_ed25519
 
 execute_remote(){
-    sshpass -p ubuntu ssh -p "$SSH_PORT" -o ServerAliveInterval=60 -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no test@localhost "$*"
+    ssh_args=(
+        -o ServerAliveInterval=60
+        -o ConnectTimeout=10
+        -o UserKnownHostsFile=/dev/null
+        -o StrictHostKeyChecking=no
+    )
+    if [ "$BUILD_VARIANT" = cloud-init ]; then
+        sshpass -p ubuntu ssh -p "$SSH_PORT" "${ssh_args[@]}" test@localhost "$*"
+    else
+        ssh -p "$SSH_PORT" -i "$SSH_PRIVATE_KEY" \
+            "${ssh_args[@]}" ubuntu@localhost "$*"
+    fi
 }
 
 wait_for_ssh(){
     local service_name="$1"
     retry=400
     wait=1
+    # Repo permissions for this file are not respected when copied, fix that
+    chmod 0600 "$SSH_PRIVATE_KEY"
     while ! execute_remote true; do
         if ! systemctl is-active "$service_name"; then
             echo "Service no longer active"
@@ -28,6 +42,18 @@ wait_for_ssh(){
         fi
         sleep "$wait"
     done
+
+    # Create "external" user with password needed by snapd spread external
+    # backend, and "test" user used by the snapd tests.
+    if [ "$BUILD_VARIANT" != cloud-init ]; then
+        execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers external'
+        execute_remote 'echo external:ubuntu123 | sudo chpasswd'
+        execute_remote 'echo "external ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-external'
+
+        execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers test'
+        execute_remote 'echo test:ubuntu | sudo chpasswd'
+        execute_remote 'echo "test ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-test'
+    fi
 }
 
 nested_wait_for_snap_command(){
@@ -66,7 +92,6 @@ start_snapd_core_vm() {
     PARAM_TRACE="-d cpu_reset"
     PARAM_LOG="-D ${work_dir}/qemu.log"
     PARAM_SERIAL="-serial file:${work_dir}/serial.log"
-    PARAM_TPM=""
 
     ATTR_KVM=""
     if [ "$ENABLE_KVM" = "true" ]; then
@@ -82,6 +107,7 @@ start_snapd_core_vm() {
     PARAM_IMAGE="-drive file=${work_dir}/pc.img,cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
     SVC_NAME="nested-vm"
+    # shellcheck disable=SC2086
     if ! sudo systemd-run --service-type=simple --unit="${SVC_NAME}" -- \
                 qemu-system-x86_64 \
                 ${PARAM_SMP} \
@@ -161,7 +187,7 @@ download_core26_snaps() {
     local snap_branch="$1"
 
     # get the model
-    cp "$PROJECT_PATH"/tests/lib/models/ubuntu-core-26-$(get_arch)-dangerous.model ubuntu-core-dangerous.model
+    cp "$PROJECT_PATH"/tests/lib/models/ubuntu-core-26-"$(get_arch)"-dangerous.model ubuntu-core-dangerous.model
 
     case "${snap_branch}" in
         edge)
@@ -176,8 +202,8 @@ download_core26_snaps() {
 
     # download neccessary images
     snap download pc-kernel --channel=26/"${kernel_branch}" --basename=upstream-pc-kernel
-    snap download pc --channel=26/${snap_branch} --basename=upstream-pc-gadget
-    snap download snapd --channel=${snap_branch} --basename=upstream-snapd
+    snap download pc --channel=26/"${snap_branch}" --basename=upstream-pc-gadget
+    snap download snapd --channel="${snap_branch}" --basename=upstream-snapd
 }
 
 # create two new users that used during testing when executing
@@ -221,12 +247,17 @@ prepare_base_cloudinit() {
 
 build_base_snap() {
     local project_dir="$1"
-    local current_dir="$(pwd)"
-    
+    local current_dir
+    current_dir="$(pwd)"
+
     # run snapcraft
     (
         cd "$project_dir"
+        if [ "$BUILD_VARIANT" = cloud-init ]
+        then touch cloud-init-build
+        fi
         snapcraft pack --verbosity verbose
+        rm -f cloud-init-build
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then
@@ -235,15 +266,30 @@ build_base_snap() {
     )
 }
 
+# Builds the image. $1 is true if we want to insert a user.
 build_base_image() {
-    local core_snap_name="$(get_core_snap_name)"
-    ubuntu-image snap \
-        -i 8G \
-        --snap "$core_snap_name" \
-        --snap upstream-snapd.snap \
-        --snap upstream-pc-kernel.snap \
-        --snap upstream-pc-gadget.snap \
-        ubuntu-core-dangerous.model
+    local insert_user=$1
+    local core_snap_name
+    core_snap_name=$(get_core_snap_name)
+
+    build_params=(
+        -i 8G
+        --snap "$core_snap_name"
+        --snap upstream-snapd.snap
+        --snap upstream-pc-kernel.snap
+        --snap upstream-pc-gadget.snap
+    )
+    if [ "$insert_user" = true ]; then
+        if [ "$BUILD_VARIANT" = cloud-init ]; then
+            prepare_base_cloudinit
+        else
+            build_params+=(
+                --assertion "$PROJECT_PATH"/tests/lib/models/system-user.assert
+            )
+        fi
+    fi
+    ubuntu-image snap "${build_params[@]}" ubuntu-core-dangerous.model
+
     # virtio requires 4KiB alignment on arm64, ensure that
     img_f=pc.img
     align=4096

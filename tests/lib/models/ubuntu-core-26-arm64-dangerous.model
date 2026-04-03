@@ -1,12 +1,14 @@
 type: model
-authority-id: tcMZ22pMaY5EVwoLozfjM4fR31bko4yj
+authority-id: test-snapd
 revision: 2
 series: 16
-brand-id: tcMZ22pMaY5EVwoLozfjM4fR31bko4yj
+brand-id: test-snapd
 model: ubuntu-core-26-arm64-dangerous
 architecture: arm64
 base: core26
 grade: dangerous
+serial-authority:
+  - generic
 snaps:
   -
     default-channel: 26/edge
@@ -27,16 +29,16 @@ snaps:
     id: PMrrV4ml8uWuEUDBT8dSGnKUYbevVhc4
     name: snapd
     type: snapd
-timestamp: 2025-05-09T02:03:23+00:00
-sign-key-sha3-384: JGh2mJNy5UeNKQ05MNvphnlDcgteasy0WiJFgk-aJ9XvPyqcKwIm8zomJtWwb-mT
+timestamp: 2026-03-30T02:03:23+00:00
+sign-key-sha3-384: rrP2xy5LOU-OjnYtfHm7h8QSOkySgyrZoJKT_YqlTKJrWMA8j-0SoClorTN6XR9Z
 
-AcLBcwQAAQoAHRYhBAho4l7L210CwlP5EEjPuvv/MykzBQJpnMQ0AAoJEEjPuvv/MykzidMP/1fA
-Irx5LLziogrxixYg0NnL74E+t9Wkydm/bPUNsVTWiAsT+fjFH4mt14zTV/djvU+dvFiMzOlX6knX
-QCBEd7wxMwk++SDO+pJe9rfpMxFC3x/prXazHZV/0aP078r4y7X7eU7e4knNspwc825krn3R50tp
-2vHfTvXmxCFmbI5UwByHhJbzbQ4p5kq07Twm7XfVL1VqtLIigIFL0zI37YuCngFqiL9uJawYvH22
-C95Exn0qKB6YxzdsShxFsUqAPYwHN8OGSnXeq4lyw5TnbmM3FS0LPxi1ESz7OMbSfIiIytTv9y1V
-IqxFxSpLBbCbLVRuajruJxrYz5PfKrayNG6q2yg4ZNFrXmxUaUM13SgW5Wss8JCIxxfhuTVYTDwb
-JNCTpykbxUua0PapUjo1NEFYnJOdENCmoa9kap/e7XdiNrt7REBXD3zLgvlw7f1DHKzDMKw3QVCh
-hPgTCBft2afzFNVap24O05Er1+chzCwsvM1w0XX/jcFTIBGuOPeevuHGclFLbL25Od8lKSr4XVUQ
-lHhPjC/pzcJnnsZGWzI4Xn+QFeLXcKsGIHWArEql2FSUFJ1uAyVFh1VxhETdZ6WOdX78xPeASxX9
-8LkMWhGg9F6UAcR6MWWh+hUmAcDsS7FPwTYyrh/vOUqJEJhHnBuiUpQRMZOJOSRs/fYOUEge
+AcLBcwQAAQoAHRYhBMEAb2Q1SgOrrGcnJ4b6Yn/LKbBXBQJpzrAtAAoJEIb6Yn/LKbBX5iwQANl3
+qX2ORPL5L+kVNdbdOfgxERWvlwSV3gmvI2IHeslh/vHtc76ly0cpjYNzNccVT/ZQAdtHsZr596yT
+akLeDoot9AsbAvFwIk4OwuurGSoeCe5dQQUEIm4X/4tp+MO0TulrDgO0Q2bv7w6yPZl0iBg99FGC
+ZZa4FY1K1xxc7DZkP3SHR3TCZTFKlMxg90Y2V28k+9h3mSzvw04gnBPnVvZfTEBUuCSwah7rfRNP
+B/DPYU3bZ3lLVFfaWYs8vlFxqwnf8peJAVxRCWGOu62h61EvEVAgJlFwL9kCyfQACYxfpMri7Oso
+5dwSoR2eFe02KGi9DjhvNm2ige7TK4jBbv2dR8PmYTTGy0aG4hi5aE8+3vR1nljL+j2LvftB1Ryc
+ndmGwjM69NTysj0QBDaRa8P/pni403MpK+EFedROy17WaiaxhUBf4uH93OuuPv6P9ywI4ywuviAK
+VcYRyP1APew7Gy31surad1WNYK83sGTxDgy0dePWtIiBzjzrkEttXdT0lPjff75exSngphtk47Kb
+H7ix+pJPi8q8aA35t51KoZWbWb/VNwhqIoz8YVeMQqrFRi5Yk0/KTLV2D1r0yNSe7LYQhXeRfsla
+VqVXM+S805+lGmvdVfpy6hFxFZKtTgdm/hpw7ycGx5XwCOVpd+EKV8/+WDgGlLNOADUop7Pw

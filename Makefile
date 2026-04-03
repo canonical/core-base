@@ -52,7 +52,12 @@ hooks:
 		exit 1; \
 	fi
 
-	set -eux; for f in ./hooks/[0-9]*.chroot; do		\
+	set -eux;						\
+	export SNAP_CLOUD_INIT_BUILD="";			\
+	if [ -f "$$CRAFT_PROJECT_DIR"/cloud-init-build ]; then	\
+	    SNAP_CLOUD_INIT_BUILD=true;				\
+	fi;							\
+	for f in ./hooks/[0-9]*.chroot; do			\
 		base="$$(basename "$${f}")";			\
 		cp -a "$${f}" $(DESTDIR)/install-data/;		\
 		chroot $(DESTDIR) "/install-data/$${base}";	\
@@ -60,7 +65,12 @@ hooks:
 	done
 	rm -rf $(DESTDIR)/install-data
 
-	set -eux; for f in ./hooks-build/[0-9]*.build; do	\
+	set -eux;						\
+	export SNAP_CLOUD_INIT_BUILD="";			\
+	if [ -f "$$CRAFT_PROJECT_DIR"/cloud-init-build ]; then	\
+	    SNAP_CLOUD_INIT_BUILD=true;				\
+	fi;							\
+	for f in ./hooks-build/[0-9]*.build; do			\
 		"$$f" $(DESTDIR);				\
 	done
 
