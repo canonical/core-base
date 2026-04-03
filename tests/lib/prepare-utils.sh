@@ -42,6 +42,18 @@ wait_for_ssh(){
         fi
         sleep "$wait"
     done
+
+    # Create "external" user with password needed by snapd spread external
+    # backend, and "test" user used by the snapd tests.
+    if [ "$BUILD_VARIANT" != cloud-init ]; then
+        execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers external'
+        execute_remote 'echo external:ubuntu123 | sudo chpasswd'
+        execute_remote 'echo "external ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-external'
+
+        execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers test'
+        execute_remote 'echo test:ubuntu | sudo chpasswd'
+        execute_remote 'echo "test ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-test'
+    fi
 }
 
 nested_wait_for_snap_command(){
