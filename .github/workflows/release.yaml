@@ -12,7 +12,7 @@ jobs:
       matrix:
         # main is currently core26
         base: [core22, core24, main]
-        variant: [normal, fips, cloud-init]
+        variant: [regular, fips, cloud-init]
         exclude:
           - base: main
             variant: fips
