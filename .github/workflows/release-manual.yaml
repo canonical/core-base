@@ -2,7 +2,16 @@ name: Release manually snap
 
 on:
   workflow_dispatch:
-
+    inputs:
+      variant:
+        description: 'Build variant'
+        required: true
+        default: 'regular'
+        type: choice
+        options:
+          - regular
+          - cloud-init
+          - fips
 jobs:
   build_release:
     runs-on: ubuntu-latest
@@ -13,3 +22,5 @@ jobs:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        with:
+          build-variant: ${{ github.event.inputs.variant }}
