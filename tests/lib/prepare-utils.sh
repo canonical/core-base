@@ -49,10 +49,12 @@ wait_for_ssh(){
         execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers external'
         execute_remote 'echo external:ubuntu123 | sudo chpasswd'
         execute_remote 'echo "external ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-external'
+        execute_remote 'sudo chmod 0440 /etc/sudoers.d/create-user-external'
 
         execute_remote 'sudo useradd --shell /bin/bash --create-home --extrausers test'
         execute_remote 'echo test:ubuntu | sudo chpasswd'
         execute_remote 'echo "test ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/create-user-test'
+        execute_remote 'sudo chmod 0440 /etc/sudoers.d/create-user-test'
     fi
 }
 
@@ -256,7 +258,10 @@ build_base_snap() {
         if [ "$BUILD_VARIANT" = cloud-init ]
         then touch cloud-init-build
         fi
-        snapcraft pack --verbosity verbose
+        if ! snapcraft pack --verbosity verbose; then
+            rm -f cloud-init-build
+            exit 1
+        fi
         rm -f cloud-init-build
 
         # copy the snap to the calling directory if they are not the same
@@ -272,7 +277,7 @@ build_base_image() {
     local core_snap_name
     core_snap_name=$(get_core_snap_name)
 
-    build_params=(
+    local -a build_params=(
         -i 8G
         --snap "$core_snap_name"
         --snap upstream-snapd.snap

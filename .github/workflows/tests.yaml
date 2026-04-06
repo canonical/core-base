@@ -83,7 +83,7 @@ jobs:
         variant: ${{ fromJSON(needs.setup.outputs.matrix) }}
         # We want to run tests here only for one of the variants, as in this
         # case the user is introduced by modifying the snapd snap and we do not
-        # use neither cloud-init not system-user assertions.
+        # use neither cloud-init nor system-user assertions.
         exclude:
           - variant: cloud-init
     env:
