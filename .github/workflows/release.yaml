@@ -15,10 +15,8 @@ jobs:
         exclude:
           - base: main
             variant: fips
-        exclude:
           - base: core22
             variant: cloud-init
-        exclude:
           - base: core24
             variant: cloud-init
     runs-on: ubuntu-latest
