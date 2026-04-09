@@ -22,11 +22,12 @@ parts:
     source-type: git
     source-branch: '26.04'
     override-build: |
-      # We use a marker file in $CRAFT_PROJECT_DIR to decide whether to include
-      # cloud-init or not. This file can be manually created for local builds,
-      # or created here if we are running from a launchpad recipe with suffix
-      # -cloud-init. This is detected by looking at the SNAPCRAFT_IMAGE_INFO
-      # env var injected in LP, which tells us the build url and has a form like:
+      # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
+      # include cloud-init or not. This file can be manually created for local
+      # builds, or created here if we are running from a launchpad recipe with
+      # suffix -cloud-init. This is detected by looking at the
+      # SNAPCRAFT_IMAGE_INFO env var injected in LP, which tells us the build
+      # url and has a form like:
       #
       # {
       #   "build-request-id": "lp-<id>",
@@ -37,8 +38,9 @@ parts:
       # (although in one line).
       (
           cd "$CRAFT_PROJECT_DIR"
+          touch build-env
           if printf "$SNAPCRAFT_IMAGE_INFO" | grep -q -- "-cloud-init/+build"
-          then touch cloud-init-build
+          then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
           fi
       )
       go install github.com/canonical/chisel/cmd/chisel@latest
@@ -181,8 +183,10 @@ parts:
         wpasupplicant_services
       )
 
-      if [ -f "$CRAFT_PROJECT_DIR"/cloud-init-build ]; then
-        SLICES+=(cloud-init_bins)
+      . "$CRAFT_PROJECT_DIR"/build-env
+      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
+      if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
+          SLICES+=(cloud-init_bins)
       fi
 
       # TODO: not sure about FIPS yet, this will have to come later, chisel has builtin
@@ -284,11 +288,11 @@ parts:
       # detect whether we are doing a fips build on LP
       if git remote get-url origin | grep "fips"; then
         craftctl set version="$date_tag"+fips
-        echo "SNAP_FIPS_BUILD=1" > ./.fips-env
-        echo "SNAP_BUILD_NAME=core26-fips" >> ./.fips-env
+        echo "SNAP_BUILD_VARIANT=fips" > build-env
+        echo "SNAP_BUILD_NAME=core26-fips" >> build-env
       else
         craftctl set version=$date_tag
-        rm -f ./.fips-env
+        rm -f build-env
       fi
     override-prime: |
       craftctl default

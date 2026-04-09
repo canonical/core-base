@@ -1,8 +1,5 @@
 name: Spread tests
 on:
-  schedule:
-    # Weekly sunday testing for bitrot
-    - cron: '0 12 * * 0'
   push:
     branches:
       - main
@@ -24,12 +21,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          # Skip cloud-init variant for bases that had it included by default
-          if [[ "${{ github.ref_name }}" == core22* ]] || [[ "${{ github.ref_name }}" == core24* ]]; then
-            echo 'matrix=["regular"]' >> $GITHUB_OUTPUT
-          else
-            echo 'matrix=["regular", "cloud-init"]' >> $GITHUB_OUTPUT
-          fi
+          echo 'matrix=["regular", "cloud-init"]' >> $GITHUB_OUTPUT
 
   build:
     runs-on: [self-hosted, spread-enabled]

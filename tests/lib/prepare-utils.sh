@@ -256,13 +256,13 @@ build_base_snap() {
     (
         cd "$project_dir"
         if [ "$BUILD_VARIANT" = cloud-init ]
-        then touch cloud-init-build
+        then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
         fi
         if ! snapcraft pack --verbosity verbose; then
-            rm -f cloud-init-build
+            rm -f build-env
             exit 1
         fi
-        rm -f cloud-init-build
+        rm -f build-env
 
         # copy the snap to the calling directory if they are not the same
         if [ "$project_dir" != "$current_dir" ]; then

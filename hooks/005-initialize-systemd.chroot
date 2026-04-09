@@ -68,7 +68,7 @@ units=(
     fstrim.timer
 )
 
-if [ "$SNAP_CLOUD_INIT_BUILD" = true ]; then
+if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
     units+=(
         cloud-init-local.service
         cloud-init-main.service
