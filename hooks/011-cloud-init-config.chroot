@@ -4,4 +4,6 @@ set -eu
 
 # Because /etc/fstab is read-only now, we should not let cloud-init
 # try to modify it.
-sed -i '/^ *- mounts$/d' /etc/cloud/cloud.cfg
+if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
+    sed -i '/^ *- mounts$/d' /etc/cloud/cloud.cfg
+fi

@@ -22,6 +22,27 @@ parts:
     source-type: git
     source-branch: '26.04'
     override-build: |
+      # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
+      # include cloud-init or not. This file can be manually created for local
+      # builds, or created here if we are running from a launchpad recipe with
+      # suffix -cloud-init. This is detected by looking at the
+      # SNAPCRAFT_IMAGE_INFO env var injected in LP, which tells us the build
+      # url and has a form like:
+      #
+      # {
+      #   "build-request-id": "lp-<id>",
+      #   "build-request-timestamp": "<time>",
+      #   "build_url": "https://launchpad.net/~ubuntu-core-service/+snap/core26-cloud-init/+build/<build_id>"
+      # }
+      #
+      # (although in one line).
+      (
+          cd "$CRAFT_PROJECT_DIR"
+          touch build-env
+          if printf "$SNAPCRAFT_IMAGE_INFO" | grep -q -- "-cloud-init/+build"
+          then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
+          fi
+      )
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
@@ -74,18 +95,21 @@ parts:
         bash-completion_config
         bash-completion_completions
         ca-certificates_data-with-certs
-        cloud-init_bins
         cracklib-runtime_bins
         cryptsetup_bins
         cryptsetup-bin_bins
         dbus_services
         dbus-user-session_services
+        dhcpcd-base_standard
         distro-info-data_data
         dmsetup_rules
         e2fsprogs_services
+        e2fsprogs_standard
+        fdisk_bins
         fonts-ubuntu_all
         fonts-ubuntu_config
         finalrd_services
+        iproute2_bins
         kmod_bins
         kmod_config
 
@@ -117,6 +141,8 @@ parts:
         libwrap0_host-files
         locales_standard
 
+        netcat-openbsd_bins
+        netplan.io_bins
         ncurses-base_terminfo
 
         openssh-client_config
@@ -129,6 +155,7 @@ parts:
         p11-kit_bins
         passwd_pam-config
         polkitd_services
+        procps_bins
         plymouth_bins
         plymouth-label-ft_libs
         procps_config
@@ -155,6 +182,12 @@ parts:
         tzdata_zoneinfo
         wpasupplicant_services
       )
+
+      . "$CRAFT_PROJECT_DIR"/build-env
+      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
+      if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
+          SLICES+=(cloud-init_bins)
+      fi
 
       # TODO: not sure about FIPS yet, this will have to come later, chisel has builtin
       # support for ESM, meaning it's something we can request chisel to do for us.
@@ -245,9 +278,8 @@ parts:
     # obviously for new core bases this cannot be the case, and
     # we need to wait until the first release with introducing
     # changelogs.
-    # TODO change to core26 when available
     build-snaps:
-      - core24=latest/beta
+      - core26=latest/beta
     override-pull: |
       craftctl default
 
@@ -256,11 +288,11 @@ parts:
       # detect whether we are doing a fips build on LP
       if git remote get-url origin | grep "fips"; then
         craftctl set version="$date_tag"+fips
-        echo "SNAP_FIPS_BUILD=1" > ./.fips-env
-        echo "SNAP_BUILD_NAME=core26-fips" >> ./.fips-env
+        echo "SNAP_BUILD_VARIANT=fips" > build-env
+        echo "SNAP_BUILD_NAME=core26-fips" >> build-env
       else
         craftctl set version=$date_tag
-        rm -f ./.fips-env
+        rm -f build-env
       fi
     override-prime: |
       craftctl default

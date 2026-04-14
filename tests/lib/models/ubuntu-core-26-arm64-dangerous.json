@@ -4,11 +4,12 @@
     "model": "ubuntu-core-26-arm64-dangerous",
     "revision": "2",
     "architecture": "arm64",
-    "authority-id": "tcMZ22pMaY5EVwoLozfjM4fR31bko4yj",
-    "brand-id": "tcMZ22pMaY5EVwoLozfjM4fR31bko4yj",
-    "timestamp": "2025-05-09T02:03:23+00:00",
+    "authority-id": "test-snapd",
+    "brand-id": "test-snapd",
+    "timestamp": "2026-03-30T02:03:23+00:00",
     "base": "core26",
     "grade": "dangerous",
+    "serial-authority": [ "generic" ],
     "snaps": [
         {
             "name": "pc",

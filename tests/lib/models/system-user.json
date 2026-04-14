@@ -1,0 +1,12 @@
+{
+    "type": "system-user",
+    "series": [ "16" ],
+    "authority-id": "test-snapd",
+    "brand-id": "test-snapd",
+    "models": ["ubuntu-core-26-amd64-dangerous", "ubuntu-core-26-arm64-dangerous"],
+    "since": "2025-09-06T06:46:16+00:00",
+    "until": "2090-09-06T06:46:16+00:00",
+    "email": "ubuntu@localhost",
+    "username": "ubuntu",
+    "ssh-keys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKYhBTaqhbXNF3Q0+bveNN1Col0+DW2HpNKx9rjhkSCr ubuntu@localhost"]
+}

@@ -55,23 +55,32 @@ case "$(uname -m)" in
 esac
 
 # Ensure selected base units are enabled
-for unit in \
-    cloud-init-local.service \
-    cloud-init-main.service \
-    cloud-init-network.service \
-    cloud-config.service \
-    cloud-final.service \
-    cloud-init-hotplugd.service \
-    cloud-init-hotplugd.socket \
-    e2scrub_reap.service \
-    secureboot-db.service \
-    wpa_supplicant.service \
-    apparmor.service \
-    finalrd.service \
-    netplan-configure.service \
-    sshd-keygen.service \
-    e2scrub_all.timer \
+
+units=(
+    e2scrub_reap.service
+    secureboot-db.service
+    wpa_supplicant.service
+    apparmor.service
+    finalrd.service
+    netplan-configure.service
+    sshd-keygen.service
+    e2scrub_all.timer
     fstrim.timer
+)
+
+if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
+    units+=(
+        cloud-init-local.service
+        cloud-init-main.service
+        cloud-init-network.service
+        cloud-config.service
+        cloud-final.service
+        cloud-init-hotplugd.service
+        cloud-init-hotplugd.socket
+    )
+fi
+
+for unit in "${units[@]}"
 do
     if [ "$unit" = "secureboot-db.service" ] && [ "$ARCH" != "amd64" ] && [ "$ARCH" != "i386" ]; then
         continue
@@ -98,7 +107,7 @@ echo "ensure the systemd target.wants are in /usr/lib instead of /etc"
 for wants_dir in /etc/systemd/system/*.wants; do
     [ -d "$wants_dir" ] || continue
     target_name=$(basename "$wants_dir")
-    
+
     # Skip cloud-init related .wants (keep in /etc for snapd)
     case "$target_name" in
         cloud-*)

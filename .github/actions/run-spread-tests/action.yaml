@@ -8,6 +8,11 @@ inputs:
     description: Complete spread command to run i.e. spread google-nested:tests/spread/main/
     required: true
     type: string
+  base-variant:
+    description: Type of base ("regular" or "cloud-init")
+    required: false
+    default: regular
+    type: string
     
 runs:
   using: "composite"
@@ -40,6 +45,7 @@ runs:
       cd "${{ inputs.working-directory }}"
       (
         set -o pipefail
+        export BUILD_VARIANT=${{ inputs.base-variant }}
         ${{ inputs.spread-command }} | \
           ${{ github.workspace }}/snapd-testing-tools/utils/log-filter -o $FILTERED_LOG_FILE -e Debug -e WARNING: -f Failed=NO_LINES -f Error=NO_LINES | \
           tee spread.log
@@ -63,5 +69,3 @@ runs:
       else
         echo "No spread log found, skipping errors reporting"
       fi
-
-      
