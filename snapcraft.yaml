@@ -140,6 +140,7 @@ parts:
         libpam-pwquality_libs
         libpciaccess0_libs
         libwrap0_host-files
+        libx11-data_xerrordb
         locales_standard
 
         netcat-openbsd_bins
