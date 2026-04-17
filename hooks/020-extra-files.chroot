@@ -55,3 +55,6 @@ chmod 0644 /usr/lib/systemd/system.conf.d/11-snapd-ctrl-alt-del-burst.conf
 
 mkdir -p /etc/iproute2
 mkdir -p /var/lib/dhcp
+
+echo "creating wsl mount point"
+mkdir -p /usr/lib/wsl
