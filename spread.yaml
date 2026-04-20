@@ -5,6 +5,7 @@ environment:
   PROJECT_PATH: $SETUPDIR
   PATH: $PATH:$PROJECT_PATH/tests/bin
   TESTSLIB: $PROJECT_PATH/tests/lib
+  BUILD_VARIANT: '$(HOST: echo "${CORE_VARIANT:-}")'
   SNAP_BRANCH: "edge" # stable/edge/beta
   UC_VERSION: 22
   # TODO: are these vars needed still?
@@ -132,7 +133,7 @@ suites:
     
     prepare: |
       # prepare common uc image setup by repacking snaps, etc
-      "$TESTSLIB"/prepare-uc.sh
+      "$TESTSLIB"/prepare-uc.sh "$BUILD_VARIANT"
     restore-each: |
       # delete the nested VM image after each task finishes so we don't use too much
       # disk space
