@@ -218,18 +218,16 @@ parts:
       mkdir -p "${CRAFT_STAGE}"/base
 
       # Cut the initial slices into the rootfs
-      # TODO: remove --ignore=unstable when chisel 26.04 is stable
-      chisel cut --ignore=unstable \
+      chisel cut \
         --release="${CRAFT_PART_SRC}" \
         --root "${CRAFT_STAGE}"/base \
         "${SLICES[@]}" "${UTILS[@]}" \
         base-files_chisel
 
       # Cut foreign libraries we also need
-      # TODO: remove --ignore=unstable when chisel 26.04 is stable
       case "$(dpkg --print-architecture)" in
           amd64)
-              chisel cut --ignore=unstable \
+              chisel cut \
                 --arch=i386 \
                 --release="${CRAFT_PART_SRC}" \
                 --root "${CRAFT_STAGE}"/base \
