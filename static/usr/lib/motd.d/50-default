@@ -9,11 +9,19 @@ To learn how to create your custom Ubuntu Core image, see our guide:
 
 * Getting Started: https://ubuntu.com/core/docs/get-started
 
-In this image, why not create an IoT web-kiosk. First, connect a
-screen, then run:
+In this image, why not create a local AI box that any device on your network
+can privately access, limited only by your device's compute power? Just run:
 
-   snap install ubuntu-frame wpe-webkit-mir-kiosk
-   snap set wpe-webkit-mir-kiosk url=https://ubuntu.com/core
+   sudo snap install gemma4
+   sudo gemma4 set http.host=0.0.0.0 webui.http.host=0.0.0.0 --assume-yes
+
+From a web browser on the same network, open the following:
+
+    http://<your-UC-ip>:8337
+
+Running from a VM? See the following:
+
+    https://ubuntu.com/core/tutorials/try-pre-built-images/install-on-a-vm/
 
 For more ideas, visit:
 
