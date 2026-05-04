@@ -253,6 +253,20 @@ parts:
       cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
       cp /usr/lib/tmpfiles.d/snapd.conf "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d/snapd.conf
 
+  generators:
+    plugin: nil
+    source: generators/
+    build-packages:
+      - cargo
+      - rustc
+    override-build: |
+      cd "${CRAFT_PART_SRC}"
+      cargo build --release
+      strip target/release/ubuntu-core-generator
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/lib/core"
+      install -m 755 target/release/ubuntu-core-generator \
+        "${CRAFT_PART_INSTALL}/usr/lib/core/ubuntu-core-generator"
+
   splash-theme:
     plugin: dump
     source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
