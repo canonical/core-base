@@ -78,7 +78,7 @@ hooks:
 
 	# Hooks can remove files that were pulled in by chisel dependencies.
 	# Reconcile manifest.wall so it reflects the final rootfs contents.
-	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --write-report --exclude-python
+	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
 
 	# TODO: Update the changelog generation to support chisel builds.
 
