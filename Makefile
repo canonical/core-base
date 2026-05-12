@@ -76,6 +76,10 @@ hooks:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	# Hooks can remove files that were pulled in by chisel dependencies.
+	# Reconcile manifest.wall so it reflects the final rootfs contents.
+	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --write-report --exclude-python
+
 	# TODO: Update the changelog generation to support chisel builds.
 
 	# TODO: Coordinate with the LP team that we now produce chisel artifacts
