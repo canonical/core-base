@@ -308,7 +308,7 @@ def main() -> int:
         exclude_python=args.exclude_python,
     )
     if total == 0:
-        print('No chisel manifest found, skipping reconciliation')
+        print('No chisel manifest changes needed: manifest.wall is missing or empty')
         return 0
 
     print(f'Reconciled chisel manifest: dropped {dropped} stale entries')
