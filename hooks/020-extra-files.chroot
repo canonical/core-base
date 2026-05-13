@@ -45,3 +45,6 @@ mkdir -p /host
 echo "set static file and folder permissions"
 chmod 0755 /etc/systemd/system.conf.d
 chmod 0644 /etc/systemd/system.conf.d/11-snapd-ctrl-alt-del-burst.conf
+
+echo "creating wsl mount point"
+mkdir -p /usr/lib/wsl
