@@ -55,17 +55,25 @@ def _extract_record_path(record: dict) -> str | None:
     """Extract an absolute filesystem path from a manifest record when available."""
     # Only records describing filesystem objects can be validated against rootfs.
     kind = record.get('kind')
-    if not isinstance(kind, str):
+    if kind is None:
+        # This happens for the header, ignore entries that are not actual records.
         return None
+
+    if not isinstance(kind, str):
+        raise ValueError(f'manifest record "kind" is not a string: {record}')
 
     keys = PATH_KEYS_BY_KIND.get(kind)
     if not keys:
+        print(f'Unknown manifest record kind: {kind}', file=sys.stderr)
         return None
 
     for key in keys:
         value = record.get(key)
-        if isinstance(value, str) and value.startswith('/'):
-            return value
+        if not isinstance(value, str):
+            raise ValueError(f'manifest record "{kind}" path key "{key}" is not a string or missing: {record}')
+        if not value.startswith('/'):
+            raise ValueError(f'manifest record "{kind}" path key "{key}" is not an absolute path: {record}')
+        return value
     return None
 
 
@@ -73,24 +81,29 @@ def _record_slices(record: dict) -> set[str]:
     """Return the set of slices referenced by a manifest record."""
     # File-backed records can reference a single slice or a list of slices.
     slices: set[str] = set()
-    slice_name = record.get('slice')
-    if isinstance(slice_name, str) and slice_name:
-        slices.add(slice_name)
 
-    many = record.get('slices')
-    if isinstance(many, list):
+    if 'slice' in record:
+        slice_name = record.get('slice')
+        if not isinstance(slice_name, str):
+            raise ValueError(f'manifest record "slice" is not a string: {record}')
+        slices.add(slice_name)
+    elif 'slices' in record:
+        many = record.get('slices')
+        if not isinstance(many, list):
+            raise ValueError(f'manifest record "slices" is not a list: {record}')
         for item in many:
-            if isinstance(item, str) and item:
-                slices.add(item)
+            if not isinstance(item, str):
+                raise ValueError(f'manifest record "slices" contains a non-string item: {record}')
+            slices.add(item)
 
     return slices
 
 
-def _slice_to_package(slice_name: str) -> str | None:
+def _slice_to_package(slice_name: str) -> str:
     """Map a chisel slice name to its package name prefix."""
     # Chisel slice names are <debian-package>_<slice>; package names have no '_'.
     if '_' not in slice_name:
-        return None
+        raise ValueError(f'manifest record slice name does not contain "_": {slice_name}')
     return slice_name.rsplit('_', 1)[0]
 
 
@@ -102,7 +115,7 @@ def _is_python_package(package_name: str) -> bool:
 def _is_python_slice(slice_name: str) -> bool:
     """Return True when a slice belongs to a python-related package."""
     package_name = _slice_to_package(slice_name)
-    return package_name is not None and _is_python_package(package_name)
+    return _is_python_package(package_name)
 
 
 def _is_python_path(path: str) -> bool:
@@ -123,6 +136,8 @@ def _record_targets_python(record: dict, record_path: str | None) -> bool:
     return False
 
 
+# Manifest are of jsonwall schema:
+# https://documentation.ubuntu.com/chisel/latest/reference/manifest/#manifest-format
 def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
     """Read manifest.wall and return decoded JSON-lines records as text lines."""
     # manifest.wall is a zstd-compressed JSON-lines stream.
@@ -132,7 +147,7 @@ def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
         stderr=subprocess.PIPE,
         check=True,
     )
-    return p.stdout.decode('utf-8').splitlines()
+    return p.stdout.decode('utf-8').split('\n')
 
 
 def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
@@ -230,6 +245,7 @@ def refresh(
     for line in _decompress_lines(wall_path):
         if not line.strip():
             continue
+        
         total += 1
         record = json.loads(line)
         record_path = _extract_record_path(record)
@@ -334,7 +350,7 @@ def main() -> int:
 
     print(f'Reconciled chisel manifest: dropped {dropped} stale entries')
     if report_path is not None:
-        print(f'Wrote prune report: {report_path}')
+        print(f'Wrote report of removals: {report_path}')
     return 0
 
 
