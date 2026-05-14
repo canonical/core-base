@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import pathlib
+import stat
 import subprocess
 import sys
 import tempfile
@@ -136,6 +137,7 @@ def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
 
 def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
     """Write JSON-lines back to manifest.wall using atomic zstd replacement."""
+    original_stat = wall_path.stat()
     fd, tmp_name = tempfile.mkstemp(
         prefix='manifest.wall.', suffix='.tmp', dir=str(wall_path.parent)
     )
@@ -152,6 +154,12 @@ def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
             stderr=subprocess.PIPE,
             check=True,
         )
+        os.chmod(tmp_path, stat.S_IMODE(original_stat.st_mode))
+        try:
+            os.chown(tmp_path, original_stat.st_uid, original_stat.st_gid)
+        except PermissionError:
+            # Non-root runs may not be able to set owner/group explicitly.
+            pass
         # Atomic replacement avoids leaving a partially-written manifest behind.
         os.replace(tmp_path, wall_path)
     finally:
@@ -166,9 +174,9 @@ def _write_report(
     dropped: int,
     dropped_entries: list[dict],
 ) -> pathlib.Path:
-    """Persist a JSON sidecar with all dropped manifest records and counts."""
-    # Sidecar report is stored next to chisel metadata in the rootfs.
-    report_path = pathlib.Path(rootfs) / 'var/lib/chisel/manifest-pruned.json'
+    """Writes a JSON report with all dropped manifest records and counts."""
+    # Report is stored next to chisel metadata in the rootfs.
+    report_path = pathlib.Path(rootfs) / 'var/lib/chisel/manifest-refresh-report.json'
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
     payload = {
@@ -180,14 +188,15 @@ def _write_report(
     }
 
     fd, tmp_name = tempfile.mkstemp(
-        prefix='manifest-pruned.', suffix='.tmp', dir=str(report_path.parent)
+        prefix='manifest-refresh-report.', suffix='.tmp', dir=str(report_path.parent)
     )
-    os.close(fd)
     tmp_path = pathlib.Path(tmp_name)
     try:
-        with tmp_path.open('w', encoding='utf-8') as f:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
             json.dump(payload, f, indent=2, sort_keys=True)
             f.write('\n')
+            f.flush()
+            os.fchmod(f.fileno(), 0o644)
         os.replace(tmp_path, report_path)
     finally:
         if tmp_path.exists():
@@ -196,12 +205,18 @@ def _write_report(
     return report_path
 
 
-def reconcile(
+# The refresh function does the following;
+# It goes through the entire manifest.wall and checks each file entry against the rootfs.
+# If the file exists in the rootfs, it is kept in the manifest, otherwise it is dropped.
+# If not, it is dropped from the manifest, and optionally recorded in a report of removed entries.
+# Afterwards it goes through all the slice and package entries, and drops those that are no longer 
+# referenced by any surviving file entry.
+def refresh(
     rootfs: str,
-    write_pruned_report: bool = False,
+    write_report: bool = False,
     exclude_python: bool = False,
 ) -> tuple[int, int, pathlib.Path | None]:
-    """Reconcile manifest.wall against rootfs and optional policy-based exclusions."""
+    """Refresh manifest.wall against rootfs and optional policy-based exclusions."""
     wall_path = _manifest_path(rootfs)
     if not wall_path.exists():
         return (0, 0, None)
@@ -221,6 +236,7 @@ def reconcile(
 
         if exclude_python and _record_targets_python(record, record_path):
             # Intentionally hide python runtime details from the exported manifest.
+            # This is a policy choice to avoid exposing the python runtime.
             removed_entries.append(record)
             dropped += 1
             continue
@@ -272,9 +288,14 @@ def reconcile(
 
         kept_lines.append(line)
 
-    _compress_lines(kept_lines, wall_path)
+    # If no entries were dropped, then let us not
+    # rewrite the manifest, and rather leave it in place
+    if dropped > 0:
+        _compress_lines(kept_lines, wall_path)
+    
+    # still generate the report if requested
     report_path = None
-    if write_pruned_report:
+    if write_report:
         report_path = _write_report(
             rootfs=rootfs,
             wall_path=wall_path,
@@ -293,7 +314,7 @@ def main() -> int:
     parser.add_argument(
         "--write-report",
         action="store_true",
-        help='Write a sidecar report of removed manifest entries',
+        help='Write a report of removed manifest entries',
     )
     parser.add_argument(
         "--exclude-python",
@@ -302,9 +323,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    total, dropped, report_path = reconcile(
+    total, dropped, report_path = refresh(
         rootfs=args.rootfs,
-        write_pruned_report=args.write_report,
+        write_report=args.write_report,
         exclude_python=args.exclude_python,
     )
     if total == 0:
