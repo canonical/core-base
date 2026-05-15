@@ -201,21 +201,9 @@ def _write_report(
         'removed_entries': dropped_entries,
     }
 
-    fd, tmp_name = tempfile.mkstemp(
-        prefix='manifest-refresh-report.', suffix='.tmp', dir=str(report_path.parent)
-    )
-    tmp_path = pathlib.Path(tmp_name)
-    try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            json.dump(payload, f, indent=2, sort_keys=True)
-            f.write('\n')
-            f.flush()
-            os.fchmod(f.fileno(), 0o644)
-        os.replace(tmp_path, report_path)
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
-
+    with open(report_path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, indent=2, sort_keys=True)
+        f.write('\n')
     return report_path
 
 
