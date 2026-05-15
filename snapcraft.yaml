@@ -20,7 +20,6 @@ parts:
     build-packages:
       - golang
       - file
-      - zstd
     source: https://github.com/canonical/chisel-ubuntu-core.git
     source-type: git
     source-branch: '26.04'
