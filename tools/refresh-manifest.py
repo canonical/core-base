@@ -16,10 +16,11 @@ import argparse
 import json
 import os
 import pathlib
-import stat
+import shutil
 import subprocess
 import sys
 import tempfile
+from compression import zstd
 from datetime import datetime, timezone
 
 
@@ -136,41 +137,39 @@ def _record_targets_python(record: dict, record_path: str | None) -> bool:
     return False
 
 
+def _is_header_record(record: dict) -> bool:
+    """Return True when a manifest record is the jsonwall header line."""
+    return 'jsonwall' in record and 'schema' in record and 'count' in record
+
+
 # Manifest are of jsonwall schema:
 # https://documentation.ubuntu.com/chisel/latest/reference/manifest/#manifest-format
 def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
     """Read manifest.wall and return decoded JSON-lines records as text lines."""
     # manifest.wall is a zstd-compressed JSON-lines stream.
-    p = subprocess.run(
-        ['zstdcat', str(wall_path)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    )
-    return p.stdout.decode('utf-8').split('\n')
+    with zstd.open(wall_path) as f:
+        file_content = f.read()
+    return file_content.decode('utf-8').split('\n')
 
 
 def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
     """Write JSON-lines back to manifest.wall using atomic zstd replacement."""
-    original_stat = wall_path.stat()
-    fd, tmp_name = tempfile.mkstemp(
-        prefix='manifest.wall.', suffix='.tmp', dir=str(wall_path.parent)
-    )
-    os.close(fd)
-    tmp_path = pathlib.Path(tmp_name)
 
+    tmp_path = None
     try:
-        # Keep JSON-lines format (newline-terminated records) when writing back.
-        payload = ('\n'.join(lines) + '\n').encode('utf-8')
-        subprocess.run(
-            ['zstd', '-q', '-f', '-z', '-o', str(tmp_path), '-'],
-            input=payload,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True,
-        )
-        os.chmod(tmp_path, stat.S_IMODE(original_stat.st_mode))
+        with tempfile.NamedTemporaryFile(
+            prefix='manifest.wall.', suffix='.tmp', dir=str(wall_path.parent), delete=False
+        ) as tmp_file:
+            tmp_path = pathlib.Path(tmp_file.name)
+                
+            # Keep JSON-lines format (newline-terminated records) when writing back.
+            payload = ('\n'.join(lines) + '\n').encode('utf-8')
+            with zstd.open(tmp_path, "w") as f:
+                f.write(payload)
+        
+        shutil.copymode(wall_path, tmp_path)
         try:
+            original_stat = wall_path.stat()
             os.chown(tmp_path, original_stat.st_uid, original_stat.st_gid)
         except PermissionError:
             # Non-root runs may not be able to set owner/group explicitly.
@@ -178,7 +177,7 @@ def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
         # Atomic replacement avoids leaving a partially-written manifest behind.
         os.replace(tmp_path, wall_path)
     finally:
-        if tmp_path.exists():
+        if tmp_path and tmp_path.exists():
             tmp_path.unlink()
 
 
@@ -236,12 +235,13 @@ def refresh(
     if not wall_path.exists():
         return (0, 0, None)
 
-    kept_phase1: list[tuple[dict, str]] = []
+    initial_pass_kept: list[tuple[dict, str]] = []
     removed_entries: list[dict] = []
     dropped = 0
     total = 0
     surviving_slices: set[str] = set()
 
+    # The initial pass checks file-backed records against the rootfs
     for line in _decompress_lines(wall_path):
         if not line.strip():
             continue
@@ -256,28 +256,32 @@ def refresh(
             removed_entries.append(record)
             dropped += 1
             continue
-
+        
+        # If the record is not a path entry, then we keep it for now and
+        # do additional filtering in second pass.
         if record_path is None:
-            kept_phase1.append((record, line))
+            initial_pass_kept.append((record, line))
             continue
 
         fs_path = pathlib.Path(rootfs) / record_path.lstrip('/')
         if os.path.lexists(fs_path):
-            kept_phase1.append((record, line))
+            initial_pass_kept.append((record, line))
             surviving_slices.update(_record_slices(record))
         else:
             # Drop manifest entries whose paths were removed by post-cut hooks.
             removed_entries.append(record)
             dropped += 1
 
+    # Get the list of packages in the manifest
     surviving_packages = {
         package_name
         for package_name in (_slice_to_package(slice_name) for slice_name in surviving_slices)
         if package_name is not None
     }
 
-    kept_lines: list[str] = []
-    for record, line in kept_phase1:
+    # Second pass removes slices and packages
+    kept_records: list[tuple[dict, str]] = []
+    for record, line in initial_pass_kept:
         if exclude_python and record.get('kind') == 'slice' and _is_python_slice(
             record.get('name', '')
         ):
@@ -302,6 +306,17 @@ def refresh(
             dropped += 1
             continue
 
+        kept_records.append((record, line))
+
+    # Update the header record with the new count if it has changed
+    expected_count = len(kept_records)
+    kept_lines: list[str] = []
+    for record, line in kept_records:
+        if _is_header_record(record):
+            if record.get('count') != expected_count:
+                header_record = dict(record)
+                header_record['count'] = expected_count
+                line = json.dumps(header_record, separators=(',', ':'))
         kept_lines.append(line)
 
     # If no entries were dropped, then let us not
