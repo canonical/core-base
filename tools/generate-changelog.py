@@ -265,7 +265,7 @@ def main():
     # add a header that helps us audit where the current build is
     # sourced from.
     now = datetime.now()
-    changes = f'{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n'
+    changes = f"{now.strftime("%d/%m/%Y")}, commit {read_remote_git_url()}/tree/{ccommit}\n\n"
     changes += f'[ Changes in the {args.name} snap ]\n\n'
 
     # Is there a previous commit? Then we get a log between them
