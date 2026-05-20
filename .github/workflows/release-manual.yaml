@@ -12,6 +12,10 @@ on:
           - regular
           - cloud-init
           - fips
+
+permissions:
+  contents: write
+
 jobs:
   build_release:
     runs-on: ubuntu-latest
