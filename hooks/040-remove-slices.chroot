@@ -12,6 +12,7 @@ rm /usr/bin/file
 
 # remove libmagic1
 rm /usr/lib/*-linux-*/libmagic.so.1*
+rm -rf /usr/share/doc/libmagic1t64
 
 # remove libsemanage-common
 rm /etc/selinux/semanage.conf
