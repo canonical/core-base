@@ -80,6 +80,11 @@ hooks:
 	# Reconcile manifest.wall so it reflects the final rootfs contents.
 	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
 
+	# Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
+	# this file to be present, and they move slowly in terms of support for the new chisel format.
+	mkdir -p "$(DESTDIR)/usr/share/snappy"
+	python3 ./tools/wall2dpkg.py "$(DESTDIR)/var/lib/chisel/manifest.wall" "$(DESTDIR)/usr/share/snappy/dpkg.yaml"
+
 	# TODO: Update the changelog generation to support chisel builds.
 
 	# TODO: Coordinate with the LP team that we now produce chisel artifacts
