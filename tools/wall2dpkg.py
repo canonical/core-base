@@ -19,9 +19,20 @@
 # releases.
 
 import json
-import subprocess
 import sys
 import yaml
+import pathlib
+from compression import zstd
+
+
+# Manifest are of jsonwall schema:
+# https://documentation.ubuntu.com/chisel/latest/reference/manifest/#manifest-format
+def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
+    """Read manifest.wall and return decoded JSON-lines records as text lines."""
+    # manifest.wall is a zstd-compressed JSON-lines stream.
+    with zstd.open(wall_path) as f:
+        file_content = f.read()
+    return file_content.decode('utf-8').split('\n')
 
 
 def main():
@@ -33,15 +44,14 @@ def main():
     wall_p = sys.argv[1]
     dpkg_p = sys.argv[2]
     dpkg = {'packages': []}
-    p = subprocess.run(['zstdcat', wall_p], stdout=subprocess.PIPE, check=True)
-    for line in p.stdout.decode('utf-8').splitlines():
+    for line in _decompress_lines(pathlib.Path(wall_p)):
         if not line.strip():
             continue
         record = json.loads(line)
         if record.get('kind') == 'package':
             pkg_name = record.get('name')
-        if 'version' in record:
-            dpkg['packages'].append(pkg_name + '=' + record['version'])
+            if 'version' in record:
+                dpkg['packages'].append(f"{pkg_name}={record['version']}")
 
     # Now save in yaml format
     with open(dpkg_p, 'w') as f:
