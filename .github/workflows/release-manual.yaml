@@ -25,6 +25,7 @@ jobs:
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@upload-changelog-to-gh-release
         with:
           build-variant: ${{ github.event.inputs.variant }}
+          publish: false
