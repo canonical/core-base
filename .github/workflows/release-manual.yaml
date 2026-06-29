@@ -25,6 +25,9 @@ jobs:
         env:
           LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@upload-changelog-to-gh-release
         with:
           build-variant: ${{ github.event.inputs.variant }}
+          publish: false
+          # TODO: set upload-changelog to true once core26 also has a changelog
+          upload-changelog: ${{ github.ref_name != 'main' }}
