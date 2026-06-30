@@ -126,3 +126,33 @@ this is currently not possible as `systemd-bootchart` needs some changes
 so it can survive the switch root between initramfs and data
 partition. With those changes, we could also have `systemd-bootchart` as
 init process so we get an even more accurate picture.
+
+# ChangeLog
+
+Each release of the base snap includes a ChangeLog at
+`/usr/share/doc/ChangeLog` that summarises the package updates bundled in
+that release, along with the aggregated updates from previous releases.
+
+## When the snap is already installed
+
+If the base snap is already installed on the system, the ChangeLog is available
+at `/snap/core24/current/usr/share/doc/ChangeLog`.
+
+You can list all installed revisions with `snap list --all core24`. To inspect
+a specific revision that is not the active one, replace `current` with the
+revision number (e.g. `/snap/core24/1234/usr/share/doc/ChangeLog`).
+
+## Via `snap download`
+
+You can download a snap without installing it, then extract the
+ChangeLog from the squashfs image:
+
+```bash
+# Download the snap
+snap download core24
+
+# Extract the changelog into a local directory
+unsquashfs -d core24-unpacked core24_*.snap usr/share/doc/ChangeLog
+```
+
+The ChangeLog is then available at `core24-unpacked/usr/share/doc/ChangeLog`.
