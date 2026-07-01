@@ -1,0 +1,31 @@
+#!/bin/bash -e
+set -x
+APPARMOR_PROF_D="etc/apparmor.d"
+
+declare -A allowed_profs
+
+num_prof=0
+
+for profile in "$APPARMOR_PROF_D"/*; do
+    # Skip if it is a directory
+    if [ -d "$profile" ]; then
+        continue
+    fi
+    # Skip if not a regular file
+    if [ ! -f "$profile" ]; then
+        continue
+    fi
+    num_prof=$((num_prof + 1))
+
+    filename=$(basename "$profile")
+    if ! [[ -v allowed_profs["$filename"] ]]; then
+        printf "Apparmor profile %s is not allowed\n" "$filename"
+        exit 1
+    fi
+done
+
+if [ "$num_prof" -ne "${#allowed_profs[@]}" ]; then
+    # If there were more we would have failed in the loop
+    printf "Less number of apparmor profiles than expected\n"
+    exit 1
+fi
