@@ -115,8 +115,14 @@ start_snapd_core_vm() {
 }
 
 get_core_snap_name() {
+    local variant="${2:-}"
+
     printf -v date '%(%Y%m%d)T' -1
-    echo "core22_${date}_amd64.snap"
+    if [ "$variant" = "fips" ]; then
+        echo "core22-fips_${date}_amd64.snap"
+    else
+        echo "core22_${date}_amd64.snap"
+    fi    
 }
 
 install_core22_deps() {
@@ -191,10 +197,18 @@ prepare_core22_cloudinit() {
 build_core22_snap() {
     local project_dir="$1"
     local current_dir="$(pwd)"
+    local variant="${2:-}"
     
     # run snapcraft
     (
         cd "$project_dir"
+
+        # if it's the fips variant, rename the remote url to trigger
+        # the fips build
+        if [ "$variant" = "fips" ]; then
+            git remote set-url origin "$(git remote get-url origin | sed 's/$/-fips/')"
+        fi
+
         sudo snapcraft --destructive-mode --verbose
 
         # copy the snap to the calling directory if they are not the same
@@ -205,7 +219,8 @@ build_core22_snap() {
 }
 
 build_core22_image() {
-    local core_snap_name="$(get_core_snap_name)"
+    local variant="${1:-}"
+    local core_snap_name="$(get_core_snap_name "$variant")"
     ubuntu-image snap \
         -i 8G \
         --snap $core_snap_name \
