@@ -7,3 +7,6 @@ rm -f /usr/lib/systemd/system/*/systemd-confext*.service
 rm -f /usr/lib/systemd/system/*/systemd-sysext*.service
 rm -f /usr/lib/systemd/system/systemd-confext*.service
 rm -f /usr/lib/systemd/system/systemd-sysext*.service
+
+# remove generators
+rm -f /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
