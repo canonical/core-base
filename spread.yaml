@@ -77,30 +77,6 @@ backends:
       - ubuntu-core-26-arm-64:
           image: snapd-spread/ubuntu-26.04-arm-64-uefi
           workers: 8
-  
-  google-nested:
-    type: google
-    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
-    location: snapd-spread/us-east1-b
-    plan: n2-standard-4
-    halt-timeout: 2h
-    systems:
-      - ubuntu-26.04-64:
-          workers: 4
-          image: ubuntu-2604-64-virt-enabled
-          storage: 20G
-
-  google-nested-arm:
-    type: google
-    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
-    location: snapd-spread/us-central1-a
-    plan: t2a-standard-4
-    halt-timeout: 2h
-    systems:
-      - ubuntu-26.04-arm-64:
-          workers: 4
-          image: ubuntu-2604-arm-64-virt-enabled
-          storage: 25G
 
   qemu-nested:
     type: qemu
@@ -164,6 +140,15 @@ kill-timeout: 60m
 suites:
   tests/spread/build/:
     summary: Build task for the core snap.
+    prepare: |
+      # for various utilities
+      . "$TESTSLIB/prepare-utils.sh"
+
+      # setup system and snapd proxy to allow tools
+      # to talk to the outside, as we run behind a proxy in the openstack environment.
+      setup_system_proxy
+      RESTART_SNAPD=true
+      setup_snapd_proxy "${RESTART_SNAPD}"
   
   tests/spread/ci/:
     summary: CI specific tasks for core-base.
