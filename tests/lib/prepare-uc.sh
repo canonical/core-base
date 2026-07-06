@@ -6,6 +6,13 @@ set -x
 # include auxiliary functions from this script
 . "$TESTSLIB/prepare-utils.sh"
 
+# setup system proxy
+setup_system_proxy
+
+# setup snapd proxy
+RESTART_SNAPD=true
+setup_snapd_proxy "${RESTART_SNAPD}"
+
 # install dependencies
 install_base_deps
 
