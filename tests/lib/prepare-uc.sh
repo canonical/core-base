@@ -7,9 +7,13 @@ set -x
 . "$TESTSLIB/prepare-utils.sh"
 
 # setup system proxy
+# needed to talk outside the openstack proxy, which
+# is mostly just to allow us to call 'apt' in install_base_deps
 setup_system_proxy
 
 # setup snapd proxy
+# needed for snapd to talk to the internet so we can do
+# 'snap download' and 'snap install'
 RESTART_SNAPD=true
 setup_snapd_proxy "${RESTART_SNAPD}"
 
