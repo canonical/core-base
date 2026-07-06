@@ -2,4 +2,3 @@
 
 # remove perl executables
 rm usr/sbin/luksformat
-rm usr/sbin/update-rc.d
