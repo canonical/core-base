@@ -80,7 +80,7 @@ install:
 
 	# When building through spread there is no .git, which means we cannot
 	# generate the changelog in this case, ensure that the current folder is
-	# a git repository, additionally check that the snap we building a changelog
+	# a git repository, additionally check that the snap we are building a changelog
 	# against has the dpkg.yaml.
 	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
 		CHG_PARAMS=; \
@@ -96,9 +96,10 @@ install:
 		echo "WARNING: changelog will not be generated for this build"; \
 	fi
 
-	# only generate manifest and dpkg.yaml files for lp build
+	# copy dpkg.yaml, chisel manifest and changelog files for lp build
 	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
 		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
+		/bin/cp $(DESTDIR)/var/lib/chisel/manifest.wall /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest.wall; \
 		if [ -e $(DESTDIR)/usr/share/doc/ChangeLog ]; then \
 			/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
 		fi \
