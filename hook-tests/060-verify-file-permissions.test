@@ -11,3 +11,15 @@ if [ "$PERMISSIONS" != "4754 103 0" ]; then
     echo "Actual: $PERMISSIONS"
     exit 1
 fi
+
+# Verify permissions of /etc/shadow and extrausers db
+# It should be 640 42 0 (rw-r----- root:shadow)
+for SHADOW in etc/shadow var/lib/extrausers/shadow var/lib/extrausers/gshadow; do
+    PERMISSIONS="$(stat -c "%a %g %u" "$SHADOW")"
+    if [ "$PERMISSIONS" != "640 42 0" ]; then
+        echo "The permissions of $SHADOW are incorrect."
+        echo "Expected: 640 42 0"
+        echo "Actual: $PERMISSIONS"
+        exit 1
+    fi
+done

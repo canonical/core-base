@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -eux
+
+# Fixup both ownership and permissions of the dbus-daemon-launch-helper binary
+# chown first, setuid is cleared on this
+chown root:messagebus usr/lib/dbus-1.0/dbus-daemon-launch-helper
+chmod 4754 usr/lib/dbus-1.0/dbus-daemon-launch-helper
+
+# Fixup ownership and permissions for /etc/shadow
+# this matches the expected setup on resolute
+chown root:shadow etc/shadow
+chmod 640 etc/shadow
