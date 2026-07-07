@@ -78,6 +78,7 @@ parts:
         rfkill_bins
         sed_bins
         sudo-rs_bins
+        sysvinit-utils_scripts
         squashfs-tools_bins
         tar_bins
         util-linux_bins
@@ -90,7 +91,7 @@ parts:
       # Define the system libraries and services that we want to include in the base
       # 
       SLICES=(
-        apparmor_extras
+        apparmor_systemd
         base-files_motd
         base-files_release-info
         base-files_root-defaults

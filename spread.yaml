@@ -10,35 +10,73 @@ environment:
   # TODO: are these vars needed still?
   LANG: "C.UTF-8"
   LANGUAGE: "en"
-  # XXX temporarily switch to edge to get the fix for
-  # https://bugs.launchpad.net/snapcraft/+bug/2051567
-  SNAPCRAFT_CHANNEL: latest/edge
   BUILD_VARIANT: '$(HOST: echo "$BUILD_VARIANT")'
+  SNAPD_WORK_DIR: '$(HOST: echo "${SPREAD_SNAPD_WORK_DIR:-/var/tmp/work-dir}")'
+  HTTP_PROXY: '$(HOST: echo "$SPREAD_HTTP_PROXY")'
+  http_proxy: '$(HOST: echo "$SPREAD_HTTP_PROXY")'
+  HTTPS_PROXY: '$(HOST: echo "$SPREAD_HTTPS_PROXY")'
+  https_proxy: '$(HOST: echo "$SPREAD_HTTPS_PROXY")'
+  NO_PROXY: '$(HOST: echo "${SPREAD_NO_PROXY:-127.0.0.1}")'
+  no_proxy: '$(HOST: echo "${SPREAD_NO_PROXY:-127.0.0.1}")'
 
 backends:
-  google-nested:
-    type: google
-    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
-    location: snapd-spread/us-east1-b
-    plan: n2-standard-4
+  openstack-ext:
+    type: openstack
+    key: '$(HOST: echo "$OS_CREDENTIALS_AMD64_PS7")'
+    plan: shared.medium
+    storage: 30G
     halt-timeout: 2h
-    systems:
+    wait-timeout: 10m
+    groups: [default]
+    proxy: ingress-haproxy.ps7.canonical.com
+    cidr-port-rel: [10.151.96.0/21:5000]
+    volume-auto-delete: true
+    environment: &openstack-env
+      SNAPD_USE_PROXY: 'true'
+      HTTP_PROXY: 'http://egress.ps7.internal:3128'
+      HTTPS_PROXY: 'http://egress.ps7.internal:3128'
+      http_proxy: 'http://egress.ps7.internal:3128'
+      https_proxy: 'http://egress.ps7.internal:3128'
+      no_proxy: '127.0.0.1,127.0.0.53,localhost'
+      NO_PROXY: '127.0.0.1,127.0.0.53,localhost'
+      NTP_SERVER: 'ntp.ps7.internal'
+    systems: &openstack-nested-systems
       - ubuntu-26.04-64:
-          workers: 4
-          image: ubuntu-2604-64-virt-enabled
-          storage: 20G
-
-  google-nested-arm:
-    type: google
-    key: '$(HOST: echo "$SPREAD_GOOGLE_KEY")'
-    location: snapd-spread/us-central1-a
-    plan: t2a-standard-4
+          image: snapd-spread/ubuntu-26.04-64
+          storage: 30G
+          workers: 12
+  openstack-ext-dev:
+    type: openstack
+    key: '$(HOST: echo "$OS_CREDENTIALS_STG_AMD64_PS7")'
+    plan: shared.medium
+    storage: 30G
     halt-timeout: 2h
-    systems:
+    wait-timeout: 10m
+    groups: [default]
+    proxy: ingress-haproxy.ps7.canonical.com
+    cidr-port-rel: [10.151.54.0/24:4000]
+    volume-auto-delete: true
+    environment: *openstack-env
+    systems: *openstack-nested-systems
+
+  openstack-arm-ext:
+    type: openstack
+    key: '$(HOST: echo "$OS_CREDENTIALS_ARM64_PS7")'
+    plan: shared.large.arm64
+    halt-timeout: 3h
+    wait-timeout: 10m
+    groups: [default]
+    proxy: ingress-haproxy.ps7.canonical.com
+    cidr-port-rel: [10.151.89.0/24:8000]
+    volume-auto-delete: true
+    environment: *openstack-env
+    systems: &openstack-arm-systems
       - ubuntu-26.04-arm-64:
-          workers: 4
-          image: ubuntu-2604-arm-64-virt-enabled
-          storage: 25G
+          image: snapd-spread/ubuntu-26.04-arm-64
+          workers: 8
+      - ubuntu-core-26-arm-64:
+          image: snapd-spread/ubuntu-26.04-arm-64-uefi
+          workers: 8
 
   qemu-nested:
     type: qemu
@@ -102,6 +140,15 @@ kill-timeout: 60m
 suites:
   tests/spread/build/:
     summary: Build task for the core snap.
+    prepare: |
+      # for various utilities
+      . "$TESTSLIB/prepare-utils.sh"
+
+      # setup system and snapd proxy to allow tools
+      # to talk to the outside, as we run behind a proxy in the openstack environment.
+      setup_system_proxy
+      RESTART_SNAPD=true
+      setup_snapd_proxy "${RESTART_SNAPD}"
   
   tests/spread/ci/:
     summary: CI specific tasks for core-base.

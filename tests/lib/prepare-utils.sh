@@ -158,6 +158,43 @@ get_core_snap_name() {
     echo "core26_${date}_$(get_arch).snap"
 }
 
+setup_snapd_proxy() {
+    if [ "${SNAPD_USE_PROXY:-}" != true ]; then
+        return
+    fi
+    restart=$1
+
+    mkdir -p /etc/systemd/system/snapd.service.d
+    cat <<EOF > /etc/systemd/system/snapd.service.d/proxy.conf
+[Service]
+Environment=HTTPS_PROXY=$HTTPS_PROXY HTTP_PROXY=$HTTP_PROXY https_proxy=$HTTPS_PROXY http_proxy=$HTTP_PROXY NO_PROXY=$NO_PROXY no_proxy=$NO_PROXY
+EOF
+
+    # We change the service configuration so reload and restart
+    # the units to get them applied (if requested)
+    systemctl daemon-reload
+    if [ "$restart" = true ]
+    then systemctl restart snapd.service
+    fi
+}
+
+setup_system_proxy() {
+    if [ "${SNAPD_USE_PROXY:-}" != true ]; then
+        return
+    fi
+
+    mkdir -p "$SNAPD_WORK_DIR"
+    cp -f /etc/environment "$SNAPD_WORK_DIR"/environment.bak
+    {
+        echo "HTTPS_PROXY=$HTTPS_PROXY"
+        echo "HTTP_PROXY=$HTTP_PROXY"
+        echo "https_proxy=$HTTPS_PROXY"
+        echo "http_proxy=$HTTP_PROXY"
+        echo "NO_PROXY=$NO_PROXY"
+        echo "no_proxy=$NO_PROXY"
+    } >> /etc/environment
+}
+
 install_base_deps() {
     sudo apt-get update -qq
 

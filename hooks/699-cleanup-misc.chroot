@@ -11,8 +11,6 @@ rm /etc/debian_version
 rm -rf /etc/dpkg
 # whatever is left in /run
 rm -rv run/*
-# includes directory
-rm -rv usr/include
 # some unneeded binaries
 sbin=(add-shell
       arpd
