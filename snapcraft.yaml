@@ -319,27 +319,27 @@ parts:
     after:
       - bootstrap
     plugin: make
-    source: .
+    source: tools
     build-packages:
       - python3-debian
       - python3-requests
       - python3-yaml
+    # to generate changelogs, it's own snap need to be present
+    build-snaps:
+      - core26/beta
     override-build: |
       # no-op
     override-prime: |
       cd ${CRAFT_PART_SRC}
 
-      # to generate changelogs, it's own snap need to be present
-      snap refresh core26 --beta || snap install core26 --beta
-
       # Hooks can remove files that were pulled in by chisel dependencies.
       # Reconcile manifest.wall so it reflects the final rootfs contents.
-      python3 ./tools/refresh-manifest.py "${CRAFT_PRIME}" --exclude-python
+      python3 ./refresh-manifest.py "${CRAFT_PRIME}" --exclude-python
       
       # Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
       # this file to be present, and they move slowly in terms of support for the new chisel format.
       mkdir -p "${CRAFT_PRIME}/usr/share/snappy"
-      python3 ./tools/wall2dpkg.py "${CRAFT_PRIME}/var/lib/chisel/manifest.wall" "${CRAFT_PRIME}/usr/share/snappy/dpkg.yaml"
+      python3 ./wall2dpkg.py "${CRAFT_PRIME}/var/lib/chisel/manifest.wall" "${CRAFT_PRIME}/usr/share/snappy/dpkg.yaml"
 
       # When building through spread there is no .git, which means we cannot
       # generate the changelog in this case, ensure that the current folder is
@@ -350,7 +350,7 @@ parts:
         if [ -e /build/core26 ]; then
           CHG_PARAMS=--launchpad
         fi
-        ./tools/generate-changelog.py "/snap/core26/current" "${CRAFT_PRIME}" core26 $CHG_PARAMS
+        ./generate-changelog.py "/snap/core26/current" "${CRAFT_PRIME}" core26 $CHG_PARAMS
       else
         echo "WARNING: changelog will not be generated for this build"
       fi
@@ -359,7 +359,6 @@ parts:
     after:
       - generate-changelog
     plugin: nil
-    source: .
     override-prime: |
       # copy dpkg.yaml, chisel manifest and changelog files for lp build
       if [ -e /build/core26 ]; then
