@@ -1,7 +1,5 @@
 # dir that contans the filesystem that must be checked
 TESTDIR ?= "prime/"
-SNAP_NAME=core26
-SNAP_BUILD_NAME=core26
 CODENAME:="$(shell . /etc/os-release; echo "$$VERSION_CODENAME")"
 
 .PHONY: all
@@ -68,40 +66,6 @@ install:
 
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
-
-	# Hooks can remove files that were pulled in by chisel dependencies.
-	# Reconcile manifest.wall so it reflects the final rootfs contents.
-	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
-
-	# Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
-	# this file to be present, and they move slowly in terms of support for the new chisel format.
-	mkdir -p "$(DESTDIR)/usr/share/snappy"
-	python3 ./tools/wall2dpkg.py "$(DESTDIR)/var/lib/chisel/manifest.wall" "$(DESTDIR)/usr/share/snappy/dpkg.yaml"
-
-	# When building through spread there is no .git, which means we cannot
-	# generate the changelog in this case, ensure that the current folder is
-	# a git repository, additionally check that the snap we are building a changelog
-	# against has the dpkg.yaml.
-	if git rev-parse HEAD && [ -e "/snap/$(SNAP_NAME)/current/usr/share/snappy/dpkg.yaml" ]; then \
-		CHG_PARAMS=; \
-		if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
-			CHG_PARAMS=--launchpad; \
-		fi; \
-		./tools/generate-changelog.py \
-			"/snap/$(SNAP_NAME)/current" \
-			"$(DESTDIR)" \
-			"$(SNAP_NAME)" \
-			$$CHG_PARAMS; \
-	else \
-		echo "WARNING: changelog will not be generated for this build"; \
-	fi
-
-	# copy dpkg.yaml, chisel manifest and changelog files for lp build
-	if [ -e /build/$(SNAP_BUILD_NAME) ]; then \
-		/bin/cp $(DESTDIR)/usr/share/snappy/dpkg.yaml /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).dpkg.yaml; \
-		/bin/cp $(DESTDIR)/var/lib/chisel/manifest.wall /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).manifest.wall; \
-		/bin/cp $(DESTDIR)/usr/share/doc/ChangeLog /build/$(SNAP_BUILD_NAME)/$(SNAP_NAME)-$$(date +%Y%m%d%H%M)_$(DPKG_ARCH).ChangeLog; \
-	fi;
 
 .PHONY: check
 check:
