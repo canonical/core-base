@@ -1,5 +1,5 @@
 name: core26
-adopt-info: bootstrap
+adopt-info: hooks
 summary: Runtime environment based on Ubuntu 26.04
 description: |
   The base snap based on the Ubuntu 26.04 release.
@@ -216,12 +216,12 @@ parts:
       esac
 
       # create the rootfs directory we install slices into
-      mkdir -p "${CRAFT_STAGE}"/base
+      mkdir -p "${CRAFT_PART_INSTALL}"/base
 
       # Cut the initial slices into the rootfs
       chisel cut \
         --release="${CRAFT_PART_SRC}" \
-        --root "${CRAFT_STAGE}"/base \
+        --root "${CRAFT_PART_INSTALL}"/base \
         "${SLICES[@]}" "${UTILS[@]}" \
         base-files_chisel
 
@@ -231,7 +231,7 @@ parts:
               chisel cut \
                 --arch=i386 \
                 --release="${CRAFT_PART_SRC}" \
-                --root "${CRAFT_STAGE}"/base \
+                --root "${CRAFT_PART_INSTALL}"/base \
                 libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
@@ -242,6 +242,9 @@ parts:
       # this is zstd compressed, and must therefor be uncompressed
       # unzstd ./manifest.wall -o manifest.json
 
+    override-prime: |
+      # Not files from this step in prime
+
   snapd-files:
     plugin: nil
     source: .
@@ -250,9 +253,12 @@ parts:
     after:
       - chisel-libs
     override-build: |
-      mkdir -p "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators
-      cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_STAGE}"/base/usr/lib/systemd/system-generators/snapd-generator
-      cp /usr/lib/tmpfiles.d/snapd.conf "${CRAFT_STAGE}"/base/usr/lib/tmpfiles.d/snapd.conf
+      mkdir -p "${CRAFT_PART_INSTALL}"/base/usr/lib/systemd/system-generators
+      cp /usr/lib/systemd/system-generators/snapd-generator "${CRAFT_PART_INSTALL}"/base/usr/lib/systemd/system-generators/snapd-generator
+      mkdir -p "${CRAFT_PART_INSTALL}"/base/usr/lib/tmpfiles.d
+      cp /usr/lib/tmpfiles.d/snapd.conf "${CRAFT_PART_INSTALL}"/base/usr/lib/tmpfiles.d/snapd.conf
+    override-prime: |
+      # Not files from this step in prime
 
   generators:
     plugin: nil
@@ -278,10 +284,11 @@ parts:
     stage:
       - -README.md
 
-  bootstrap:
+  hooks:
     after:
       - chisel-libs
       - snapd-files
+      - splash-theme
     plugin: make
     source: .
     build-packages:
@@ -310,11 +317,48 @@ parts:
         craftctl set version=$date_tag
         rm -f build-env
       fi
+
     override-prime: |
       craftctl default
 
-      # run all the hooks
-      cd ${CRAFT_PART_SRC} && make hooks DESTDIR=${CRAFT_PRIME}
-
       # ensure build-in tests are run
-      cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
+      make -C ${CRAFT_PART_SRC} test TESTDIR=${CRAFT_PRIME}
+
+  generate-changelog:
+    after:
+      - hooks
+    plugin: nil
+    source: tools
+    build-packages:
+      - python3-debian
+      - python3-requests
+      - python3-yaml
+    override-build: |
+      # Hooks can remove files that were pulled in by chisel dependencies.
+      # Reconcile manifest.wall so it reflects the final rootfs contents.
+      mkdir -p "${CRAFT_PART_INSTALL}/var/lib/chisel"
+      python3 ${CRAFT_PART_SRC}/refresh-manifest.py \
+        "${CRAFT_STAGE}" \
+        "${CRAFT_STAGE}/base/var/lib/chisel/manifest.wall" \
+        "${CRAFT_PART_INSTALL}/var/lib/chisel/manifest.wall" \
+        --exclude-python
+
+      # Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
+      # this file to be present, and they move slowly in terms of support for the new chisel format.
+      mkdir -p "${CRAFT_PART_INSTALL}/usr/share/snappy"
+      python3 ${CRAFT_PART_SRC}/wall2dpkg.py \
+        "${CRAFT_PART_INSTALL}/var/lib/chisel/manifest.wall" \
+        "${CRAFT_PART_INSTALL}/usr/share/snappy/dpkg.yaml"
+
+      # TODO: Update the changelog generation to support chisel builds.
+
+      # TODO: Coordinate with the LP team that we now produce chisel artifacts
+
+
+  test-step:
+    after:
+      - generate-changelog
+    plugin: nil
+    source-type: nil
+    override-build: |
+      echo "hello"

@@ -16,6 +16,7 @@ install:
 	fi
 	rm -rf $(DESTDIR)
 	cp -a $(CRAFT_STAGE)/base $(DESTDIR)
+	rm "$(DESTDIR)/var/lib/chisel/manifest.wall"
 
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
@@ -45,13 +46,6 @@ install:
 	# create install-data for hooks
 	mkdir -p $(DESTDIR)/install-data
 
-.PHONY: hooks
-hooks:
-	set -ex; if [ -z "$(DESTDIR)" ]; then \
-		echo "no DESTDIR set"; \
-		exit 1; \
-	fi
-
 	set -eux;						\
 	export SNAP_BUILD_VARIANT="";				\
 	. "$$CRAFT_PROJECT_DIR"/build-env;			\
@@ -75,20 +69,6 @@ hooks:
 
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
-
-	# Hooks can remove files that were pulled in by chisel dependencies.
-	# Reconcile manifest.wall so it reflects the final rootfs contents.
-	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
-
-	# Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
-	# this file to be present, and they move slowly in terms of support for the new chisel format.
-	mkdir -p "$(DESTDIR)/usr/share/snappy"
-	python3 ./tools/wall2dpkg.py "$(DESTDIR)/var/lib/chisel/manifest.wall" "$(DESTDIR)/usr/share/snappy/dpkg.yaml"
-
-	# TODO: Update the changelog generation to support chisel builds.
-
-	# TODO: Coordinate with the LP team that we now produce chisel artifacts
-
 
 .PHONY: check
 check:

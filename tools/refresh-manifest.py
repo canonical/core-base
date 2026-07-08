@@ -151,13 +151,13 @@ def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
     return file_content.decode('utf-8').split('\n')
 
 
-def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
+def _compress_lines(lines: list[str], output_wall_path: pathlib.Path, input_wall_path: pathlib.Path) -> None:
     """Write JSON-lines back to manifest.wall using atomic zstd replacement."""
 
     tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(
-            prefix='manifest.wall.', suffix='.tmp', dir=str(wall_path.parent), delete=False
+            prefix='manifest.wall.', suffix='.tmp', dir=str(output_wall_path.parent), delete=False
         ) as tmp_file:
             tmp_path = pathlib.Path(tmp_file.name)
                 
@@ -166,15 +166,15 @@ def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
             with zstd.open(tmp_path, "w") as f:
                 f.write(payload)
         
-        shutil.copymode(wall_path, tmp_path)
+        shutil.copymode(input_wall_path, tmp_path)
         try:
-            original_stat = wall_path.stat()
+            original_stat = input_wall_path.stat()
             os.chown(tmp_path, original_stat.st_uid, original_stat.st_gid)
         except PermissionError:
             # Non-root runs may not be able to set owner/group explicitly.
             pass
         # Atomic replacement avoids leaving a partially-written manifest behind.
-        os.replace(tmp_path, wall_path)
+        os.replace(tmp_path, output_wall_path)
     finally:
         if tmp_path and tmp_path.exists():
             tmp_path.unlink()
@@ -182,7 +182,7 @@ def _compress_lines(lines: list[str], wall_path: pathlib.Path) -> None:
 
 def _write_report(
     rootfs: str,
-    wall_path: pathlib.Path,
+    wall_path: str,
     total: int,
     dropped: int,
     dropped_entries: list[dict],
@@ -194,7 +194,7 @@ def _write_report(
 
     payload = {
         'generated_at': datetime.now(timezone.utc).isoformat(),
-        'manifest_path': str(wall_path.relative_to(rootfs)),
+        'manifest_path': wall_path,
         'total_records_seen': total,
         'dropped_records': dropped,
         'removed_entries': dropped_entries,
@@ -214,14 +214,12 @@ def _write_report(
 # referenced by any surviving file entry.
 def refresh(
     rootfs: str,
+    input_wall_path: pathlib.Path,
+    output_wall_path: pathlib.Path,
     write_report: bool = False,
     exclude_python: bool = False,
 ) -> tuple[int, int, pathlib.Path | None]:
     """Refresh manifest.wall against rootfs and optional policy-based exclusions."""
-    wall_path = _manifest_path(rootfs)
-    if not wall_path.exists():
-        return (0, 0, None)
-
     initial_pass_kept: list[tuple[dict, str]] = []
     removed_entries: list[dict] = []
     dropped = 0
@@ -229,7 +227,7 @@ def refresh(
     surviving_slices: set[str] = set()
 
     # The initial pass checks file-backed records against the rootfs
-    for line in _decompress_lines(wall_path):
+    for line in _decompress_lines(input_wall_path):
         if not line.strip():
             continue
         
@@ -309,14 +307,14 @@ def refresh(
     # If no entries were dropped, then let us not
     # rewrite the manifest, and rather leave it in place
     if dropped > 0:
-        _compress_lines(kept_lines, wall_path)
+        _compress_lines(kept_lines, output_wall_path, input_wall_path)
     
     # still generate the report if requested
     report_path = None
     if write_report:
         report_path = _write_report(
             rootfs=rootfs,
-            wall_path=wall_path,
+            wall_path='/var/lib/chisel/manifest.wall',
             total=total,
             dropped=dropped,
             dropped_entries=removed_entries,
@@ -329,6 +327,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Refreshes the chisel manifest")
 
     parser.add_argument('rootfs', help='Path to the root of the filesystem to reconcile against')
+    parser.add_argument('input', help='Path to the manifest to read', type=pathlib.Path)
+    parser.add_argument('output', help='Path to the manifest to write', type=pathlib.Path)
     parser.add_argument(
         "--write-report",
         action="store_true",
@@ -343,6 +343,8 @@ def main() -> int:
 
     total, dropped, report_path = refresh(
         rootfs=args.rootfs,
+        input_wall_path=args.input,
+        output_wall_path=args.output,
         write_report=args.write_report,
         exclude_python=args.exclude_python,
     )
