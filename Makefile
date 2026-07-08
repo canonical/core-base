@@ -45,13 +45,6 @@ install:
 	# create install-data for hooks
 	mkdir -p $(DESTDIR)/install-data
 
-.PHONY: hooks
-hooks:
-	set -ex; if [ -z "$(DESTDIR)" ]; then \
-		echo "no DESTDIR set"; \
-		exit 1; \
-	fi
-
 	set -eux;						\
 	export SNAP_BUILD_VARIANT="";				\
 	. "$$CRAFT_PROJECT_DIR"/build-env;			\
