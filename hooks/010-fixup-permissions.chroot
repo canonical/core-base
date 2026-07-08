@@ -7,7 +7,7 @@ set -eux
 chown root:messagebus usr/lib/dbus-1.0/dbus-daemon-launch-helper
 chmod 4754 usr/lib/dbus-1.0/dbus-daemon-launch-helper
 
-# Fixup ownership and permissions for /etc/shadow
+# Fixup ownership and permissions for /etc/shadow and /etc/gshadow
 # this matches the expected setup on resolute
-chown root:shadow etc/shadow
-chmod 640 etc/shadow
+chown root:shadow etc/shadow etc/gshadow
+chmod 640 etc/shadow etc/gshadow
