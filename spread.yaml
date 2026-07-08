@@ -44,7 +44,7 @@ backends:
       - ubuntu-26.04-64:
           image: snapd-spread/ubuntu-26.04-64
           storage: 30G
-          workers: 1
+          workers: 2
   openstack-ext-dev:
     type: openstack
     key: '$(HOST: echo "$OS_CREDENTIALS_STG_AMD64_PS7")'
@@ -73,10 +73,10 @@ backends:
     systems: &openstack-arm-systems
       - ubuntu-26.04-arm-64:
           image: snapd-spread/ubuntu-26.04-arm-64
-          workers: 1
+          workers: 2
       - ubuntu-core-26-arm-64:
           image: snapd-spread/ubuntu-26.04-arm-64-uefi
-          workers: 1
+          workers: 2
 
   qemu-nested:
     type: qemu
