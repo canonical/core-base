@@ -5,3 +5,7 @@ set -e
 for prefix in passwd group shadow; do
     grep -q "^${prefix}:.*extrausers" etc/nsswitch.conf
 done
+
+for prefix in passwd group; do
+    grep -q "^${prefix}:.*snapd" etc/nsswitch.conf
+done
