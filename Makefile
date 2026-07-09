@@ -67,6 +67,10 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	# Hooks can remove files that were pulled in by chisel dependencies.
+	# Reconcile manifest.wall so it reflects the final rootfs contents.
+	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
+
 .PHONY: check
 check:
 	# exclude "useless cat" from checks, while useless they also make

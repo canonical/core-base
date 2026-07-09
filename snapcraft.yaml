@@ -317,7 +317,7 @@ parts:
 
   generate-changelog:
     after:
-      - bootstrap
+      - hooks
     plugin: make
     source: tools
     build-packages:
@@ -332,10 +332,6 @@ parts:
     override-prime: |
       cd ${CRAFT_PART_SRC}
 
-      # Hooks can remove files that were pulled in by chisel dependencies.
-      # Reconcile manifest.wall so it reflects the final rootfs contents.
-      python3 ./refresh-manifest.py "${CRAFT_PRIME}" --exclude-python
-      
       # Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
       # this file to be present, and they move slowly in terms of support for the new chisel format.
       mkdir -p "${CRAFT_PRIME}/usr/share/snappy"
