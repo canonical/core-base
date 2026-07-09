@@ -64,7 +64,7 @@ def _extract_record_path(record: dict) -> str | None:
 
     keys = PATH_KEYS_BY_KIND.get(kind)
     if not keys:
-        print(f'Unknown manifest record kind: {kind}', file=sys.stderr)
+        # likely a slice or something else that does not have a path, ignore it for now
         return None
 
     for key in keys:
