@@ -48,6 +48,13 @@ parts:
       copyright: usr/share/doc/plymouth-theme-ubuntu-core/copyright
     stage:
       - -README.md
+  nss-snapd:
+    plugin: make
+    source: https://github.com/canonical/nss-snapd.git
+    source-type: git
+    make-parameters:
+      - prefix=/usr
+      - libdir=/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}
   bootstrap:
     after:
       - base
