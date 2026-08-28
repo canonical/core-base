@@ -33,7 +33,7 @@ parts:
       # (although in one line).
       if ! [ -e "$CRAFT_PROJECT_DIR"/build-env ]; then
         (
-            cd "${CRAFT_PART_INSTALL}"
+            cd "${CRAFT_PART_SRC}"
             touch build-env
             # parse the snap name from the url, and remove the prefix "core26-" and 
             # suffix "/+build" to get the variant name, if any.
@@ -46,24 +46,26 @@ parts:
         )
       else
         # copy to install dir so that we can use it in the build step
-        cp "$CRAFT_PROJECT_DIR"/build-env "${CRAFT_PART_INSTALL}"/build-env
+        cp "$CRAFT_PROJECT_DIR"/build-env "${CRAFT_PART_SRC}"/build-env
       fi
 
       date_tag=$("$CRAFT_PROJECT_DIR"/get-version.sh)
 
       # make sure we load the build-env here, especially if we're using
       # the locally sourced one.
-      . "${CRAFT_PART_INSTALL}"/build-env
+      . "${CRAFT_PART_SRC}"/build-env
       SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
 
       # handle build variants
       if [ -n "$SNAP_BUILD_VARIANT" ]; then
         craftctl set version="${date_tag}+$SNAP_BUILD_VARIANT"
-        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> "${CRAFT_PART_INSTALL}"/build-env
+        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> "${CRAFT_PART_SRC}"/build-env
       else
         craftctl set version="${date_tag}"
-        echo "SNAP_BUILD_NAME=core26" > "${CRAFT_PART_INSTALL}"/build-env
+        echo "SNAP_BUILD_NAME=core26" > "${CRAFT_PART_SRC}"/build-env
       fi
+    override-build: |
+      cp "${CRAFT_PART_SRC}"/build-env "${CRAFT_PART_INSTALL}"/build-env
     prime:
       - -build-env
 
