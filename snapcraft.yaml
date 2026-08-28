@@ -1,5 +1,5 @@
 name: core26
-adopt-info: hooks
+adopt-info: build-env
 summary: Runtime environment based on Ubuntu 26.04
 description: |
   The base snap based on the Ubuntu 26.04 release.
@@ -15,6 +15,7 @@ assumes:
 parts:
   build-env:
     plugin: nil
+    source: .
     override-pull: |
       # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
       # include cloud-init or not. This file can be manually created for local
@@ -30,25 +31,48 @@ parts:
       # }
       #
       # (although in one line).
-      (
-          cd "$CRAFT_PROJECT_DIR"
-          touch build-env
-          # parse the snap name from the url, and remove the prefix "core26-" and 
-          # suffix "/+build" to get the variant name, if any.
-          if [ -n "${SNAPCRAFT_IMAGE_INFO+x}" ]; then
-            SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-).*(?=/\+build)')
-            if [ -n "$SNAP_BUILD_VARIANT" ]; then
-                echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
+      if ! [ -e "$CRAFT_PROJECT_DIR"/build-env ]; then
+        (
+            cd "${CRAFT_PART_INSTALL}"
+            touch build-env
+            # parse the snap name from the url, and remove the prefix "core26-" and 
+            # suffix "/+build" to get the variant name, if any.
+            if [ -n "${SNAPCRAFT_IMAGE_INFO+x}" ]; then
+              SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-).*(?=/\+build)')
+              if [ -n "$SNAP_BUILD_VARIANT" ]; then
+                  echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
+              fi
             fi
-          fi
-      )
+        )
+      else
+        # copy to install dir so that we can use it in the build step
+        cp "$CRAFT_PROJECT_DIR"/build-env "${CRAFT_PART_INSTALL}"/build-env
+      fi
+
+      date_tag=$("$CRAFT_PROJECT_DIR"/get-version.sh)
+
+      # make sure we load the build-env here, especially if we're using
+      # the locally sourced one.
+      . "${CRAFT_PART_INSTALL}"/build-env
+      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
+
+      # handle build variants
+      if [ -n "$SNAP_BUILD_VARIANT" ]; then
+        craftctl set version="${date_tag}+$SNAP_BUILD_VARIANT"
+        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> "${CRAFT_PART_INSTALL}"/build-env
+      else
+        craftctl set version="${date_tag}"
+        echo "SNAP_BUILD_NAME=core26" > "${CRAFT_PART_INSTALL}"/build-env
+      fi
+    prime:
+      - -build-env
 
   # TODO: rewrite this once all slices are upstreamed to use chisel slices
   # directly from canonical, instead of our own chisel-releases repo.
   chisel-libs:
-    plugin: nil
     after:
       - build-env
+    plugin: nil
     build-packages:
       - golang
       - file
@@ -198,7 +222,7 @@ parts:
         wpasupplicant_services
       )
 
-      . "$CRAFT_PROJECT_DIR"/build-env
+      . "$CRAFT_STAGE"/build-env
       SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
       if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
           SLICES+=(cloud-init_bins)
@@ -306,24 +330,6 @@ parts:
     build-packages:
       - shellcheck
       - distro-info
-    override-pull: |
-      craftctl default
-
-      date_tag=$(./get-version.sh)
-
-      . "$CRAFT_PROJECT_DIR"/build-env
-      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
-
-      # handle build variants
-      if [ -n "$SNAP_BUILD_VARIANT" ]; then
-        craftctl set version="${date_tag}+$SNAP_BUILD_VARIANT"
-        echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
-        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> build-env
-      else
-        craftctl set version="${date_tag}"
-        echo "SNAP_BUILD_NAME=core26" > build-env
-      fi
-
     override-prime: |
       craftctl default
 
