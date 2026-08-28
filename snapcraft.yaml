@@ -41,8 +41,13 @@ parts:
       (
           cd "$CRAFT_PROJECT_DIR"
           touch build-env
-          if printf "$SNAPCRAFT_IMAGE_INFO" | grep -q -- "-cloud-init/+build"
-          then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
+          # parse the snap name from the url, and remove the prefix "core26-" and 
+          # suffix "/+build" to get the variant name, if any.
+          if [ -n "${SNAPCRAFT_IMAGE_INFO+x}" ]; then
+            SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-).*(?=/\+build)')
+            if [ -n "$SNAP_BUILD_VARIANT" ]; then
+                echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
+            fi
           fi
       )
       go install github.com/canonical/chisel/cmd/chisel@latest
@@ -195,7 +200,7 @@ parts:
 
       # TODO: not sure about FIPS yet, this will have to come later, chisel has builtin
       # support for ESM, meaning it's something we can request chisel to do for us.
-      # if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+      # if [ "$SNAP_BUILD_VARIANT" = fips ]; then
       #   # Ensure vital crypt packages are refreshed / downgraded and downloaded
       #   # from the FIPS ppa. This should also contain openssh-server, but we already
       #   # have that one listed above.
@@ -299,14 +304,17 @@ parts:
 
       date_tag=$(./get-version.sh)
 
-      # detect whether we are doing a fips build on LP
-      if git remote get-url origin | grep "fips"; then
-        craftctl set version="$date_tag"+fips
-        echo "SNAP_BUILD_VARIANT=fips" > build-env
-        echo "SNAP_BUILD_NAME=core26-fips" >> build-env
+      . "$CRAFT_PROJECT_DIR"/build-env
+      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
+
+      # handle build variants
+      if [ -n "$SNAP_BUILD_VARIANT" ]; then
+        craftctl set version="${date_tag}+$SNAP_BUILD_VARIANT"
+        echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
+        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> build-env
       else
-        craftctl set version=$date_tag
-        rm -f build-env
+        craftctl set version="${date_tag}"
+        echo "SNAP_BUILD_NAME=core26" > build-env
       fi
 
     override-prime: |
