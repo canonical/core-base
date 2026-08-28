@@ -155,6 +155,10 @@ get_arch() {
 
 get_core_snap_name() {
     printf -v date '%(%Y%m%d)T' -1
+    if [ "$BUILD_VARIANT" != "" ]; then
+        echo "core26_${date}+${BUILD_VARIANT}_$(get_arch).snap"
+        return
+    fi
     echo "core26_${date}_$(get_arch).snap"
 }
 
