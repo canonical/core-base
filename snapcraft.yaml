@@ -13,17 +13,9 @@ assumes:
   ## - isa-riscv64-rva23
 
 parts:
-  # TODO: rewrite this once all slices are upstreamed to use chisel slices
-  # directly from canonical, instead of our own chisel-releases repo.
-  chisel-libs:
+  build-env:
     plugin: nil
-    build-packages:
-      - golang
-      - file
-    source: https://github.com/canonical/chisel-ubuntu-core.git
-    source-type: git
-    source-branch: '26.04'
-    override-build: |
+    override-pull: |
       # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
       # include cloud-init or not. This file can be manually created for local
       # builds, or created here if we are running from a launchpad recipe with
@@ -50,6 +42,20 @@ parts:
             fi
           fi
       )
+
+  # TODO: rewrite this once all slices are upstreamed to use chisel slices
+  # directly from canonical, instead of our own chisel-releases repo.
+  chisel-libs:
+    plugin: nil
+    after:
+      - build-env
+    build-packages:
+      - golang
+      - file
+    source: https://github.com/canonical/chisel-ubuntu-core.git
+    source-type: git
+    source-branch: '26.04'
+    override-build: |
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
@@ -294,6 +300,7 @@ parts:
       - chisel-libs
       - snapd-files
       - splash-theme
+      - build-env
     plugin: make
     source: .
     build-packages:
