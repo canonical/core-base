@@ -1,0 +1,24 @@
+name: Release core20
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    environment: store
+    steps:
+      - name: Build and release core20 to edge channel
+        env:
+          LP_CREDENTIALS: ${{ secrets.LP_CREDENTIALS }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        uses: snapcore/system-snaps-cicd-tools/action-rebuild-base@main
+        with:
+          # snapcraft_channel is not set here as it will be selected automatically
+          # based on the corresponding LP snap recipe
+          build-variant: regular
