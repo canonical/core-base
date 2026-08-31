@@ -15,6 +15,7 @@ assumes:
 parts:
   build-env:
     plugin: nil
+    # To retrigger the pull step automatically on changes.
     source: .
     override-pull: |
       # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
