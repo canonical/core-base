@@ -120,6 +120,8 @@ parts:
         squashfs-tools_bins
         tar_bins
         util-linux_bins
+        util-linux_nsenter
+        util-linux-extra_pivot-root
         util-linux-extra_hardware
         util-linux-extra_process
         util-linux-extra_login
