@@ -1,5 +1,5 @@
 name: core26
-adopt-info: hooks
+adopt-info: build-env
 summary: Runtime environment based on Ubuntu 26.04
 description: |
   The base snap based on the Ubuntu 26.04 release.
@@ -13,17 +13,11 @@ assumes:
   ## - isa-riscv64-rva23
 
 parts:
-  # TODO: rewrite this once all slices are upstreamed to use chisel slices
-  # directly from canonical, instead of our own chisel-releases repo.
-  chisel-libs:
+  build-env:
     plugin: nil
-    build-packages:
-      - golang
-      - file
-    source: https://github.com/canonical/chisel-ubuntu-core.git
-    source-type: git
-    source-branch: '26.04'
-    override-build: |
+    # To retrigger the pull step automatically on changes.
+    source: .
+    override-pull: |
       # We use a file with env vars in $CRAFT_PROJECT_DIR to decide whether to
       # include cloud-init or not. This file can be manually created for local
       # builds, or created here if we are running from a launchpad recipe with
@@ -38,13 +32,57 @@ parts:
       # }
       #
       # (although in one line).
-      (
-          cd "$CRAFT_PROJECT_DIR"
-          touch build-env
-          if printf "$SNAPCRAFT_IMAGE_INFO" | grep -q -- "-cloud-init/+build"
-          then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
-          fi
-      )
+      if ! [ -e "$CRAFT_PROJECT_DIR"/build-env ]; then
+        (
+            cd "${CRAFT_PART_SRC}"
+            touch build-env
+            # parse the snap name from the url, and remove the prefix "core26-" and 
+            # suffix "/+build" to get the variant name, if any.
+            if [ -n "${SNAPCRAFT_IMAGE_INFO+x}" ]; then
+              SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-).*(?=/\+build)')
+              if [ -n "$SNAP_BUILD_VARIANT" ]; then
+                  echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
+              fi
+            fi
+        )
+      else
+        # copy to install dir so that we can use it in the build step
+        cp "$CRAFT_PROJECT_DIR"/build-env "${CRAFT_PART_SRC}"/build-env
+      fi
+
+      date_tag=$("$CRAFT_PROJECT_DIR"/get-version.sh)
+
+      # make sure we load the build-env here, especially if we're using
+      # the locally sourced one.
+      . "${CRAFT_PART_SRC}"/build-env
+      SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
+
+      # handle build variants
+      if [ -n "$SNAP_BUILD_VARIANT" ]; then
+        craftctl set version="${date_tag}+$SNAP_BUILD_VARIANT"
+        echo "SNAP_BUILD_NAME=core26-$SNAP_BUILD_VARIANT" >> "${CRAFT_PART_SRC}"/build-env
+      else
+        craftctl set version="${date_tag}"
+        echo "SNAP_BUILD_NAME=core26" > "${CRAFT_PART_SRC}"/build-env
+      fi
+    override-build: |
+      cp "${CRAFT_PART_SRC}"/build-env "${CRAFT_PART_INSTALL}"/build-env
+    prime:
+      - -build-env
+
+  # TODO: rewrite this once all slices are upstreamed to use chisel slices
+  # directly from canonical, instead of our own chisel-releases repo.
+  chisel-libs:
+    after:
+      - build-env
+    plugin: nil
+    build-packages:
+      - golang
+      - file
+    source: https://github.com/canonical/chisel-ubuntu-core.git
+    source-type: git
+    source-branch: '26.04'
+    override-build: |
       go install github.com/canonical/chisel/cmd/chisel@latest
       
       # Define the system utilities that we want to include in the base
@@ -187,7 +225,7 @@ parts:
         wpasupplicant_services
       )
 
-      . "$CRAFT_PROJECT_DIR"/build-env
+      . "$CRAFT_STAGE"/build-env
       SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
       if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
           SLICES+=(cloud-init_bins)
@@ -195,7 +233,7 @@ parts:
 
       # TODO: not sure about FIPS yet, this will have to come later, chisel has builtin
       # support for ESM, meaning it's something we can request chisel to do for us.
-      # if [[ ${SNAP_FIPS_BUILD+x} ]]; then
+      # if [ "$SNAP_BUILD_VARIANT" = fips ]; then
       #   # Ensure vital crypt packages are refreshed / downgraded and downloaded
       #   # from the FIPS ppa. This should also contain openssh-server, but we already
       #   # have that one listed above.
@@ -289,26 +327,12 @@ parts:
       - chisel-libs
       - snapd-files
       - splash-theme
+      - build-env
     plugin: make
     source: .
     build-packages:
       - shellcheck
       - distro-info
-    override-pull: |
-      craftctl default
-
-      date_tag=$(./get-version.sh)
-
-      # detect whether we are doing a fips build on LP
-      if git remote get-url origin | grep "fips"; then
-        craftctl set version="$date_tag"+fips
-        echo "SNAP_BUILD_VARIANT=fips" > build-env
-        echo "SNAP_BUILD_NAME=core26-fips" >> build-env
-      else
-        craftctl set version=$date_tag
-        rm -f build-env
-      fi
-
     override-prime: |
       craftctl default
 

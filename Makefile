@@ -45,7 +45,7 @@ install:
 
 	set -eux;						\
 	export SNAP_BUILD_VARIANT="";				\
-	. "$$CRAFT_PROJECT_DIR"/build-env;			\
+	. "$$CRAFT_STAGE"/build-env;			\
 	for f in ./hooks/[0-9]*.chroot; do			\
 		base="$$(basename "$${f}")";			\
 		cp -a "$${f}" $(DESTDIR)/install-data/;		\
@@ -56,7 +56,7 @@ install:
 
 	set -eux;						\
 	export SNAP_BUILD_VARIANT="";				\
-	. "$$CRAFT_PROJECT_DIR"/build-env;			\
+	. "$$CRAFT_STAGE"/build-env;			\
 	for f in ./hooks-build/[0-9]*.build; do			\
 		"$$f" $(DESTDIR);				\
 	done
