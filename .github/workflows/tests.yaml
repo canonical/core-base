@@ -12,13 +12,16 @@ on:
       - main
       - 'core[0-9][0-9]'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: [self-hosted, spread-enabled]
+    runs-on: [self-hosted, x64, linux, spread-enabled]
     steps:
       - name: Cleanup job workspace
         id: cleanup-job-workspace
@@ -29,9 +32,9 @@ jobs:
 
       - name: Build snap
         run: |
-          spread -artifacts=./artifacts google-nested:tests/spread/build/
+          spread -artifacts=./artifacts openstack-ext:tests/spread/build/
           find ./artifacts -type f -name "*.artifact" -exec cp {} "${{ github.workspace }}" \;
-      
+
       - uses: actions/upload-artifact@v4
         with:
           name: core-snap
@@ -45,8 +48,40 @@ jobs:
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
 
+  cve-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Cleanup job workspace
+        id: cleanup-job-workspace
+        run: |
+          rm -rf "${{ github.workspace }}"
+          mkdir "${{ github.workspace }}"
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: core-snap
+
+      - name: Install CVE scanner
+        run: |
+          sudo snap install review-tools
+
+      - name: run CVE scanner
+        run: |
+          # rename the .artifact to a .snap so that the scanner accepts it
+          mv "${{ github.workspace }}/core22.artifact" "${{ github.workspace }}/core22.snap"
+          # this produces a table of detected CVEs and their severity
+          review-tools.scan-snap "${{ github.workspace }}/core22.snap" > "${{ github.workspace }}/cve-scan-amd64.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cve-scan
+          path: "${{ github.workspace }}/cve-scan-amd64.txt"
+
   tests-main:
-    runs-on: [self-hosted, spread-enabled]
+    runs-on: [self-hosted, x64, linux, spread-enabled]
     needs: build
     steps:
       - name: Cleanup job workspace
@@ -63,7 +98,7 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/run-spread-tests
         with:
-          spread-command: spread google-nested:tests/spread/main/
+          spread-command: spread openstack-ext:tests/spread/main/
 
       - name: Discard spread workers
         if: always()
@@ -72,6 +107,7 @@ jobs:
           for r in .spread-reuse.*.yaml; do
             spread -discard -reuse-pid="$(echo "$r" | grep -o -E '[0-9]+')"
           done
+
   tests-snapd:
     runs-on: ubuntu-latest
     needs: build
