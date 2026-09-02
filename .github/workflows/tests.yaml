@@ -12,6 +12,9 @@ on:
       - main
       - 'core[0-9][0-9]'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -29,12 +32,12 @@ jobs:
 
       - name: x86 build
         run: |
-          spread -artifacts=./artifacts google-nested:tests/spread/build/
+          spread -artifacts=./artifacts openstack-ext:tests/spread/build/
           find ./artifacts -type f -name core24_amd64.artifact -exec cp {} "${{ github.workspace }}" \;
       
       - name: arm64 build
         run: |
-          spread -artifacts=./artifacts google-nested-arm:tests/spread/build/
+          spread -artifacts=./artifacts openstack-arm-ext:tests/spread/build/
           find ./artifacts -type f -name core24_arm64.artifact -exec cp {} "${{ github.workspace }}" \;
 
       - uses: actions/upload-artifact@v4
@@ -101,12 +104,12 @@ jobs:
       - name: Run x86 tests
         uses: ./.github/actions/run-spread-tests
         with:
-          spread-command: spread google-nested:tests/spread/main/
+          spread-command: spread openstack-ext:tests/spread/main/
 
       - name: Run arm64 tests
         uses: ./.github/actions/run-spread-tests
         with:
-          spread-command: spread google-nested-arm:tests/spread/main/
+          spread-command: spread openstack-arm-ext:tests/spread/main/
 
       - name: Discard spread workers
         if: always()
