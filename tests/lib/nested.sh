@@ -84,6 +84,9 @@ start_nested_core_vm_unit(){
     elif [ "${SPREAD_BACKEND}" = "qemu-nested" ]; then
         PARAM_MEM="-m 2048"
         PARAM_SMP="-smp 1"
+    elif [[ "$SPREAD_BACKEND" = openstack* ]]; then
+        PARAM_MEM="-m 4096"
+        PARAM_SMP="-smp 2"
     else
         echo "unknown spread backend ${SPREAD_BACKEND}"
         exit 1
