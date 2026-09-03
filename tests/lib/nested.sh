@@ -102,6 +102,16 @@ start_nested_core_vm_unit(){
     PARAM_LOG="-D ${WORK_DIR}/qemu.log"
     PARAM_SERIAL="-chardev socket,telnet=on,host=localhost,server=on,port=7777,wait=off,id=char0,logfile=${WORK_DIR}/serial.log,logappend=on -serial chardev:char0"
     PARAM_TPM=""
+    PARAM_SMBIOS=""
+
+    if [ -n "${NTP_SERVER:-}" ]; then
+        local tmpfiles_extra
+        tmpfiles_extra=$(printf '%s\n' \
+            'f+ /etc/chrony/sources.d/10-nested-ntp.sources 0644 - - - "pool '"${NTP_SERVER}"' iburst maxsources 1 nts prefer"' \
+            'f+ /etc/systemd/timesyncd.conf.d/10-nested-ntp.conf 0644 - - - [Time]\nNTP='"${NTP_SERVER}"'\nFallbackNTP=' |
+            base64 -w0)
+        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=~${tmpfiles_extra}"
+    fi
 
     # TODO: enable ms key booting for i.e. nightly edge jobs ?
     VMF_CODE=""
@@ -180,6 +190,7 @@ start_nested_core_vm_unit(){
                 ${PARAM_BIOS} \
                 ${PARAM_TPM} \
                 ${PARAM_RANDOM} \
+                ${PARAM_SMBIOS} \
                 ${PARAM_IMAGE} \
                 ${PARAM_SERIAL} \
                 ${PARAM_MONITOR}; then
