@@ -105,12 +105,14 @@ start_nested_core_vm_unit(){
     PARAM_SMBIOS=""
 
     if [ -n "${NTP_SERVER:-}" ]; then
-        local tmpfiles_extra
-        tmpfiles_extra=$(printf '%s\n' \
-            'd /etc/systemd/timesyncd.conf.d 0755 - - -' \
-            'f+ /etc/systemd/timesyncd.conf.d/10-nested-ntp.conf 0644 - - - [Time]\nNTP='"${NTP_SERVER}"'\nFallbackNTP=' |
-            base64 -w0)
-        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${tmpfiles_extra}"
+        local NTP_SOURCES_FILE NTP_SOURCES_FILE_BASE64
+        NTP_SOURCES_FILE=$(mktemp)
+        NTP_SOURCES_FILE_BASE64=$(echo "pool ${NTP_SERVER} iburst maxsources 1 nts prefer" | base64 -w0)
+        cat > "$NTP_SOURCES_FILE" <<EOF
+f+~ /etc/chrony/sources.d/10-nested-ntp.sources 0644 - - - ${NTP_SOURCES_FILE_BASE64}
+EOF
+        NTP_SOURCES_FILE_BASE64=$(base64 -w0 "$NTP_SOURCES_FILE")
+        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${NTP_SOURCES_FILE_BASE64}"
     fi
 
     # TODO: enable ms key booting for i.e. nightly edge jobs ?
