@@ -18,7 +18,6 @@ environment:
   https_proxy: '$(HOST: echo "$SPREAD_HTTPS_PROXY")'
   NO_PROXY: '$(HOST: echo "${SPREAD_NO_PROXY:-127.0.0.1}")'
   no_proxy: '$(HOST: echo "${SPREAD_NO_PROXY:-127.0.0.1}")'
-  NTP_SERVER: '$(HOST: echo "${SPREAD_NTP_SERVER:-}")'
 
 backends:
   openstack-ext:
