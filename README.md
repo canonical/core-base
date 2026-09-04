@@ -82,7 +82,7 @@ rm ./lxd-core26-img.tar.gz
 2. Import the LXD core26 test profile. Make sure your working directory is the root of this repository.
 ```
 lxc profile create core26
-lxc profile edit < tests/spread/core26.lxdprofile
+lxc profile edit core26 < tests/spread/core26.lxdprofile
 ```
 3. Set environment variable to enable KVM acceleration for the nested qemu instance
 ```
