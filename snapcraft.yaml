@@ -39,7 +39,7 @@ parts:
             # parse the snap name from the url, and remove the prefix "core26-" and 
             # suffix "/+build" to get the variant name, if any.
             if [ -n "${SNAPCRAFT_IMAGE_INFO+x}" ]; then
-              SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-).*(?=/\+build)')
+              SNAP_BUILD_VARIANT=$(printf '%s' "$SNAPCRAFT_IMAGE_INFO" | grep -oP '(?<=core26-)[^/]*(?=/\+build)' || true)
               if [ -n "$SNAP_BUILD_VARIANT" ]; then
                   echo "SNAP_BUILD_VARIANT=$SNAP_BUILD_VARIANT" > build-env
               fi
