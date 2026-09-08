@@ -34,3 +34,4 @@ jobs:
         with:
           branch: ${{ matrix.base }}
           build-variant: ${{ matrix.variant }}
+          optional-architectures: riscv64
