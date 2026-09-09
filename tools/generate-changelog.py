@@ -109,19 +109,17 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     max_retries = 3
     retry_delay = 5
     status = 0
-    for attempt in range(max_retries):
+    for _ in range(max_retries):
         changelog_r = requests.get(url)
         if changelog_r.status_code == requests.codes.ok:
             return changelog_r.text
-        
-        if changelog_r.status_code == 503 and attempt < max_retries:
+
+        status = changelog_r.status_code
+        if changelog_r.status_code == 503:
             print('No changelog found in ' + url + ' - status:' +
                   str(changelog_r.status_code) + ', retrying in ' +
                   str(retry_delay) + ' seconds')
             time.sleep(retry_delay)
-        else:
-            status = changelog_r.status_code
-            break
     raise Exception('No changelog found in ' + url + ' - status:' + str(status))
 
 
