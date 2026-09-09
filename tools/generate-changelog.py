@@ -120,6 +120,8 @@ def get_changelog_from_url(pkg, new_v, on_lp):
                   str(changelog_r.status_code) + ', retrying in ' +
                   str(retry_delay) + ' seconds')
             time.sleep(retry_delay)
+        else:
+            break
     raise Exception('No changelog found in ' + url + ' - status:' + str(status))
 
 
