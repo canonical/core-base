@@ -105,6 +105,18 @@ start_nested_core_vm_unit(){
     PARAM_LOG="-D ${WORK_DIR}/qemu.log"
     PARAM_SERIAL="-serial file:${WORK_DIR}/serial.log"
     PARAM_TPM=""
+    PARAM_SMBIOS=""
+
+    if [ -n "${NTP_SERVER:-}" ]; then
+        local NTP_SOURCES_FILE NTP_SOURCES_BASE64 NTP_SOURCES_FILE_BASE64
+        NTP_SOURCES_FILE=$(mktemp)
+        NTP_SOURCES_BASE64=$(echo "pool ${NTP_SERVER} iburst maxsources 1 nts prefer" | base64 -w0)
+        cat > "$NTP_SOURCES_FILE" <<EOF
+f+~ /etc/chrony/sources.d/10-nested-ntp.sources 0644 - - - ${NTP_SOURCES_BASE64}
+EOF
+        NTP_SOURCES_FILE_BASE64=$(base64 -w0 "$NTP_SOURCES_FILE")
+        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${NTP_SOURCES_FILE_BASE64}"
+    fi
 
     ATTR_KVM=""
     if [ "$ENABLE_KVM" = "true" ]; then
@@ -167,6 +179,7 @@ start_nested_core_vm_unit(){
                 ${PARAM_BIOS} \
                 ${PARAM_TPM} \
                 ${PARAM_RANDOM} \
+                ${PARAM_SMBIOS} \
                 ${PARAM_IMAGE} \
                 ${PARAM_SERIAL} \
                 ${PARAM_MONITOR}; then
