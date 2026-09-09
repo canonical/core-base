@@ -31,6 +31,7 @@ import subprocess
 import re
 import requests
 import sys
+import time
 import yaml
 from collections import namedtuple
 
@@ -100,12 +101,28 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     else:
         url += safe_name[0]
     url += '/' + safe_name + '/' + new_v + '/changelog'
-    changelog_r = requests.get(url)
-    if changelog_r.status_code != requests.codes.ok:
-        raise Exception('No changelog found in ' + url + ' - status:' +
-                        str(changelog_r.status_code))
 
-    return changelog_r.text
+    # changelogs.ubuntu.com will return 503 sometimes and it works to
+    # try again, 503 is temporarily unavailable and happens for some short
+    # periods. We allow up to 3 tries, with 5 seconds in between to improve
+    # robustness.
+    max_retries = 3
+    retry_delay = 5
+    status = 0
+    for attempt in range(max_retries):
+        changelog_r = requests.get(url)
+        if changelog_r.status_code == requests.codes.ok:
+            return changelog_r.text
+        
+        if changelog_r.status_code == 503 and attempt < max_retries:
+            print('No changelog found in ' + url + ' - status:' +
+                  str(changelog_r.status_code) + ', retrying in ' +
+                  str(retry_delay) + ' seconds')
+            time.sleep(retry_delay)
+        else:
+            status = changelog_r.status_code
+            break
+    raise Exception('No changelog found in ' + url + ' - status:' + str(status))
 
 
 # Exception thrown for packages with no local or remote changelog
