@@ -31,6 +31,7 @@ import subprocess
 import re
 import requests
 import sys
+import time
 import yaml
 from collections import namedtuple
 
@@ -52,7 +53,6 @@ pkg_allowed_list = [
 # base (removed by 400-trim-pkcs-11.chroot) so the chain is broken. This is ok
 # as anyway we will get the changes from libgnutls30.
 pkg_no_changelog = ['gnutls-bin']
-
 
 # Returns a dictionary from package name to version, using
 # the packages section.
@@ -100,11 +100,28 @@ def get_changelog_from_url(pkg, new_v, on_lp):
     else:
         url += safe_name[0]
     url += '/' + safe_name + '/' + new_v + '/changelog'
-    changelog_r = requests.get(url)
-    if changelog_r.status_code != requests.codes.ok:
-        raise Exception(f'No changelog found in {url} - status: {changelog_r.status_code}')
 
-    return changelog_r.text
+    # changelogs.ubuntu.com will return 503 sometimes and it works to
+    # try again, 503 is temporarily unavailable and happens for some short
+    # periods. We allow up to 3 tries, with 5 seconds in between to improve
+    # robustness.
+    max_retries = 3
+    retry_delay = 5
+    status = 0
+    for _ in range(max_retries):
+        changelog_r = requests.get(url)
+        if changelog_r.status_code == requests.codes.ok:
+            return changelog_r.text
+
+        status = changelog_r.status_code
+        if changelog_r.status_code == 503:
+            print('No changelog found in ' + url + ' - status:' +
+                  str(changelog_r.status_code) + ', retrying in ' +
+                  str(retry_delay) + ' seconds')
+            time.sleep(retry_delay)
+        else:
+            break
+    raise Exception('No changelog found in ' + url + ' - status:' + str(status))
 
 
 # Exception thrown for packages with no local or remote changelog
