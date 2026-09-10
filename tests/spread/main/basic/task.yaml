@@ -43,7 +43,7 @@ execute: |
   execute_remote systemctl -q is-active systemd-timesyncd.service
 
   if [ -n "${NTP_SERVER:-}" ]; then
-    execute_remote "cat /etc/chrony/sources.d/10-nested-ntp.sources" | grep -q "$NTP_SERVER"
+    execute_remote "timedatectl show-timesync" | grep -q "$NTP_SERVER"
   fi
 
   # Verify that ubuntu-seed and ubuntu-save has been mounted
