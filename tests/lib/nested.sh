@@ -108,14 +108,20 @@ start_nested_core_vm_unit(){
     PARAM_SMBIOS=""
 
     if [ -n "${NTP_SERVER:-}" ]; then
-        local NTP_SOURCES_FILE NTP_SOURCES_BASE64 NTP_SOURCES_FILE_BASE64
-        NTP_SOURCES_FILE=$(mktemp)
-        NTP_SOURCES_BASE64=$(echo "pool ${NTP_SERVER} iburst maxsources 1 nts prefer" | base64 -w0)
-        cat > "$NTP_SOURCES_FILE" <<EOF
-f+~ /etc/chrony/sources.d/10-nested-ntp.sources 0644 - - - ${NTP_SOURCES_BASE64}
+        local TIMESYNC_SOURCES_FILE TIMESYNC_CONTENTS_FILE TIMESYNC_CONTENTS_BASE64 TIMESYNC_SOURCES_FILE_BASE64
+        TIMESYNC_SOURCES_FILE=$(mktemp)
+        TIMESYNC_CONTENTS_FILE=$(mktemp)
+        cat > "$TIMESYNC_CONTENTS_FILE" <<EOF
+[Time]
+NTP=${NTP_SERVER}
+FallbackNTP=
 EOF
-        NTP_SOURCES_FILE_BASE64=$(base64 -w0 "$NTP_SOURCES_FILE")
-        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${NTP_SOURCES_FILE_BASE64}"
+        TIMESYNC_CONTENTS_BASE64=$(base64 -w0 "$TIMESYNC_CONTENTS_FILE")
+        cat > "$TIMESYNC_SOURCES_FILE" <<EOF
+f+~ /etc/systemd/timesyncd.conf.d/10-nested-ntp.conf 0644 - - - ${TIMESYNC_CONTENTS_BASE64}
+EOF
+        TIMESYNC_SOURCES_FILE_BASE64=$(base64 -w0 "$TIMESYNC_SOURCES_FILE")
+        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${TIMESYNC_SOURCES_FILE_BASE64}"
     fi
 
     ATTR_KVM=""
