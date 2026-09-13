@@ -1,0 +1,54 @@
+#!/bin/bash -ex
+
+# Check profiles in /etc/apparmor.d/ and removes them if no matching binary
+# exists.
+
+APPARMOR_PROF_D="/etc/apparmor.d"
+
+# The list of directories to check for binaries
+SEARCH_DIRS=(
+    "/usr/bin"
+    "/usr/sbin"
+    "/usr/lib/systemd"
+    "/usr/lib/snapd"
+    "/usr/lib/cargo/bin"
+)
+
+echo "Starting AppArmor profile cleanup..."
+
+# Iterate through files in /etc/apparmor.d/
+for profile in "$APPARMOR_PROF_D"/*; do
+    # Skip if it is a directory
+    if [ -d "$profile" ]; then
+        continue
+    fi
+    # Skip if not a regular file
+    if [ ! -f "$profile" ]; then
+        continue
+    fi
+
+    filename=$(basename "$profile")
+
+    # unix-chkpwd profile is actually for unix_chkpwd, fix this naming issue here
+    if [ "$filename" = unix-chkpwd ]
+    then filename=unix_chkpwd
+    fi
+
+    match_found=false
+    for target_dir in "${SEARCH_DIRS[@]}"; do
+        # Check if the file exists in the target directory
+        if [ -e "${target_dir}/${filename}" ]; then
+            match_found=true
+            break
+        fi
+    done
+
+    # If no match was found in any directory, perform deletion
+    if [ "$match_found" = false ]; then
+        echo "[DELETING] $profile"
+        rm "$profile"
+    fi
+
+done
+
+echo "Cleanup complete."
