@@ -12,6 +12,16 @@ prepare: |
   # wait for the snap command to exist
   nested_wait_for_snap_command
 
+debug: |
+  # for various utilities
+  . "$TESTSLIB/nested.sh"
+
+  # try to debug the timesync.d ntp
+  execute_remote ls -la /etc/systemd/timesyncd.conf.d/
+  execute_remote cat /etc/systemd/timesyncd.conf.d/*.conf
+  execute_remote systemctl status systemd-timesyncd.service
+  execute_remote journalctl -u systemd-timesyncd.service
+
 execute: |
   # for various utilities
   . "$TESTSLIB/nested.sh"
