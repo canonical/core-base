@@ -67,6 +67,11 @@ install:
 	# see https://github.com/systemd/systemd/blob/v247/src/shared/clock-util.c#L145
 	touch $(DESTDIR)/usr/lib/clock-epoch
 
+	# Create a copy of the original manifest.wall before reconciliation
+	# to keep for SBOM purposes. In the eyes of SBOM these files and cve's are
+	# still present.
+	cp "$(DESTDIR)/var/lib/chisel/manifest.wall" "$(DESTDIR)/var/lib/chisel/manifest.wall.sbom"
+
 	# Hooks can remove files that were pulled in by chisel dependencies.
 	# Reconcile manifest.wall so it reflects the final rootfs contents.
 	python3 ./tools/refresh-manifest.py "$(DESTDIR)" --exclude-python
