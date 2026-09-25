@@ -41,7 +41,8 @@ from collections import namedtuple
 # to generate changelogs
 pkg_allowed_list = [
     'dpkg',    # is removed during hook
-    'openssl'  # contains a symlink which is broken currently
+    'openssl',  # contains a symlink which is broken currently
+    'openssl-provider-legacy' #chisel doesn't contain changelog symlink
 ]
 
 # List of packages with no valid changelog. We only have gnutls-bin for the
