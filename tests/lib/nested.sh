@@ -115,17 +115,30 @@ EOF
         PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${NTP_SOURCES_FILE_BASE64}"
     fi
 
-    # TODO: enable ms key booting for i.e. nightly edge jobs ?
-    VMF_CODE=""
-    VMF_VARS=""
-    if [ "${ENABLE_SECURE_BOOT:-false}" = "true" ]; then
-        VMF_CODE=".ms"
+    if os.query is-pc-amd64; then
+        OVMF=OVMF
+    elif os.query is-arm64; then
+        OVMF=QEMU
+    else
+        printf "ERROR: unsupported archtecture\n"
+        exit 1
     fi
-    if [ "${ENABLE_OVMF_SNAKEOIL:-false}" = "true" ]; then
-        VMF_VARS=".snakeoil"
+
+    if ! [ -d "${WORK_DIR}/ovmf/test-snapd-ovmf" ]; then
+      mkdir -p "${WORK_DIR}/ovmf/"
+      snap download --edge test-snapd-ovmf --basename=test-snapd-ovmf --target-directory="${WORK_DIR}/ovmf/"
+      unsquashfs -d "${WORK_DIR}/ovmf/test-snapd-ovmf" "${WORK_DIR}/ovmf/test-snapd-ovmf.snap"
     fi
 
     mkdir -p "${WORK_DIR}/image/"
+
+    ovmf_code="${WORK_DIR}/ovmf/test-snapd-ovmf/fw/${OVMF}_CODE.fd"
+    if [ "${ENABLE_SECURE_BOOT:-false}" = "true" ]; then
+        cp "${WORK_DIR}/ovmf/test-snapd-ovmf/fw/${OVMF}_VARS.enrolled.fd" "${WORK_DIR}/image/ovmf-vars.fd"
+    else
+        cp "${WORK_DIR}/ovmf/test-snapd-ovmf/fw/${OVMF}_VARS.fd" "${WORK_DIR}/image/ovmf-vars.fd"
+    fi
+
     if os.query is-pc-amd64; then
         ATTR_KVM=""
         if [ "$ENABLE_KVM" = "true" ]; then
@@ -134,19 +147,17 @@ EOF
             PARAM_CPU="-cpu host"
         fi
         QEMU_BIN=qemu-system-x86_64
-        PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
-        PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE_4M${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/OVMF_VARS_4M${VMF_VARS}.fd,if=pflash,format=raw"
+        PARAM_MACHINE="-machine q35${ATTR_KVM}"
+        PARAM_BIOS="-drive file=${ovmf_code},if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/ovmf-vars.fd,if=pflash,format=raw"
         TPM_DEVICE=tpm-tis
-        cp -f "/usr/share/OVMF/OVMF_VARS_4M${VMF_VARS}.fd" "${WORK_DIR}/image/OVMF_VARS_4M${VMF_VARS}.fd"
     elif os.query is-arm64; then
         # Assume arm64
         # Unfortunately gce does not offer kvm enabled arm64 VMs
         PARAM_CPU="-cpu cortex-a57"
         QEMU_BIN=qemu-system-aarch64
         PARAM_MACHINE="-machine virt"
-        PARAM_BIOS="-drive file=/usr/share/AAVMF/AAVMF_CODE${VMF_CODE}.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/AAVMF_VARS${VMF_VARS}.fd,if=pflash,format=raw"
+        PARAM_BIOS="-drive file=${ovmf_code},if=pflash,format=raw,unit=0,readonly=on -drive file=${WORK_DIR}/image/ovmf-vars.fd,if=pflash,format=raw"
         TPM_DEVICE=tpm-tis-device
-        cp -f "/usr/share/AAVMF/AAVMF_VARS${VMF_VARS}.fd" "${WORK_DIR}/image/AAVMF_VARS${VMF_VARS}.fd"
     else
         printf "ERROR: unsupported archtecture\n"
         exit 1
