@@ -4,6 +4,9 @@
 /run/mnt/kernel/firmware /usr/lib/firmware none bind,x-initrd.mount,ro 0 0
 /run/mnt/kernel/modules /usr/lib/modules none bind,x-initrd.mount,ro 0 0
 
+# Backward compatibility. Do we really need that mount?
+/run/mnt/host /host none rbind,x-initrd.mount 0 0
+
 /writable/system-data/etc/cloud /etc/cloud none bind,x-initrd.mount 0 0
 /writable/system-data/etc/dbus-1 /etc/dbus-1 none bind,x-initrd.mount 0 0
 /writable/system-data/etc/default/swapfile /etc/default/swapfile none bind,x-initrd.mount 0 0
