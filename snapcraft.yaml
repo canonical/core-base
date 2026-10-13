@@ -133,6 +133,7 @@ parts:
       SLICES=(
         apparmor_systemd
         base-files_motd
+        base-files_profile
         base-files_release-info
         base-files_root-defaults
         bash-completion_config
