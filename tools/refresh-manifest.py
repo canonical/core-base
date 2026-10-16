@@ -142,7 +142,7 @@ def _is_header_record(record: dict) -> bool:
 
 
 # Manifest are of jsonwall schema:
-# https://documentation.ubuntu.com/chisel/latest/reference/manifest/#manifest-format
+# https://ubuntu.com/chisel/docs/latest/reference/manifest/#manifest-format
 def _decompress_lines(wall_path: pathlib.Path) -> list[str]:
     """Read manifest.wall and return decoded JSON-lines records as text lines."""
     # manifest.wall is a zstd-compressed JSON-lines stream.
