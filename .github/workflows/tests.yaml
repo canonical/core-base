@@ -183,7 +183,10 @@ jobs:
           name: core-snap-${{ matrix.variant }}
       
       - name: Install spread
-        run: curl -s https://storage.googleapis.com/snapd-spread-tests/spread/spread-amd64.tar.gz | sudo tar xzv -C /usr/bin
+        run: |
+          curl --follow -s https://github.com/canonical/spread-plus/releases/latest/download/spread-plus-amd64.tar.gz | \
+              sudo tar xzv -C /usr/bin
+          sudo ln -sfr /usr/bin/spread-plus /usr/bin/spread
 
       - name: Build image
         working-directory: '${{ github.workspace }}'
