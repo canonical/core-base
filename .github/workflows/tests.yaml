@@ -140,8 +140,7 @@ jobs:
         uses: ./.github/actions/run-spread-tests
         with:
           base-variant: ${{ matrix.variant }}
-          spread-command: |
-            ${{ matrix.arch == 'amd64' && 'spread openstack-ext:tests/spread/main/' || 'spread openstack-arm-ext:tests/spread/main/' }}
+          spread-command: ${{ matrix.arch == 'amd64' && 'spread openstack-ext:tests/spread/main/' || 'spread openstack-arm-ext:tests/spread/main/' }}
 
       - name: Discard spread workers
         if: always()
