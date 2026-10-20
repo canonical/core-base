@@ -277,7 +277,7 @@ parts:
               ;;
       esac
       
-      # https://documentation.ubuntu.com/chisel/en/latest/reference/manifest/
+      # https://ubuntu.com/chisel/docs/latest/reference/manifest/
       # chisel automatically generates a manifest for the cut slices here:
       # $rootfs/var/lib/chisel/manifest.wall
       # this is zstd compressed, and must therefor be uncompressed
