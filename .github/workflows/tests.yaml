@@ -156,7 +156,6 @@ jobs:
       fail-fast: false
       matrix:
         variant: ${{ fromJSON(needs.setup.outputs.matrix) }}
-        arch: [amd64, arm64]
     env:
       BUILD_VARIANT: ${{ matrix.variant }}
       SNAPD_USE_PROXY: 'true'
@@ -201,7 +200,7 @@ jobs:
 
           echo "************* BUILDING CORE26 IMAGE *************"
           uc_snap="$(get_core_snap_name)"
-          mv core26_${{ matrix.arch }}.artifact "$uc_snap"
+          mv core26_"$(get_arch)".artifact "$uc_snap"
           insert_user=true
           build_base_image "$insert_user"
 
@@ -213,7 +212,7 @@ jobs:
         with:
           working-directory: snapd
           base-variant: ${{ matrix.variant }}
-          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:${{ matrix.arch == 'amd64' && 'ubuntu-core-26-64' || 'ubuntu-core-26-arm-64' }}:tests/smoke/
+          spread-command: SPREAD_EXTERNAL_ADDRESS=localhost:8022 spread external:ubuntu-core-26-64:tests/smoke/
 
       - name: Discard spread workers
         if: always()
