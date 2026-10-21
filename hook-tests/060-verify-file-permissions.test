@@ -23,3 +23,12 @@ for SHADOW in etc/shadow etc/gshadow var/lib/extrausers/shadow var/lib/extrauser
         exit 1
     fi
 done
+
+# Verify permissions on usr/sbin/unix_chkpwd
+PERMISSIONS="$(stat -c "%a %g %u" usr/sbin/unix_chkpwd)"
+if [ "$PERMISSIONS" != "2755 42 0" ]; then
+    echo "The permissions of usr/sbin/unix_chkpwd are incorrect."
+    echo "Expected: 2755 42 0"
+    echo "Actual: $PERMISSIONS"
+    exit 1
+fi
