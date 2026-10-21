@@ -300,8 +300,7 @@ parts:
               libpython3.14-stdlib |\
               libstdc++6 |\
               openssh-sftp-server |\
-              p11-kit-modules |\
-              sgml-base)
+              p11-kit-modules)
                   continue ;;
           esac
           CHANGELOG_SLICES+=("${pkg}_changelog")
