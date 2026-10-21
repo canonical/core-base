@@ -287,7 +287,7 @@ parts:
       CHANGELOG_SLICES=()
       python3 "${CRAFT_PROJECT_DIR}/tools/wall2dpkg.py" \
         "${CRAFT_PART_INSTALL}/base/var/lib/chisel/manifest.wall" \
-        /tmp/dpkg.yaml 2>/dev/null || true
+        "${CRAFT_PART_BUILD}/dpkg-for-changelogs.yaml" 2>/dev/null || true
 
       while IFS='= ' read -r pkg _; do
           case "$pkg" in
@@ -305,7 +305,7 @@ parts:
                   continue ;;
           esac
           CHANGELOG_SLICES+=("${pkg}_changelog")
-      done < <(grep '^- ' /tmp/dpkg.yaml | sed 's/^- //')
+      done < <(grep '^- ' "${CRAFT_PART_BUILD}/dpkg-for-changelogs.yaml" | sed 's/^- //')
 
       # We are sure to have changelog slices, it's likely a bug if there are
       # none.
