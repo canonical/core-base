@@ -228,6 +228,242 @@ parts:
         wpasupplicant_services
       )
 
+      SLICES+=(
+        apparmor_changelog
+        base-files_changelog
+        base-passwd_changelog
+        bash_changelog
+        bash-completion_changelog
+        bzip2_changelog
+        ca-certificates_changelog
+        coreutils_changelog
+        coreutils-from-uutils_changelog
+        cracklib-runtime_changelog
+        cryptsetup_changelog
+        cryptsetup-bin_changelog
+        dash_changelog
+        dbus_changelog
+        dbus-bin_changelog
+        dbus-daemon_changelog
+        dbus-session-bus-common_changelog
+        dbus-system-bus-common_changelog
+        dbus-user-session_changelog
+        debianutils_changelog
+        dhcpcd-base_changelog
+        diffutils_changelog
+        distro-info-data_changelog
+        dmsetup_changelog
+        dosfstools_changelog
+        dpkg_changelog
+        e2fsprogs_changelog
+        ethtool_changelog
+        fdisk_changelog
+        file_changelog
+        finalrd_changelog
+        findutils_changelog
+        fonts-ubuntu_changelog
+        gcc-14-base_changelog
+        gdbserver_changelog
+        gnu-coreutils_changelog
+        gnutls-bin_changelog
+        gpgv_changelog
+        grep_changelog
+        gzip_changelog
+        hostname_changelog
+        init-system-helpers_changelog
+        iproute2_changelog
+        iptables_changelog
+        iputils-ping_changelog
+        less_changelog
+        libacl1_changelog
+        libapparmor1_changelog
+        libassuan9_changelog
+        libattr1_changelog
+        libaudit1_changelog
+        libaudit-common_changelog
+        libblkid1_changelog
+        libbpf1_changelog
+        libbrotli1_changelog
+        libbsd0_changelog
+        libbz2-1.0_changelog
+        libc6_changelog
+        libcap2_changelog
+        libcap2-bin_changelog
+        libcap-ng0_changelog
+        libc-bin_changelog
+        libcbor0.10_changelog
+        libcom-err2_changelog
+        libcrack2_changelog
+        libcrypt1_changelog
+        libcryptsetup12_changelog
+        libdb5.3t64_changelog
+        libdbus-1-3_changelog
+        libdevmapper1.02.1_changelog
+        libdrm2_changelog
+        libdrm-common_changelog
+        libduktape207_changelog
+        libeac3_changelog
+        libedit2_changelog
+        libelf1t64_changelog
+        libengine-pkcs11-openssl_changelog
+        libevdev2_changelog
+        libevent-2.1-7t64_changelog
+        libexpat1_changelog
+        libext2fs2t64_changelog
+        libfdisk1_changelog
+        libffi8_changelog
+        libfido2-1_changelog
+        libfreetype6_changelog
+        libgcrypt20_changelog
+        libglib2.0-0t64_changelog
+        libgmp10_changelog
+        libgnutls30t64_changelog
+        libgnutls-dane0t64_changelog
+        libgpg-error0_changelog
+        libgssapi-krb5-2_changelog
+        libhogweed6t64_changelog
+        libidn2-0_changelog
+        libip4tc2_changelog
+        libip6tc2_changelog
+        libjson-c5_changelog
+        libk5crypto3_changelog
+        libkeyutils1_changelog
+        libkmod2_changelog
+        libkrb5-3_changelog
+        libkrb5support0_changelog
+        liblastlog2-2_changelog
+        liblz4-1_changelog
+        liblzma5_changelog
+        liblzo2-2_changelog
+        libmagic1t64_changelog
+        libmd0_changelog
+        libmnl0_changelog
+        libmount1_changelog
+        libnetfilter-conntrack3_changelog
+        libnetplan1_changelog
+        libnettle8t64_changelog
+        libnfnetlink0_changelog
+        libnftnl11_changelog
+        libnl-3-200_changelog
+        libnl-genl-3-200_changelog
+        libnl-route-3-200_changelog
+        libnpth0t64_changelog
+        libnsl2_changelog
+        libnss-extrausers_changelog
+        libnss-mdns_changelog
+        libopts25_changelog
+        libp11-3t64_changelog
+        libp11-kit0_changelog
+        libpam0g_changelog
+        libpam-modules_changelog
+        libpam-modules-bin_changelog
+        libpam-pwquality_changelog
+        libpam-runtime_changelog
+        libpam-systemd_changelog
+        libpciaccess0_changelog
+        libpcre2-8-0_changelog
+        libpcsclite1_changelog
+        libplymouth5_changelog
+        libpng16-16t64_changelog
+        libpolkit-agent-1-0_changelog
+        libpolkit-gobject-1-0_changelog
+        libpopt0_changelog
+        libproc2-0_changelog
+        libpwquality1_changelog
+        libpwquality-common_changelog
+        libpython3.14-minimal_changelog
+        libpython3-stdlib_changelog
+        libreadline8t64_changelog
+        libseccomp2_changelog
+        libselinux1_changelog
+        libsemanage2_changelog
+        libsemanage-common_changelog
+        libsepol2_changelog
+        libsmartcols1_changelog
+        libsqlite3-0_changelog
+        libss2_changelog
+        libssl3t64_changelog
+        libsystemd0_changelog
+        libsystemd-shared_changelog
+        libtasn1-6_changelog
+        libtinfo6_changelog
+        libtirpc3t64_changelog
+        libtirpc-common_changelog
+        libudev1_changelog
+        libunbound8_changelog
+        libunistring5_changelog
+        libuuid1_changelog
+        libwrap0_changelog
+        libx11-data_changelog
+        libxkbcommon0_changelog
+        libxtables12_changelog
+        libxxhash0_changelog
+        libyaml-0-2_changelog
+        libzstd1_changelog
+        locales_changelog
+        login_changelog
+        login.defs_changelog
+        logsave_changelog
+        mawk_changelog
+        media-types_changelog
+        mount_changelog
+        ncurses-base_changelog
+        ncurses-bin_changelog
+        netbase_changelog
+        netcat-openbsd_changelog
+        netplan-generator_changelog
+        netplan.io_changelog
+        nvidia-kernel-common-595_changelog
+        opensc_changelog
+        opensc-pkcs11_changelog
+        openssh-client_changelog
+        openssl_changelog
+        openssl-provider-legacy_changelog
+        opensysusers_changelog
+        p11-kit_changelog
+        passwd_changelog
+        plymouth-label-ft_changelog
+        polkitd_changelog
+        procps_changelog
+        python3_changelog
+        python3.14_changelog
+        python3.14-minimal_changelog
+        python3-cffi-backend_changelog
+        python3-minimal_changelog
+        python3-netplan_changelog
+        python3-yaml_changelog
+        readline-common_changelog
+        rfkill_changelog
+        rust-coreutils_changelog
+        sbsigntool_changelog
+        secureboot-db_changelog
+        sed_changelog
+        squashfs-tools_changelog
+        sudo-common_changelog
+        sudo-rs_changelog
+        systemd_changelog
+        systemd-bootchart_changelog
+        systemd-coredump_changelog
+        systemd-cryptsetup_changelog
+        systemd-dev_changelog
+        systemd-resolved_changelog
+        systemd-sysv_changelog
+        systemd-timesyncd_changelog
+        systemd-zram-generator_changelog
+        sysvinit-utils_changelog
+        tar_changelog
+        tzdata_changelog
+        udev_changelog
+        util-linux_changelog
+        util-linux-extra_changelog
+        vim-common_changelog
+        vim-tiny_changelog
+        wpasupplicant_changelog
+        xkb-data_changelog
+        xml-core_changelog
+        zlib1g_changelog
+      )
+
       . "$CRAFT_STAGE"/build-env
       SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
       if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
@@ -363,8 +599,9 @@ parts:
 
       # Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
       # this file to be present, and they move slowly in terms of support for the new chisel format.
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/share/snappy"
-      python3 ./tools/wall2dpkg.py "${CRAFT_STAGE}/var/lib/chisel/manifest.wall" "${CRAFT_PART_INSTALL}/usr/share/snappy/dpkg.yaml"
+      mkdir -p "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy"
+      cp -avT "${CRAFT_STAGE}/base/usr/share/doc" "${CRAFT_PART_BUILD}/sysroot/usr/share/doc"
+      python3 ./tools/wall2dpkg.py "${CRAFT_STAGE}/var/lib/chisel/manifest.wall" "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy/dpkg.yaml"
 
       # When building through spread there is no .git, which means we cannot
       # generate the changelog in this case, ensure that the current folder is
@@ -375,11 +612,12 @@ parts:
         if [ -e /build/core26 ]; then
           CHG_PARAMS=--launchpad
         fi
-        mkdir -p "${CRAFT_PART_INSTALL}/usr/share/doc"
-        ./tools/generate-changelog.py "/snap/core26/current" "${CRAFT_PART_INSTALL}" core26 $CHG_PARAMS
+        ./tools/generate-changelog.py "/snap/core26/current" "${CRAFT_PART_BUILD}/sysroot" core26 $CHG_PARAMS
+        install -D "${CRAFT_PART_BUILD}/sysroot/usr/share/doc/ChangeLog" "${CRAFT_PART_INSTALL}/usr/share/doc/ChangeLog"
       else
         echo "WARNING: changelog will not be generated for this build"
       fi
+      install -D "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy/dpkg.yaml" "${CRAFT_PART_INSTALL}/usr/share/snappy/dpkg.yaml"
 
   publish-artifacts-lp:
     after:
