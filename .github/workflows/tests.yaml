@@ -117,6 +117,7 @@ jobs:
       fail-fast: false
       matrix:
         variant: ${{ fromJSON(needs.setup.outputs.matrix) }}
+        arch: [amd64, arm64]
         # We want to run tests here only for one of the variants, as in this
         # case the user is introduced by modifying the snapd snap and we do not
         # use neither cloud-init nor system-user assertions.
@@ -135,17 +136,11 @@ jobs:
         with:
           name: core-snap-${{ matrix.variant }}
 
-      - name: Run x86 tests
+      - name: Run tests
         uses: ./.github/actions/run-spread-tests
         with:
           base-variant: ${{ matrix.variant }}
-          spread-command: spread openstack-ext:tests/spread/main/
-
-      - name: Run arm64 tests
-        uses: ./.github/actions/run-spread-tests
-        with:
-          base-variant: ${{ matrix.variant }}
-          spread-command: spread openstack-arm-ext:tests/spread/main/
+          spread-command: ${{ matrix.arch == 'amd64' && 'spread openstack-ext:tests/spread/main/' || 'spread openstack-arm-ext:tests/spread/main/' }}
 
       - name: Discard spread workers
         if: always()
