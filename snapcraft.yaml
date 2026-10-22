@@ -228,6 +228,7 @@ parts:
         wpasupplicant_services
       )
 
+
       . "$CRAFT_STAGE"/build-env
       SNAP_BUILD_VARIANT=${SNAP_BUILD_VARIANT:-}
       if [ "$SNAP_BUILD_VARIANT" = cloud-init ]; then
@@ -246,7 +247,11 @@ parts:
       # add architecture specific slices
       case "$(dpkg --print-architecture)" in
           amd64|arm64)
-              SLICES+=(secureboot-db_services nvidia-kernel-common-595_bins nvidia-kernel-common-595_modprobe-d-kms)
+              SLICES+=(
+                secureboot-db_services
+                nvidia-kernel-common-595_bins
+                nvidia-kernel-common-595_modprobe-d-kms
+              )
               ;;
           i386)
               SLICES+=(secureboot-db_services)
@@ -276,7 +281,43 @@ parts:
                 libnss-mdns_mdns4-minimal libc6_libs libc6_gconv libc6_config libgcc-s1_libs
               ;;
       esac
-      
+
+      # Derive changelog slices from the manifest to automatically cover
+      # all packages, including their dependencies.
+      CHANGELOG_SLICES=()
+      python3 "${CRAFT_PROJECT_DIR}/tools/wall2dpkg.py" \
+        "${CRAFT_PART_INSTALL}/base/var/lib/chisel/manifest.wall" \
+        "${CRAFT_PART_BUILD}/dpkg-for-changelogs.yaml" 2>/dev/null || true
+
+      while IFS='= ' read -r pkg _; do
+          case "$pkg" in
+              # Skip packages known to not have a changelog slice
+              openssh-server |\
+              kmod |\
+              libatomic1 |\
+              libgcc-s1 |\
+              libncursesw6 |\
+              libpython3.14-stdlib |\
+              libstdc++6 |\
+              openssh-sftp-server |\
+              p11-kit-modules)
+                  continue ;;
+          esac
+          CHANGELOG_SLICES+=("${pkg}_changelog")
+      done < <(grep '^- ' "${CRAFT_PART_BUILD}/dpkg-for-changelogs.yaml" | sed 's/^- //')
+
+      # We are sure to have changelog slices, it's likely a bug if there are
+      # none.
+      if [ ${#CHANGELOG_SLICES[@]} -eq 0 ]; then
+          echo "No changelogs?"
+          exit 1
+      fi
+
+      chisel cut \
+          --release="${CRAFT_PART_SRC}" \
+          --root "${CRAFT_PART_INSTALL}"/base \
+          "${CHANGELOG_SLICES[@]}"
+
       # https://ubuntu.com/chisel/docs/latest/reference/manifest/
       # chisel automatically generates a manifest for the cut slices here:
       # $rootfs/var/lib/chisel/manifest.wall
@@ -363,8 +404,9 @@ parts:
 
       # Generate the dpkg.yaml for compatability purposes. Scanning tools still expect
       # this file to be present, and they move slowly in terms of support for the new chisel format.
-      mkdir -p "${CRAFT_PART_INSTALL}/usr/share/snappy"
-      python3 ./tools/wall2dpkg.py "${CRAFT_STAGE}/var/lib/chisel/manifest.wall" "${CRAFT_PART_INSTALL}/usr/share/snappy/dpkg.yaml"
+      mkdir -p "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy"
+      cp -avT "${CRAFT_STAGE}/base/usr/share/doc" "${CRAFT_PART_BUILD}/sysroot/usr/share/doc"
+      python3 ./tools/wall2dpkg.py "${CRAFT_STAGE}/var/lib/chisel/manifest.wall" "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy/dpkg.yaml"
 
       # When building through spread there is no .git, which means we cannot
       # generate the changelog in this case, ensure that the current folder is
@@ -375,11 +417,12 @@ parts:
         if [ -e /build/core26 ]; then
           CHG_PARAMS=--launchpad
         fi
-        mkdir -p "${CRAFT_PART_INSTALL}/usr/share/doc"
-        ./tools/generate-changelog.py "/snap/core26/current" "${CRAFT_PART_INSTALL}" core26 $CHG_PARAMS
+        ./tools/generate-changelog.py "/snap/core26/current" "${CRAFT_PART_BUILD}/sysroot" core26 $CHG_PARAMS
+        install -D "${CRAFT_PART_BUILD}/sysroot/usr/share/doc/ChangeLog" "${CRAFT_PART_INSTALL}/usr/share/doc/ChangeLog"
       else
         echo "WARNING: changelog will not be generated for this build"
       fi
+      install -D "${CRAFT_PART_BUILD}/sysroot/usr/share/snappy/dpkg.yaml" "${CRAFT_PART_INSTALL}/usr/share/snappy/dpkg.yaml"
 
   publish-artifacts-lp:
     after:

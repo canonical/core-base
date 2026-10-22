@@ -42,3 +42,7 @@ rm /usr/bin/pipesz
 rm /usr/bin/lslogins
 rm /usr/bin/newgrp
 #rm /usr/sbin/ctrlaltdel
+
+# remove changelogs
+rm -f /usr/share/doc/*/changelog.gz
+rm -f /usr/share/doc/*/changelog.Debian.gz
