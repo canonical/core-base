@@ -132,6 +132,7 @@ parts:
       # 
       SLICES=(
         apparmor_systemd
+        base-files_bin
         base-files_motd
         base-files_profile
         base-files_release-info
