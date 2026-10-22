@@ -97,7 +97,8 @@ pushd /usr/share/bash-completion/completions/
 compl_to_rm=()
 for f in *; do
     # keep python as existing commands symlink to it
-    if [ -e /usr/bin/"$f" ] || [ -e /usr/sbin/"$f" ] || [ "$f" = python ]
+    # keep snap symlink created by earlier hooks
+    if [ -e /usr/bin/"$f" ] || [ -e /usr/sbin/"$f" ] || [ "$f" = "python" ] || [ "$f" = "snap" ]
     then continue
     fi
     compl_to_rm+=("$f")
