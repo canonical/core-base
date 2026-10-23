@@ -102,10 +102,16 @@ start_snapd_core_vm() {
         PARAM_CPU="-cpu host"
     fi
 
+    if ! [ -d "${work_dir}/ovmf/test-snapd-ovmf" ]; then
+        mkdir -p "${work_dir}/ovmf/"
+        snap download --edge test-snapd-ovmf --basename=test-snapd-ovmf --target-directory="${work_dir}/ovmf/"
+        unsquashfs -d "${work_dir}/ovmf/test-snapd-ovmf" "${work_dir}/ovmf/test-snapd-ovmf.snap"
+    fi
+
     mkdir -p "${work_dir}/image/"
-    cp -f "/usr/share/OVMF/OVMF_VARS_4M.fd" "${work_dir}/image/OVMF_VARS_4M.fd"
-    PARAM_BIOS="-drive file=/usr/share/OVMF/OVMF_CODE_4M.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${work_dir}/image/OVMF_VARS_4M.fd,if=pflash,format=raw"
-    PARAM_MACHINE="-machine q35${ATTR_KVM} -global ICH9-LPC.disable_s3=1"
+    cp "${work_dir}/ovmf/test-snapd-ovmf/fw/OVMF_VARS.fd" "${work_dir}/image/ovmf-vars.fd"
+    PARAM_BIOS="-drive file=${work_dir}/ovmf/test-snapd-ovmf/fw/OVMF_CODE.fd,if=pflash,format=raw,unit=0,readonly=on -drive file=${work_dir}/image/ovmf-vars.fd,if=pflash,format=raw"
+    PARAM_MACHINE="-machine q35${ATTR_KVM}"
     PARAM_IMAGE="-drive file=${work_dir}/pc.img,cache=none,format=raw,id=disk1,if=none -device virtio-blk-pci,drive=disk1,bootindex=1"
 
     SVC_NAME="nested-vm"
