@@ -31,7 +31,6 @@ install:
 	cat /etc/resolv.conf > $(DESTDIR)/etc/resolv.conf
 	# copy-in launchpad's build archive
 	if grep -q ftpmaster.internal /etc/apt/sources.list.d/lp-buildd.sources; then \
-		cp /etc/apt/sources.list $(DESTDIR)/etc/apt/sources.list || true; \
 		cp /etc/apt/sources.list.d/lp-buildd.sources $(DESTDIR)/etc/apt/sources.list.d/lp-buildd.sources || true; \
 		cp -r /etc/apt/trusted.gpg.d $(DESTDIR)/etc/apt/ || true; \
 	fi
@@ -55,7 +54,9 @@ ifdef SNAP_FIPS_BUILD
 
 	# If we are doing a fips build, make sure updates are enabled
 	# and we export that to the hooks
-	sed -n 's/$(CODENAME)-security/$(CODENAME)-updates/p' /etc/apt/sources.list >> $(DESTDIR)/etc/apt/sources.list;
+	awk -v RS= -v codename="$(CODENAME)" \
+		'gsub(codename "-security", codename "-updates") { printf "\n%s\n", $$0 }' \
+		/etc/apt/sources.list.d/ubuntu.sources >> $(DESTDIR)/etc/apt/sources.list.d/ubuntu.sources;
 endif
 	mkdir -p $(DESTDIR)/install-data
 	# customize
