@@ -12,6 +12,6 @@ chmod 4754 usr/lib/dbus-1.0/dbus-daemon-launch-helper
 chown root:shadow etc/shadow etc/gshadow
 chmod 640 etc/shadow etc/gshadow
 
-# Same for the unix_chkpwd script, match group and setgid
-chown root:shadow usr/sbin/unix_chkpwd
-chmod 2755 usr/sbin/unix_chkpwd
+# Same for the chkpwd helpers, match group and setgid
+chown root:shadow usr/sbin/unix_chkpwd usr/sbin/pam_extrausers_chkpwd
+chmod 2755 usr/sbin/unix_chkpwd usr/sbin/pam_extrausers_chkpwd
