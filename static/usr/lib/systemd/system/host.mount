@@ -1,0 +1,9 @@
+[Unit]
+ConditionKernelCommandLine=snapd_recovery_mode=recovery
+ConditionPathIsMountPoint=/run/mnt/host
+
+[Mount]
+Type=none
+Options=rbind
+What=/run/mnt/host
+Where=/host
