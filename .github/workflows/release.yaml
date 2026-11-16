@@ -14,13 +14,26 @@ jobs:
       fail-fast: false
       matrix:
         # main is currently core26
-        base: [core22, core24, main]
+        base: [core18, core20, core22, core24, main]
         variant: [regular, fips, cloud-init]
         exclude:
+          # No fips for core26 (yet)
           - base: main
             variant: fips
+          # No fips or cloud init for core18
+          - base: core18
+            variant: cloud-init
+          - base: core18
+            variant: fips
+          # No fips or cloud init for core20
+          - base: core20
+            variant: cloud-init
+          - base: core20
+            variant: fips
+          # No cloud-init for core22
           - base: core22
             variant: cloud-init
+          # No cloud-init for core24
           - base: core24
             variant: cloud-init
     runs-on: ubuntu-latest
@@ -34,4 +47,4 @@ jobs:
         with:
           branch: ${{ matrix.base }}
           build-variant: ${{ matrix.variant }}
-          optional-architectures: riscv64
+          optional-architectures: riscv64,i386
