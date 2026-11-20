@@ -27,9 +27,11 @@ import debian.changelog
 import debian.debian_support
 import gzip
 import os
-import requests
 import subprocess
+import re
+import requests
 import sys
+import time
 import yaml
 from collections import namedtuple
 
@@ -39,10 +41,12 @@ from collections import namedtuple
 # keep the list short to not increase the time it takes
 # to generate changelogs
 pkg_allowed_list = [
-    'dpkg',   # is removed during hook
-    'openssl', # contains a symlink which is broken currently
-    'base-files' # seems to be missing for 24.04.1
+    'dpkg',    # is removed during hook
+    'openssl'  # contains a symlink which is broken currently
 ]
+
+# List of packages with no valid changelog. 
+pkg_no_changelog = []
 
 # Returns a dictionary from package name to version, using
 # the packages section.
@@ -58,9 +62,11 @@ def packages_from_manifest(manifest_p):
             pkg_dict[pkg_data[0]] = pkg_data[1]
         return pkg_dict
 
+
 def package_name(pkg):
     t = pkg.split(':')
     return t[0]
+
 
 def get_changelog_from_file(docs_d, pkg):
     chl_deb_path = docs_d + '/' + package_name(pkg) + '/changelog.Debian.gz'
@@ -74,25 +80,52 @@ def get_changelog_from_file(docs_d, pkg):
     else:
         raise FileNotFoundError("no supported changelog found for package " + pkg)
 
+
 def get_changelog_from_url(pkg, new_v, on_lp):
     url = 'https://changelogs.ubuntu.com/changelogs/binary/'
-    
+
     print(f"failed to resolve changelog for {pkg} locally, downloading from official repo")
     safe_name = package_name(pkg)
     if not on_lp and safe_name not in pkg_allowed_list:
         raise Exception(f"{pkg} has not been whitelisted for changelog retrieval")
-    
+
     if safe_name.startswith('lib'):
         url += safe_name[0:4]
     else:
         url += safe_name[0]
     url += '/' + safe_name + '/' + new_v + '/changelog'
-    changelog_r = requests.get(url)
-    if changelog_r.status_code != requests.codes.ok:
-        raise Exception('No changelog found in ' + url + ' - status:' +
-                        str(changelog_r.status_code))
 
-    return changelog_r.text
+    # changelogs.ubuntu.com will return 503 sometimes and it works to
+    # try again, 503 is temporarily unavailable and happens for some short
+    # periods. We allow up to 3 tries, with 5 seconds in between to improve
+    # robustness.
+    max_retries = 3
+    retry_delay = 5
+    status = 0
+    for _ in range(max_retries):
+        changelog_r = requests.get(url)
+        if changelog_r.status_code == requests.codes.ok:
+            return changelog_r.text
+
+        status = changelog_r.status_code
+        if changelog_r.status_code == 503:
+            print('No changelog found in ' + url + ' - status:' +
+                  str(changelog_r.status_code) + ', retrying in ' +
+                  str(retry_delay) + ' seconds')
+            time.sleep(retry_delay)
+        else:
+            break
+    raise Exception('No changelog found in ' + url + ' - status:' + str(status))
+
+
+# Exception thrown for packages with no local or remote changelog
+class PackageNoChangelog(Exception):
+    pass
+
+
+# Exception thrown for packages for which we do not find a previous change
+class NoOldChange(Exception):
+    pass
 
 
 # Gets difference in changelog between old and new versions
@@ -104,6 +137,8 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
     try:
         changelog = get_changelog_from_file(docs_d, pkg)
     except Exception:
+        if re.match(r'.*\+esm[0-9]*$', new_v) or package_name(pkg) in pkg_no_changelog:
+            raise PackageNoChangelog('package ' + pkg + ' does not have changelog')
         changelog = get_changelog_from_url(pkg, new_v, on_lp)
 
     source_pkg = changelog[0:changelog.find(' ')]
@@ -129,7 +164,9 @@ def get_changes_for_version(docs_d, pkg, old_v, new_v, indent, on_lp):
             change_chunk += indent + line + '\n'
 
     if not found_version:
-        raise EOFError(f"{old_change_start} was not found in the changelog, aborting")
+        # It can happen if a binary package changes the source package it came
+        # from
+        raise NoOldChange(f"{old_change_start} for {pkg} was not found in the changelog")
 
     return source_pkg, change_chunk
 
@@ -149,12 +186,18 @@ def compare_manifests(old_manifest_p, new_manifest_p, docs_d, on_lp):
         try:
             old_v = old_packages[pkg]
             if old_v != new_v:
-                src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
-                                                          new_v, '  ', on_lp)
-                if src not in src_pkgs:
-                    src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
-                else:
-                    src_pkgs[src].debs.append(pkg)
+                try:
+                    src, pkg_change = get_changes_for_version(docs_d, pkg, old_v,
+                                                              new_v, '  ', on_lp)
+                    if src not in src_pkgs:
+                        src_pkgs[src] = SrcPkgData(old_v, new_v, pkg_change, [pkg])
+                    else:
+                        src_pkgs[src].debs.append(pkg)
+                except PackageNoChangelog as e:
+                    print(e)
+                except NoOldChange as e:
+                    print(e)
+                    changes += pkg + ' (' + new_v + '): new primed package\n\n'
         except KeyError:
             changes += pkg + ' (' + new_v + '): new primed package\n\n'
 
@@ -175,7 +218,7 @@ def find_commit_in_changelog(clog_p) -> str:
     if clog_p == "" or not os.path.exists(clog_p):
         print(f"No previous changelog existed at {clog_p}, skipping changelog generation for local repo")
         return ""
-    
+
     # expect commit in the first line
     with open(clog_p, "r") as f:
         line = f.readline().strip()

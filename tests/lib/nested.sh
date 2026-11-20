@@ -102,6 +102,24 @@ start_nested_core_vm_unit(){
     PARAM_LOG="-D ${WORK_DIR}/qemu.log"
     PARAM_SERIAL="-serial file:${WORK_DIR}/serial.log"
     PARAM_TPM=""
+    PARAM_SMBIOS=""
+
+    if [ -n "${NTP_SERVER:-}" ]; then
+        local TIMESYNC_SOURCES_FILE TIMESYNC_CONTENTS_FILE TIMESYNC_CONTENTS_BASE64 TIMESYNC_SOURCES_FILE_BASE64
+        TIMESYNC_SOURCES_FILE=$(mktemp)
+        TIMESYNC_CONTENTS_FILE=$(mktemp)
+        cat > "$TIMESYNC_CONTENTS_FILE" <<EOF
+[Time]
+NTP=${NTP_SERVER}
+FallbackNTP=
+EOF
+        TIMESYNC_CONTENTS_BASE64=$(base64 -w0 "$TIMESYNC_CONTENTS_FILE")
+        cat > "$TIMESYNC_SOURCES_FILE" <<EOF
+f+~ /etc/systemd/timesyncd.conf.d/10-nested-ntp.conf 0644 - - - ${TIMESYNC_CONTENTS_BASE64}
+EOF
+        TIMESYNC_SOURCES_FILE_BASE64=$(base64 -w0 "$TIMESYNC_SOURCES_FILE")
+        PARAM_SMBIOS="-smbios type=11,value=io.systemd.credential.binary:tmpfiles.extra=${TIMESYNC_SOURCES_FILE_BASE64}"
+    fi
 
     # TODO: enable ms key booting for i.e. nightly edge jobs ?
     VMF_CODE=""
@@ -180,6 +198,7 @@ start_nested_core_vm_unit(){
                 ${PARAM_BIOS} \
                 ${PARAM_TPM} \
                 ${PARAM_RANDOM} \
+                ${PARAM_SMBIOS} \
                 ${PARAM_IMAGE} \
                 ${PARAM_SERIAL} \
                 ${PARAM_MONITOR}; then
