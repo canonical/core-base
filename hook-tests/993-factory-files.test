@@ -20,6 +20,7 @@
 set -eu
 
 declare -A known_mounts
+declare -A all_mounts
 
 sysroot="${PWD}"
 
@@ -59,6 +60,7 @@ while read line; do
                 false
             fi
             known_mounts["$2"]=1
+            all_mounts["$2"]=1
           ;;
           /run/mnt/data/*)
             echo "Files outside /etc can use /writable: $1" 1>&2
@@ -86,6 +88,7 @@ while read line; do
                 false
             fi
             known_mounts["$2"]=1
+            all_mounts["$2"]=1
           ;;
           /writable/user-data)
             if [ "$2" != "/home" ]; then
@@ -97,6 +100,7 @@ while read line; do
                 false
             fi
             known_mounts["$2"]=1
+            all_mounts["$2"]=1
           ;;
         esac
     fi
@@ -124,10 +128,36 @@ while read line; do
         ;;
     esac
 
-    # Verify that it was declared in /etc/fstab
+    # Verify that it was declared in /etc/fstab, either as a mount of
+    # its own or (d/f entries only) as a path nested under one. Nested
+    # d entries are how a variant payload pins individual entries
+    # inside a mounted tree (e.g. a skeleton entry inside the
+    # /var/lib/snapd mount), because the factory C copy of the whole
+    # tree can be skipped when snapd's initrd created the destination
+    # directory first. all_mounts keeps every fstab mount, unlike
+    # known_mounts, whose entries are consumed by their C lines before
+    # appended fragments are read.
+    declared=""
     if [ "${known_mounts[${path}]:+set}" = set ]; then
         unset known_mounts["${path}"]
+        declared=1
     else
+        case "$1" in
+          C)
+            ;;
+          *)
+            for mount in "${!all_mounts[@]}"; do
+                case "$path" in
+                  "$mount"|"$mount"/*)
+                    declared=1
+                    break
+                    ;;
+                esac
+            done
+            ;;
+        esac
+    fi
+    if [ "${declared:+set}" != set ]; then
         echo "${path} is not mounted" 1>&2
         false
     fi

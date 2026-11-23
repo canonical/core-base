@@ -1,0 +1,199 @@
+#!/bin/bash
+
+# Verifies the variant payload machinery (tools/apply-variant-payload.sh):
+#
+# * variant builds: the primed /etc/fstab and
+#   /usr/lib/tmpfiles.d/core-writable.conf must be the pre-payload
+#   files with the selected variant's fragments appended exactly once
+#   (no duplication, nothing else changed) -- the fragments are
+#   stripped and re-applied here and compared;
+# * regular (variant-less) builds: the base fstab and
+#   core-writable.conf must be primed unchanged, with no variant
+#   fragments applied at all, and no variant payload file may leak
+#   into the prime;
+# * a synthetic payload must have its knobs applied (static file
+#   copied, fstab and core-writable.conf fragments appended).
+
+set -eu
+
+src="$(cd "$(dirname "$0")/.." && pwd)"
+sysroot="${PWD}"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+# Concatenate a fragment directory the way apply-variant-payload.sh
+# appends it: glob order, byte for byte. Every fragment must be a
+# complete set of newline-terminated lines.
+cat_fragments() {
+    local dir="$1" out="$2" f
+    : > "$out"
+    for f in "$dir"/*.conf; do
+        [ -e "$f" ] || continue
+        if [ -n "$(tail -c 1 "$f")" ]; then
+            echo "E: fragment $f does not end with a newline" >&2
+            exit 1
+        fi
+        cat "$f" >> "$out"
+    done
+}
+
+# Write the pre-payload content of a merged file: if the merged file
+# ends with exactly the fragment bytes, strip them (they were applied
+# by the build); otherwise the merged file is still pre-payload.
+pre_payload() {
+    local merged="$1" frags="$2" out="$3" merged_size frag_size
+    merged_size=$(stat -c %s "$merged")
+    frag_size=$(stat -c %s "$frags")
+    if [ "$frag_size" -gt 0 ] && [ "$merged_size" -ge "$frag_size" ] \
+            && tail -c "$frag_size" "$merged" | cmp -s - "$frags"; then
+        head -c $((merged_size - frag_size)) "$merged" > "$out"
+    else
+        cp "$merged" "$out"
+    fi
+}
+
+# --- the shipped payload must be applied exactly once ---
+
+# The selected variant is identified by its baked payload (hook-tests
+# do not run with SNAP_BUILD_VARIANT exported). With a single payload
+# variant in the tree this is unambiguous; a tree carrying several
+# payload variants extends this detection (e.g. one marker file per
+# variant) and keeps the leak walk below covering every unselected
+# variant.
+selected=
+if [ -e "$sysroot/usr/share/doc/example-variant/README" ]; then
+    selected=example
+fi
+
+if [ -n "$selected" ]; then
+    cat_fragments "$src/variants/$selected/fstab.d" "$tmp/fstab.frags"
+    cat_fragments "$src/variants/$selected/writable.conf.d" \
+        "$tmp/writable.frags"
+
+    pre_payload "$sysroot/etc/fstab" "$tmp/fstab.frags" "$tmp/fstab.pre"
+    pre_payload "$sysroot/usr/lib/tmpfiles.d/core-writable.conf" \
+        "$tmp/writable.frags" "$tmp/writable.pre"
+
+    # the pre-payload fstab must still be the base static one
+    cmp "$src/static/etc/fstab" "$tmp/fstab.pre"
+    cmp "$src/static/usr/lib/tmpfiles.d/core-writable.conf" \
+        "$tmp/writable.pre"
+
+    # re-applying the payload to the pre-payload files must rebuild the
+    # primed files exactly
+    mkdir -p "$tmp/rootfs/etc" "$tmp/rootfs/usr/lib/tmpfiles.d"
+    cp "$tmp/fstab.pre" "$tmp/rootfs/etc/fstab"
+    cp "$tmp/writable.pre" \
+        "$tmp/rootfs/usr/lib/tmpfiles.d/core-writable.conf"
+    "$src/tools/apply-variant-payload.sh" "$tmp/rootfs" "$selected"
+
+    cmp "$sysroot/etc/fstab" "$tmp/rootfs/etc/fstab"
+    cmp "$sysroot/usr/lib/tmpfiles.d/core-writable.conf" \
+        "$tmp/rootfs/usr/lib/tmpfiles.d/core-writable.conf"
+
+    echo "$selected variant payload is applied exactly once"
+else
+    # regular build: the base fstab and core-writable.conf are primed
+    # unchanged, with no variant fragments appended (a payload leaking
+    # into a regular build shows up as a mismatch here, and as fragment
+    # lines in the files)
+    cmp "$src/static/etc/fstab" "$sysroot/etc/fstab"
+    cmp "$src/static/usr/lib/tmpfiles.d/core-writable.conf" \
+        "$sysroot/usr/lib/tmpfiles.d/core-writable.conf"
+
+    # no variant payload may leak into a regular build at all: walk
+    # every regular file and symlink every variant's payload ships and
+    # require each one to be absent from the primed rootfs. Two
+    # existence classes in the prime are NOT leaks:
+    # * paths the chisel slices stage in every build (a payload may
+    #   mirror or override some of them). Read the set from the
+    #   manifest the build maintains, with the same zstd decompression
+    #   tools/refresh-manifest.py uses.
+    # * /var/lib/extrausers/group and gshadow, which hook
+    #   013-setup-extrausers creates on every build (a variant payload
+    #   may ship replacement stubs for them; on regular builds the hook
+    #   owns the files).
+    python3 - "$sysroot" > "$tmp/base.paths" <<'PYEOF'
+import json, sys
+from compression import zstd
+with zstd.open(sys.argv[1] + "/var/lib/chisel/manifest.wall") as wall:
+    for line in wall.read().decode("utf-8").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        path = json.loads(line).get("path")
+        if isinstance(path, str) and path.startswith("/"):
+            print(path.lstrip("/"))
+PYEOF
+    leak=
+    for vdir in "$src"/variants/*/; do
+        v=$(basename "$vdir")
+        [ "$v" = "$selected" ] && continue
+        [ -d "$vdir/static" ] || continue
+        while IFS= read -r -d '' f; do
+            rel="${f#./}"
+            [ -e "$sysroot/$rel" ] || [ -L "$sysroot/$rel" ] || continue
+            if grep -Fqx -- "$rel" "$tmp/base.paths"; then continue; fi
+            case "$rel" in
+                var/lib/extrausers/group | var/lib/extrausers/gshadow)
+                    continue ;;
+            esac
+            echo "E: $v variant payload file leaked into a" \
+                "regular build: $rel" >&2
+            leak=1
+        done < <(cd "$vdir/static" && find . \( -type f -o -type l \) -print0)
+    done
+    [ -z "$leak" ]
+
+    echo "regular build carries no variant payload"
+fi
+
+# --- a synthetic payload must exercise every knob ---
+
+mkdir -p "$tmp/src/tools" \
+         "$tmp/rootfs/etc" \
+         "$tmp/rootfs/usr/lib/tmpfiles.d" \
+         "$tmp/src/variants/testvar/static/usr/share/example" \
+         "$tmp/src/variants/testvar/fstab.d" \
+         "$tmp/src/variants/testvar/writable.conf.d"
+: > "$tmp/rootfs/etc/fstab"
+: > "$tmp/rootfs/usr/lib/tmpfiles.d/core-writable.conf"
+cp "$src/tools/apply-variant-payload.sh" "$tmp/src/tools/"
+printf 'example\n' > "$tmp/src/variants/testvar/static/usr/share/example/data"
+printf '# testvar fstab fragment\n' \
+    > "$tmp/src/variants/testvar/fstab.d/10-test.conf"
+printf '# testvar writable.conf fragment\n' \
+    > "$tmp/src/variants/testvar/writable.conf.d/20-test.conf"
+
+# the @MULTIARCH@ placeholder knob: a placeholder-named payload
+# directory (merging into a pre-existing rootfs directory, so a
+# chisel-staged /usr/lib/<triplet> is exercised), a placeholder symlink
+# target and placeholder file content must all resolve to the build
+# environment's multiarch triplet, and the placeholder path itself must
+# not survive into the rootfs
+triplet="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
+mkdir -p "$tmp/rootfs/usr/lib/$triplet"
+printf 'pre-existing\n' > "$tmp/rootfs/usr/lib/$triplet/pre-existing"
+mkdir -p "$tmp/src/variants/testvar/static/usr/lib/@MULTIARCH@"
+printf 'marker for @MULTIARCH@\n' \
+    > "$tmp/src/variants/testvar/static/usr/lib/@MULTIARCH@/marker"
+ln -s /opt/example/@MULTIARCH@/lib \
+    "$tmp/src/variants/testvar/static/usr/lib/@MULTIARCH@/libexample.so"
+
+"$tmp/src/tools/apply-variant-payload.sh" "$tmp/rootfs" testvar
+
+cmp -s "$tmp/src/variants/testvar/static/usr/share/example/data" \
+       "$tmp/rootfs/usr/share/example/data"
+tail -1 "$tmp/rootfs/etc/fstab" | grep -q '^# testvar fstab fragment$'
+tail -1 "$tmp/rootfs/usr/lib/tmpfiles.d/core-writable.conf" \
+    | grep -q '^# testvar writable.conf fragment$'
+
+[ "$(cat "$tmp/rootfs/usr/lib/$triplet/pre-existing")" = "pre-existing" ]
+sed "s/@MULTIARCH@/$triplet/g" \
+    "$tmp/src/variants/testvar/static/usr/lib/@MULTIARCH@/marker" |
+    cmp -s - "$tmp/rootfs/usr/lib/$triplet/marker"
+[ "$(readlink "$tmp/rootfs/usr/lib/$triplet/libexample.so")" = \
+    "/opt/example/$triplet/lib" ]
+[ ! -e "$tmp/rootfs/usr/lib/@MULTIARCH@" ]
+
+echo "variant payload knobs apply correctly"

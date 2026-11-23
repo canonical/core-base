@@ -1,0 +1,8 @@
+Example variant payload file.
+
+This file is shipped by the example build variant (see
+variants/README.md) to demonstrate the static/ payload knob: it is
+copied verbatim into the rootfs on example-variant builds only, and
+must never appear in a regular (variant-less) build -- the
+995-variant-payload build-time test walks every file this payload
+ships and enforces that.
