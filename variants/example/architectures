@@ -1,0 +1,5 @@
+# The example variant's payload is exercised in CI on these
+# architectures (see variants/README.md, "Architecture support"). A
+# build on any other architecture fails loudly instead of producing a
+# snap with a wrong-architecture payload.
+amd64 arm64

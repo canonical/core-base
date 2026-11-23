@@ -38,6 +38,32 @@ case "$variant" in
         ;;
 esac
 
+# Refuse to build on an architecture the variant does not declare: the
+# apply step enforces the same check in every build path (including
+# Launchpad); this one fails earlier, before a long build, and is
+# where the per-variant story is told. See variants/README.md.
+arch_file="variants/$variant/architectures"
+if [ -e "$arch_file" ]; then
+    host_arch="$(dpkg --print-architecture)"
+    declared_arches="$(tr '\n\t' '  ' < "$arch_file")"
+    arch_ok=
+    for a in $declared_arches; do
+        if [ "$a" = "$host_arch" ]; then
+            arch_ok=1
+        fi
+    done
+    if [ -z "$arch_ok" ]; then
+        echo "E: variant '$variant' does not support build" \
+            "architecture '$host_arch'" >&2
+        echo "E: (declared architectures: $declared_arches)" >&2
+        echo "E: there is no cross-build: a variant's chroot hooks and" \
+            "chisel slice resolution execute the build architecture's" \
+            "binaries, so a variant builds natively on each declared" \
+            "architecture" >&2
+        exit 1
+    fi
+fi
+
 command -v lxc >/dev/null || {
     echo "E: lxc is required for the snap renaming step" >&2
     exit 1

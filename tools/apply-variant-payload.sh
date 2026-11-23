@@ -38,6 +38,30 @@ fi
 
 echo "I: applying variant payload from $payload"
 
+# A variant may declare the architectures its payload supports
+# (variants/<variant>/architectures, whitespace-separated Debian
+# architecture names). A build on any other architecture fails loudly
+# here - in every build path, including Launchpad - instead of
+# producing a snap whose payload assumes the wrong architecture. A
+# variant without the file is unrestricted and builds on every
+# architecture the project builds.
+if [ -e "$payload/architectures" ]; then
+    host_arch="$(dpkg --print-architecture)"
+    declared_arches="$(tr '\n\t' '  ' < "$payload/architectures")"
+    arch_ok=
+    for a in $declared_arches; do
+        if [ "$a" = "$host_arch" ]; then
+            arch_ok=1
+        fi
+    done
+    if [ -z "$arch_ok" ]; then
+        echo "E: variant '$variant' does not support build" \
+            "architecture '$host_arch'" >&2
+        echo "E: (declared architectures: $declared_arches)" >&2
+        exit 1
+    fi
+fi
+
 # (a) extra files, copied verbatim into the rootfs on top of the base
 # static/ files (a same-path variant file wins). Top-level hidden
 # files are skipped, mirroring the base "cp -a static/*" copy.

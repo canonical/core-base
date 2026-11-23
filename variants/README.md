@@ -80,6 +80,25 @@ placeholder in directory names, file contents and symlink targets;
 triplet at apply time, so the payload lands at the build
 architecture's multiarch paths instead of silently assuming amd64.
 
+# Architecture support
+
+A variant may declare the architectures its payload supports in
+`variants/<variant>/architectures`, a whitespace-separated list of
+Debian architecture names. A build on any other architecture fails
+loudly (enforced by `apply-variant-payload.sh` in every build path,
+and earlier by `tools/build-variant.sh`) instead of silently producing
+a snap whose payload assumes the wrong architecture. A variant without
+the file is unrestricted and builds on every architecture the project
+builds.
+
+There is no cross-build: a variant's chroot hooks and chisel slice
+resolution execute the build architecture's binaries, so a variant
+builds natively on each architecture it declares (the CI workflow
+builds the example variant on hosted amd64 and arm64 runners).
+Launchpad recipes for a restricted variant should declare the same
+architecture set recipe-side, so unsupported builds are not even
+attempted.
+
 # Snap naming
 
 `snapcraft.yaml` keeps the static project name `core26` (changing it
@@ -93,11 +112,11 @@ device nodes survive the round trip. The result is
 
 # Existing variants
 
-* `example` — a tiny demonstration payload exercising every knob: one
+* `example` — a tiny demonstration payload exercising every knob: an
   extra file, one writable fstab mount with its `C` line and factory
-  template, and one `d` line nested under that mount. It exists so the
-  machinery (selection, payload application, naming, architecture
-  declaration) is exercised end to end with content, in CI, without
-  carrying any product payload.
+  template, one `d` line nested under that mount, and an architecture
+  declaration. It exists so the machinery (selection, payload
+  application, naming, architecture declaration) is exercised end to
+  end with content, in CI, without carrying any product payload.
 * `cloud-init` — adds cloud-init (no payload directory; see the
   `chisel-libs` part and hooks `005`/`011`).

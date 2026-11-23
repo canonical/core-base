@@ -196,4 +196,18 @@ sed "s/@MULTIARCH@/$triplet/g" \
     "/opt/example/$triplet/lib" ]
 [ ! -e "$tmp/rootfs/usr/lib/@MULTIARCH@" ]
 
+# the architecture declaration knob: a variant declaring architectures
+# that cannot include the build architecture must be rejected before
+# anything is applied, and the rejection must leave the rootfs
+# untouched
+mkdir -p "$tmp/src/variants/testvar2"
+printf '# testvar2 arch restriction\nnot-an-arch\n' \
+    > "$tmp/src/variants/testvar2/architectures"
+if "$tmp/src/tools/apply-variant-payload.sh" "$tmp/rootfs" testvar2 \
+        2>/dev/null; then
+    echo "E: variant architecture declaration not enforced" >&2
+    exit 1
+fi
+tail -1 "$tmp/rootfs/etc/fstab" | grep -q '^# testvar fstab fragment$'
+
 echo "variant payload knobs apply correctly"
