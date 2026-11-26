@@ -1,0 +1,83 @@
+name: build-snap-variant
+
+# Builds a variant of the core26 base snap (tools/build-variant.sh
+# <variant>) and uploads it as a workflow artifact, so a variant's
+# machinery (selection, payload application, architecture declaration,
+# hook tests, naming) is exercised end to end on real builds with real
+# content. The default variant is "example", the demonstration payload
+# in variants/example/ - see variants/README.md.
+#
+# This workflow is dispatch-only on purpose: the regular and cloud-init
+# variants are already built and tested by the spread tests workflow on
+# every push and pull request, and hook-tests (including
+# 995-variant-payload) run inside every snapcraft build. Whether the
+# example variant should join that matrix, and whether variant snaps
+# should ever be published anywhere from this repository, is part of
+# the variant-hosting discussion this workflow exists to inform.
+#
+# The builds are native per architecture (there is no cross-build: the
+# chroot hooks and chisel slice resolution execute the build
+# architecture's binaries), on GitHub hosted runners. amd64 and arm64
+# are the architectures the example variant declares.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: Variant to build (must exist under variants/, or have no payload directory)
+        default: example
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snap:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runs-on: ubuntu-26.04
+          - arch: arm64
+            runs-on: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y fakeroot squashfs-tools
+      - name: Set up LXD (mirrors snapcore/action-build)
+        run: |
+          sudo groupadd --force --system lxd
+          sudo usermod --append --groups lxd "$USER"
+          sudo snap install lxd
+          sudo lxd init --auto
+          # GH runners ship docker/moby, whose FORWARD DROP policy breaks
+          # LXD bridge networking ("no network access" while creating the
+          # build instance) - see snapcore/action-build ensureLXDNetwork.
+          sudo iptables -P FORWARD ACCEPT
+      - name: Build the variant snap
+        env:
+          VARIANT: ${{ inputs.variant || 'example' }}
+        run: |
+          sudo snap install snapcraft --classic --channel=edge
+          # Re-exec with fresh group membership so snapcraft/lxc can talk
+          # to the LXD socket (see action-build's sudo -u "$USER" -E
+          # pattern); build-variant.sh needs host-side lxc for its
+          # in-instance repack step too.
+          sudo -u "$USER" -E ./tools/build-variant.sh "$VARIANT"
+      - name: Normalize snap filename
+        env:
+          VARIANT: ${{ inputs.variant || 'example' }}
+        run: cp "$(ls -t core26-"$VARIANT"_*+"$VARIANT"_*.snap | head -1)" core26-"$VARIANT".snap
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ inputs.variant || 'example' }}-${{ matrix.arch }}
+          path: core26-${{ inputs.variant || 'example' }}.snap
+          compression-level: 0
+          retention-days: 14

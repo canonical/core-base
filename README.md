@@ -107,6 +107,14 @@ works as expected.
 The `.test` scripts will be run after building with snapcraft or when
 doing a manual "make test" in the source tree.
 
+# Build variants
+
+Variants of this base (e.g. `cloud-init`, `desktop`) are selected at
+build time via `SNAP_BUILD_VARIANT` and may carry a payload of extra
+files, fstab entries and tmpfiles.d entries under `variants/`. See
+`variants/README.md`, or use `tools/build-variant.sh <variant>` to
+build and pack a variant as `core26-<variant>`.
+
 # Bootchart
 
 It is possible to enable bootcharts by adding `ubuntu_core.bootchart`

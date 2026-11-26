@@ -18,6 +18,16 @@ install:
 	# copy static files verbatim
 	/bin/cp -a static/* $(DESTDIR)
 
+	# apply the build variant payload, if one is selected (see
+	# variants/README.md), on top of the static files and before the
+	# hooks run, so the hooks and hooks-build see the full tree
+	set -eux;							\
+	export SNAP_BUILD_VARIANT="";					\
+	. "$$CRAFT_STAGE"/build-env;					\
+	if [ -n "$$SNAP_BUILD_VARIANT" ]; then				\
+		./tools/apply-variant-payload.sh $(DESTDIR) "$$SNAP_BUILD_VARIANT";	\
+	fi
+
 	# since recently we're also missing some /dev files that might be
 	# useful during build - make sure they're there
 	mkdir -p $(DESTDIR)/dev

@@ -296,8 +296,8 @@ build_base_snap() {
     # run snapcraft
     (
         cd "$project_dir"
-        if [ "$BUILD_VARIANT" = cloud-init ]
-        then echo "SNAP_BUILD_VARIANT=cloud-init" > build-env
+        if [ "$BUILD_VARIANT" != regular ] && [ -n "$BUILD_VARIANT" ]; then
+            echo "SNAP_BUILD_VARIANT=$BUILD_VARIANT" > build-env
         fi
         if ! snapcraft pack --verbosity verbose; then
             rm -f build-env
